@@ -14,6 +14,7 @@ request_data = {'method':'attendee.search',
                'params':['Test Developer']}
 request = requests.post(url = API_ENDPOINT, json = request_data, headers = REQUEST_HEADERS)
 response = json.loads(request.text)
+
 print(response)
 print('------------')
 #print(type(response))
