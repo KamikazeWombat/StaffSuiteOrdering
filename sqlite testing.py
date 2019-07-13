@@ -1,7 +1,7 @@
 import requests
 import json
 
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
+from sqlalchemy import create_engine, Column, String, ForeignKey, select
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
@@ -17,12 +17,15 @@ request_data = {'method':'attendee.search',
 request = requests.post(url = API_ENDPOINT, json = request_data, headers = REQUEST_HEADERS)
 response = json.loads(request.text)
 
+print(response)
+
 Base = declarative_base()
 class Attendee(Base):
     __tablename__ = "attendee"
 
     public_id = Column('public_id', String, primary_key=True)
     badge_printed_name = Column('badge_printed_name', String)
+    ec_phone = Column('ec_phone', String)
 
 engine = create_engine('sqlite:///:memory:')
 Base.metadata.create_all(bind=engine)
@@ -33,9 +36,21 @@ for entry in response['result']:
     attendee = Attendee()
     attendee.public_id = entry['public_id']
     attendee.badge_printed_name = entry['badge_printed_name']
-    print('public_id: %s   name: %s', attendee.public_id, attendee.badge_printed_name)
+    attendee.ec_phone = entry['ec_phone']
+    #print('public_id: %s   name: %s', attendee.public_id, attendee.badge_printed_name)
     session.add(attendee)
     session.commit()
 
     session.close()
 
+#myquery = session.query(Attendee).filter(Attendee.ec_phone == '3942342233').one()
+#myquery = session.query(Attendee).one()
+#for item in myquery:
+#    print(item.public_id)
+#help(Session)
+
+#conn = engine.connect()
+#select_stmt = select([.public_id, attendee.c.badge_printed_name])
+                #where(attendee.)
+#result = conn.execute(select_stmt)
+#print(result)
