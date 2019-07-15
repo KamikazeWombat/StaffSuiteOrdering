@@ -13,11 +13,11 @@ authfile = open('authtoken.cfg', 'r')
 REQUEST_HEADERS = {'X-Auth-Token':authfile.read()}
 #data being sent to API
 request_data = {'method':'attendee.search',
-               'params':['Test Developer']}
+               'params':['Test Developer','full']}
 request = requests.post(url = API_ENDPOINT, json = request_data, headers = REQUEST_HEADERS)
 response = json.loads(request.text)
 
-print(response)
+#print(response)
 
 Base = declarative_base()
 class Attendee(Base):
@@ -40,6 +40,9 @@ for entry in response['result']:
     #print('public_id: %s   name: %s', attendee.public_id, attendee.badge_printed_name)
     session.add(attendee)
     session.commit()
+    #for data in entry:
+        #print(data)
+    #print('-----------------------------------')
 
     session.close()
 
