@@ -6,8 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 import config
-
-
+c = config.Config()
 def api_login(apiauthkey, api_endpoint, first_name, last_name, email, zip_code):
     """
     Performs login request again Uber API and returns result
@@ -25,10 +24,11 @@ def api_login(apiauthkey, api_endpoint, first_name, last_name, email, zip_code):
     return error, response
 
 def main():
+
     Base = declarative_base()
-    #engine = create_engine(config['database_location'])
-    #Base.metadata.create_all(bind=engine)
-    #Session = sessionmaker(bind=engine)
+    engine = create_engine(c.database_location)
+    Base.metadata.create_all(bind=engine)
+    Session = sessionmaker(bind=engine)
 
 
 # This is the standard boilerplate that calls the main() function.
