@@ -2,4 +2,10 @@
   "sticker_count": 10,
   "order_message": "test order completion message",
   "api_endpoint": "https://staging-reggie.magfest.org/jsonrpc/",
-  "database_location": "sqlite:///memory"}
+  "database_location": "sqlite:///memory",
+  "cherrypy": {
+    "/": {
+      "tools.sessions.on": true
+    }
+  }
+}

@@ -2,6 +2,11 @@
 import requests
 import json
 #import re
+import string
+import random
+import os, os.path
+
+import cherrypy
 
 API_ENDPOINT = "https://staging-reggie.magfest.org/jsonrpc/"
 # https://staging-reggie.magfest.org/api/reference
@@ -22,6 +27,47 @@ userlist = response['result']
 user = userlist[0]
 #print(user['ec_phone'])
 #print(type(user))
+
+class HelloWorld(object):
+    @cherrypy.expose
+    def index(self):
+        return """<html>
+        <head>
+          <link href="/static/test.css" rel="stylesheet">
+        </head>
+        <body>
+          <form method="post" action="generate">
+            <input type="text value="8" name="length" />
+            <button type="submit">Give it now!</button>
+          </form
+        </body
+        </html>"""
+
+    @cherrypy.expose
+    def generate(self, length=8):
+        some_string = ''.join(random.sample(string.hexdigits, int(length)))
+        cherrypy.session['mystring'] = some_string
+        return some_string
+
+    @cherrypy.expose
+    def display(self):
+        return cherrypy.session['mystring']
+
+def main():
+    cherryconf = {
+        '/': {
+            'tools.sessions.on' : True,
+            'tools.staticdir.root': os.path.abspath(os.getcwd())
+        },
+        '/static': {
+            'tools.staticdir.on': True,
+            'tools.staticdir.dir': './static'
+        }
+    }
+    cherrypy.quickstart(HelloWorld(), '/', cherryconf)
+
+
+"""
 if not len(userlist):
     print('no users found')
 
@@ -37,7 +83,7 @@ if len(userlist):
 print(type(response['result'][0]))
 print('--------------')
 for line,data in response['result'][0].items():
-    print(line,type(data),data)
+    print(line,type(data),data)"""
 #print('------------------')
 #print(type(response['result'][0]['assigned_depts_labels']))
 
@@ -49,3 +95,5 @@ for line,data in response['result'][0].items():
 
 #print(len(test))
 
+if __name__ == '__main__':
+    main()

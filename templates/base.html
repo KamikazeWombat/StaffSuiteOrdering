@@ -1,6 +1,6 @@
 {% import 'macros.html' as macros with context %}
-#copied from https://github.com/magfest/ubersystem/blob/master/uber/templates/base.html
-#
+{# copied from https://github.com/magfest/ubersystem/blob/master/uber/templates/base.html #}
+{# and modified for my needs #}
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -138,6 +138,7 @@
         }
     </style>
 
+{# commenting out this section for now because no feedback setup
     {% block feedback_javascript %}
       {% if admin_area %}
       <script type="text/javascript" async="async" src="https://jira.magfest.net/s/7cedd06b64911e869dc2b32a6477230c-T/kby73n/73019/6d39734591565d7d1928c35b4400d05a/2.0.23/_/download/batch/com.atlassian.jira.collector.plugin.jira-issue-collector-plugin:issuecollector/com.atlassian.jira.collector.plugin.jira-issue-collector-plugin:issuecollector.js?locale=en-US&collectorId=a192a515"></script>
@@ -172,6 +173,7 @@
       </script>
       {% endif %}
     {% endblock %}
+#}
 
     <script>
         var DISABLE_STRIPE_BUTTONS_ON_CLICK = true;
