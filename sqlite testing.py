@@ -46,10 +46,10 @@ for entry in response['result']:
 
     session.close()
 
-#myquery = session.query(Attendee).filter(Attendee.ec_phone == '3942342233').one()
+myquery = session.query(Attendee).filter(Attendee.ec_phone == '3942342233').one()
 #myquery = session.query(Attendee).one()
-#for item in myquery:
-#    print(item.public_id)
+for item in myquery:
+    print(item.public_id)
 #help(Session)
 
 #conn = engine.connect()

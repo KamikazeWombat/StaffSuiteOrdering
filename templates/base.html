@@ -1,12 +1,12 @@
 {% import 'macros.html' as macros with context %}
-#copied from https://github.com/magfest/ubersystem/blob/master/uber/templates/base.html
-#
+{# copied from https://github.com/magfest/ubersystem/blob/master/uber/templates/base.html #}
+{# and modified for my needs #}
 <!DOCTYPE HTML>
 <html>
 <head>
     {{ macros.ie7_compatibility_check() }}
     <title>{{ c.EVENT_NAME }} - {% block title %}{% endblock %}</title>
-    <link rel="icon" href="../static/images/favicon.png" type="image/x-icon" />
+    <link rel="icon" href="{{ c.EVENT_URL_ROOT }}/static/images/favicon.png" type="image/x-icon" />
 
     {% block head_styles %}
         <link rel="stylesheet" href="../static/deps/combined.min.css" />
@@ -24,6 +24,7 @@
         {% endblock %}
     {% endblock %}
 
+{#
     {% block head_javascript %}
         <script>
             var message = '{{ message|e }}';
@@ -37,63 +38,16 @@
             })
         </script>
 
-        {% if not dont_show_csrf_token %}
-            {#
-                NOTE: never set dont_show_csrf_token to True unless you know exactly what you're doing.
-                this should only ever be used in situations where a page is cached for all users.
-                EXPERTS ONLY
-            #}
-            <script type="text/javascript">
-                var csrf_token = '{{ c.CSRF_TOKEN }}';
-            </script>
-        {% else %}
-            <!-- skipped showing CSRF token -->
-        {% endif %}
 
-        {% if 'preregistration' not in c.PAGE_PATH %}
-            {% for js in c.JAVASCRIPT_INCLUDES %}
-                <script src="{{ js }}" type="text/javascript"></script>
-            {% endfor %}
-        {% endif %}
-
-        {% if resend_email_form %}
-        <script type="text/javascript">
-            $(function() {
-                $("form[action='resend_email']").each(function(index) {
-                    $(this).submit(function (e) {
-                        // Prevent form submit.
-                        e.preventDefault();
-                        var data = $(this).serialize();
-                        var currentForm = $(this);
-                        $.ajax({
-                            method: 'POST',
-                            url: '../emails/resend_email',
-                            dataType: 'json',
-                            data: data,
-                            success: function (json) {
-                                toastr.clear();
-                                var message = json.message;
-                                if (json.success) {
-                                    toastr.info(message);
-                                } else {
-                                    toastr.error(message);
-                                }
-                            },
-                            error: function () {
-                                toastr.error('Unable to connect to server, please try again.');
-                            }
-                        });
-                    });
-                });
-            });
-        </script>
-        {% endif %}
     {% endblock %}
+    #}
 
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="mobile-web-app-capable" content="yes">
+
+
     {% block sectionStyle %}{% endblock %}
 
     <style>
@@ -137,337 +91,26 @@
           }
         }
     </style>
-
-    {% block feedback_javascript %}
-      {% if admin_area %}
-      <script type="text/javascript" async="async" src="https://jira.magfest.net/s/7cedd06b64911e869dc2b32a6477230c-T/kby73n/73019/6d39734591565d7d1928c35b4400d05a/2.0.23/_/download/batch/com.atlassian.jira.collector.plugin.jira-issue-collector-plugin:issuecollector/com.atlassian.jira.collector.plugin.jira-issue-collector-plugin:issuecollector.js?locale=en-US&collectorId=a192a515"></script>
-      <script type="text/javascript" async="async" src="https://jira.magfest.net/s/7cedd06b64911e869dc2b32a6477230c-T/kby73n/73019/6d39734591565d7d1928c35b4400d05a/2.0.23/_/download/batch/com.atlassian.jira.collector.plugin.jira-issue-collector-plugin:issuecollector/com.atlassian.jira.collector.plugin.jira-issue-collector-plugin:issuecollector.js?locale=en-US&collectorId=a9568879"></script>
-      <script type="text/javascript">
-        $(function() {
-          window.ATL_JQ_PAGE_PROPS = $.extend(window.ATL_JQ_PAGE_PROPS || {}, {
-            "a192a515": {
-              triggerFunction: function(showCollectorDialog) {
-                $('#report-a-bug').click(function(e) {
-                  e.preventDefault();
-                  showCollectorDialog();
-                });
-              },
-              fieldValues: {
-                priority: '2'
-              }
-            },
-            "a9568879": {
-              triggerFunction: function(showCollectorDialog) {
-                $('#request-an-improvement').click(function(e) {
-                  e.preventDefault();
-                  showCollectorDialog();
-                });
-              },
-              fieldValues: {
-                priority: '2'
-              }
-            }
-          });
-        });
-      </script>
-      {% endif %}
-    {% endblock %}
-
-    <script>
-        var DISABLE_STRIPE_BUTTONS_ON_CLICK = true;
-        var parseQueryString = function(queryString) {
-            var params = {}, temp, i, len, queries = queryString.split('&');
-            for (i = 0, len = queries.length; i < len; i++) {
-              if(queries[i]) {
-                temp = queries[i].split('=');
-                params[temp[0]] = temp[1];
-              }
-            }
-            return params;
-        };
-        var replaceQueryParam = function(queryParam, value) {
-            var queryString = window.location.search.substring(1);
-            var params = parseQueryString(queryString);
-            if (_.has(params, queryParam) || value) {
-                if (value) {
-                    params[queryParam] = value;
-                } else {
-                    delete params[queryParam];
-                }
-                queryString = $.param(params);
-            }
-            if (queryString) {
-                queryString = '?' + queryString;
-            }
-            return queryString;
-        };
-        var replaceQueryParamInUrl = function(queryParam, value) {
-          try {
-              // Replace the query parameter in the web browser's address bar
-              if (history && history.replaceState) {
-                  var queryString = replaceQueryParam(queryParam, value);
-                  history.replaceState({}, document.title, window.location.pathname + queryString);
-                  return true;
-              }
-          } catch(ex) {
-              // Don't let any errors here disrupt the rest of the app!
-              try { console.log(ex); } catch(ex) {}
-          }
-          return false;
-        };
-        var removeHashFromUrl = function() {
-            try {
-                if (history && history.replaceState) {
-                    var url = window.location.toString();
-                    if (url.indexOf('#') > 0) {
-                        history.replaceState({}, document.title, url.substring(0, url.indexOf('#')));
-                    }
-                } else {
-                    window.location.hash = '';
-                }
-                return true;
-            } catch(ex) {
-                // Don't let any errors here disrupt the rest of the app!
-                try { console.log(ex); } catch(ex) {}
-            }
-            return false;
-        };
-        $(function() {
-            $(window).load(function() {
-                $(".loader").fadeOut("fast");
-            });
-            toastr.options = {
-                closeButton: true,
-                debug: false,
-                positionClass: "toast-top-right",
-                onclick: null,
-                showDuration: "300",
-                hideDuration: "1000",
-                timeOut: "0",
-                extendedTimeOut: "0",
-                showEasing: "swing",
-                hideEasing: "linear",
-                showMethod: "fadeIn",
-                hideMethod: "fadeOut",
-                onShown: function() {
-                  replaceQueryParamInUrl('message');
-                }
-            };
-            var message = '{{ message }}';
-            var error_message = '{{ error_message }}';
-            if (error_message.length) {
-                toastr.error(error_message);
-            } else if (message.length) {
-                toastr.info(message);
-            }
-            {#
-              If datetextentries are contained inside of a multi-page
-              datatable, the datetextentries that aren't on the first page
-              won't be rendered. To overcome this, we attempt to instantiate
-              datetextentries every time the datatable finishes drawing.
-            -#}
-            var createDateTextEntries = function() {
-                {# Only create datetextentry if it wasn't already created. -#}
-                $('.date:not(.jq-dte .date)').datetextentry({
-                    field_order: 'MDY',
-                    min_year: '1890',
-                    max_date: function() { return this.get_today(); },
-                    max_date_message: 'You cannot be born in the future.',
-                    show_tooltips: false,
-                    errorbox_x: -135,
-                    errorbox_y: 28
-                });
-                $('.expiration-date:not(.jq-dte .expiration-date)').datetextentry({
-                    field_order: 'MDY',
-                    show_tooltips: false,
-                    errorbox_x: -135,
-                    errorbox_y: 28
-                });
-            };
-                $('.datatable').each(function() {
-                    var table = $(this).DataTable({
-                        aLengthMenu: [
-                            [25, 50, 100, 200, -1],
-                            [25, 50, 100, 200, 'All']
-                        ],
-                        stateSave: true,
-                        drawCallback: createDateTextEntries
-                    });
-                    table.columns().flatten().each( function ( colIdx ) {
-                        var header_name = $(table.column(colIdx).header()).text();
-                        // Is there a filter set up for this?
-                        var filter_span = $('*[id="' + header_name.toLowerCase() + '_filter"]');
-                        if($(filter_span).length) {
-                        // Create the select list and search operation
-                        var select = $('<select><option label="(No Filter)"></option> </select>')
-                            .appendTo(
-                                filter_span
-                            )
-                            .on( 'change', function () {
-                                table
-                                    .column( colIdx )
-                                    .search( $(this).val() )
-                                    .draw();
-                            } );
-                        // Get the search data for the first column and add to the select list
-                        table
-                            .column( colIdx )
-                            .cache( 'search' )
-                            .sort()
-                            .unique()
-                            .each( function ( d ) {
-                                select.append( $('<option value="'+d+'">'+d+'</option>') );
-                            } );
-                        }
-                    } );
-                });
-            createDateTextEntries();
-            $('.geolocator').geocomplete({
-                details: '.address_details',
-                detailsAttribute: 'data-geo'
-            });
-            $('.focus:first').focus();
-            if (window.DISABLE_STRIPE_BUTTONS_ON_CLICK) {
-                // we can't intercept the Javascript form submit, so once someone has clicked the Stripe
-                // submit button, listen for us leaving the page and disable the buttons then
-                $(document).on('click', 'form > .stripe-button-el', function () {
-                    $(window).on('beforeunload', function () {
-                        $('a > .stripe-button-el').unwrap().prop('disabled', true).unwrap();
-                    });
-                });
-            }
-            // prevent people from paying after prereg closes
-            {% if c.PRE_CON %}
-                if ($('form.stripe').size()) {
-                    var prevHour = new Date().getHours();
-                    var checkHour = function() {
-                        var currHour = new Date().getHours();
-                        if (currHour != prevHour) {
-                            location.reload();
-                        } else {
-                            prevHour = currHour;
-                            setTimeout(checkHour, 1000);
-                        }
-                    };
-                    checkHour();
-                }
-            {% endif %}
-        });
-    </script>
     {% block head_additional %}{% endblock %}
 </head>
 <body>
-    {% if c.PRE_CON and c.SLOW_LOAD_CHECK %}
-        <div class="loader"><a class="loader_link" href="../static_views/slow_load.html" target="_blank"></a></div>
-    {% endif %}
     {% block top_of_body_additional %}
         {% if admin_area %}
             <div id="floating_logo">
-                <img src="../static/theme/bg-logo.png"/>
+                <img src={{ c.EVENT_URL_ROOT }}/static/theme/bg-logo.png/>
             </div>
-            {% if c.DEV_BOX %}
-                <div id="devbox_cautiontape"></div>
-                <div id="devbox_text">DEVELOPMENT</div>
-            {% endif %}
+
         {% endif %}
     {% endblock %}
     <div id="mainContainer" class="container-fluid">
         {% block backlink %}
-        {% if admin_area %}
-            <nav class="navbar navbar-default navbar-static-top" role="navigation">
-                <!-- Brand and toggle get grouped for better mobile display -->
-                <div class="navbar-header">
-                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#main-navbar-collapse-1">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                  </button>
-                  <a class="navbar-brand" href="../accounts/homepage">{{ c.EVENT_NAME }}</a>
-                </div>
-                <!-- Collect the nav links, forms, and other content for toggling -->
-                <div class="collapse navbar-collapse" id="main-navbar-collapse-1">
-                    <ul class="nav navbar-nav navbar-right">
-                      {% block feedback_menu %}
-                        <li class="dropdown">
-                          <a href="#" class="dropdown-toggle" data-toggle="dropdown" title="Submit feedback">
-                            <span class="glyphicon glyphicon-send"></span>
-                          </a>
-                          <ul class="dropdown-menu" role="menu">
-                            <li><a id="report-a-bug" href="#" title="Report a Bug">Report a Bug</a></li>
-                            <li><a id="request-an-improvement" href="#" title="Request an Improvement">Request an Improvement</a></li>
-                          </ul>
-                        </li>
-                      {% endblock %}
-                        <li><a href="{{ c.ADMIN_GUIDE_URL }}" target="admin_guide"><span title="Admin Guide" class="glyphicon glyphicon-question-sign"></span></a></li>
-                        <li><a href="../accounts/sitemap"><span title="Site Map" class="glyphicon glyphicon-road"></span></a></li>
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                <span>Logged in as: {{ c.CURRENT_ADMIN.first_name }} {{ c.CURRENT_ADMIN.last_name }}</span> <span title="Account Settings" class="glyphicon glyphicon-cog"></span><span class="caret"></span>
-                            </a>
-                            <ul class="dropdown-menu" role="menu">
-                                {% if 'admin_account' in c.CURRENT_ADMIN %}
-                                  <li><a href="../registration/form?id={{ c.CURRENT_ADMIN.id }}">My Registration</a></li>
-                                  {% if c.PEOPLE|string in c.CURRENT_ADMIN.admin_account.access and c.CURRENT_ADMIN.assigned_depts %}
-                                    <li><a href="../departments/?filtered=1">My Departments</a></li>
-                                    {% for dept in c.CURRENT_ADMIN.assigned_depts %}
-                                      <li><a href="../departments/form?id={{ dept.id }}">&nbsp;&#8226;&nbsp;{{ dept.name }}</a></li>
-                                    {% endfor %}
-                                  {% endif %}
-                                  <li role="separator" class="divider"></li>
-                                {% endif %}
-                                <li><a href="../accounts/change_password">Change Password</a></li>
-                                <li><a href="../accounts/logout">Logout</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                    {% block mainmenu %}
-                    <ul class="nav navbar-nav" id="main-menu">
-                        {% block mainmenu_items %}
-                        {% for menu_item in c.MENU_FILTERED_BY_ACCESS_LEVELS.submenu -%}
-                            {% if menu_item.href -%}
-                                <li><a href="{{ menu_item.href }}">{{ menu_item.name }}</a></li>
-                            {% elif menu_item.submenu -%}
-                                <li class="dropdown">
-                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                        {{ menu_item.name }}
-                                        <span class="caret"></span>
-                                    </a>
-                                    <ul class="dropdown-menu" role="menu">
-                                    {% for submenu_item in menu_item.submenu -%}
-                                        <li>
-                                            {% if submenu_item.href -%}
-                                                <a href="{{ submenu_item.href }}">
-                                            {% else -%}
-                                                <a class="disabled">
-                                            {% endif -%}
-                                            {{ submenu_item.name }}</a>
-                                        </li>
-                                    {% endfor -%}
-                                    </ul>
-                                </li>
-                            {% endif -%}
-                        {% endfor -%}
-                        {% endblock mainmenu_items %}
-                    </ul>
-                    {% endblock mainmenu %}
-                </div>
-            </nav>
-        {% endif %}
+
         {% endblock %}
         {% block header %}{% endblock %}
         {% block content %}{% endblock %}
         <div id="bottomAnchor"></div>
     </div>
-    {% block scripts %}
-        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-        <!--[if lt IE 9]>
-            <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-            <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-        <![endif]-->
-        {% include "baseextra.html" %}
-    {% endblock %}
+
     {% block additional_scripts %}
         {% block page_scripts %} {% endblock %}
     {% endblock %}

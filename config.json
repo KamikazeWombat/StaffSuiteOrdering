@@ -1,5 +1,15 @@
 {"orders_open": true,
   "sticker_count": 10,
   "order_message": "test order completion message",
-  "api_endpoint": "https://staging-reggie.magfest.org/jsonrpc/",
-  "database_location": "sqlite:///memory"}
+  "api_endpoint": "https://staging-west.reggie.magfest.org/jsonrpc/",
+  "database_location": "sqlite:///memory",
+  "cherrypy": {
+    "/": {
+      "tools.sessions.on": true
+    },
+    "/static": {
+            "tools.staticdir.on": true,
+            "tools.staticdir.dir": "./static"
+    }
+  }
+}
