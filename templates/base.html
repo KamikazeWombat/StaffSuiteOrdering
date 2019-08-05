@@ -6,8 +6,8 @@
 <head>
     {{ macros.ie7_compatibility_check() }}
     <title>{{ c.EVENT_NAME }} - {% block title %}{% endblock %}</title>
-    <link rel="icon" href="{{ c.EVENT_URL_ROOT }}/static/images/favicon.png" type="image/x-icon" />
-
+    <!--<link rel="icon" href="{{ c.EVENT_URL_ROOT }}/static/images/favicon.png" type="image/x-icon" />
+    -->
     {% block head_styles %}
         <link rel="stylesheet" href="../static/deps/combined.min.css" />
         <link rel="stylesheet" href="../static_views/styles/main.css" />

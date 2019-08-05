@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% set admin_area=True %}
+{% block title %}Meal List for Setup{% endblock %}
+{% block backlink %}{% endblock %}
+{% block content %}
+
+<div class="container">
+    <h2>{{ message }} <br/></h2>
+    <h2 class="form-signin-heading">Meal List</h2>
+        {% for meal in meallist %}
+            <form role="form">
+                <input type="hidden" name="id" value ="{{ meal.id }}">
+                <label type="text" class="form-control" placeholder="Meal Name" name="meal_name" required autofocus>{{ meal.meal_name }} </label>
+                <label type="datetime-local" class="form-control" placeholder="Start Time" name="start_time"  required> {{ meal.start_time }} </label>
+                <button class="btn btn-lg btn-primary btn-block" type="submit">Edit</button>
+                <p>---------------------</p>
+            </form>
+        {% endfor %}
+
+</div>
+{% endblock content %}

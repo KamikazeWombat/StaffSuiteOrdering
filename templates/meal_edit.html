@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% set admin_area=True %}
+{% block title %}Edit Meal{% endblock %}
+{% block backlink %}{% endblock %}
+{% block content %}
+
+<div class="container">
+    <form role="form">
+        <h2 class="form-signin-heading">Edit Meal</h2>
+
+        <input type="hidden" name="id" value ="{{ meal.id }}">
+        <input type="text" class="form-control" placeholder="Meal Name" name="meal_name" value="{{ meal.meal_name }}" required autofocus />
+        <input type="datetime-local" class="form-control" placeholder="Start Time" name="start_time" value="{{ meal.start_time }}" required />
+        <input type="datetime-local" class="form-control" placeholder="End Time" name="end_time" value="{{ meal.end_time }}" required />
+        <input type="datetime-local" class="form-control" placeholder="Cutoff time for ordering" name="cutoff" value="{{ meal.cutoff }}" required />
+        <input type="text" class="form-control" placeholder="Description" name="description" value="{{ meal.description }}" required />
+
+        <button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button>
+    </form>
+</div>
+{% endblock content %}

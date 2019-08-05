@@ -14,10 +14,7 @@ import webcode
 
 def main():
 
-    Base = declarative_base()
-    engine = create_engine(cfg.database_location)
-    Base.metadata.create_all(bind=engine)
-    Session = sessionmaker(bind=engine)
+
 
     cherrypy.quickstart(webcode.Root(), '/', cfg.cherrypy)
 
