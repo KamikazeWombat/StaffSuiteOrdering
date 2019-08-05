@@ -12,7 +12,7 @@ then modified to my needs-->
 
     <form class="form-signin" role="form">
         <h2 class="form-signin-heading">Volunteer Login</h2>
-        {% if not message %}
+        {% if message %}
             <div style="background-color:red;"> {{ message }} <br/></div>
         {% endif %}
         <input type="text" class="form-control" placeholder="First Name" name="first_name" value="{{ first_name }}" required autofocus />
