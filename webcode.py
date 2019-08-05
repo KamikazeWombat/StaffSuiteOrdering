@@ -92,7 +92,7 @@ class Root:
                 session = Session(models.engine)
                 thismeal = session.query(Meal).filter_by(id=meal_id).one()
             except sqlalchemy.orm.exc.NoResultFound:
-                message = 'Requested Meal ID %s not found'.format(meal_id)
+                message = 'Requested Meal ID '+meal_id+' not found'
                 raise HTTPRedirect('meal_setup_list?message='+message)
             finally:
                 session.close()

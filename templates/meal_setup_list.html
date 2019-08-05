@@ -9,8 +9,8 @@
         {% for meal in meallist %}
             <form role="form">
                 <input type="hidden" name="id" value ="{{ meal.id }}">
-                <label type="text" class="form-control" placeholder="Meal Name" name="meal_name" required autofocus>{{ meal.meal_name }} </label>
-                <label type="datetime-local" class="form-control" placeholder="Start Time" name="start_time"  required> {{ meal.start_time }} </label>
+                <label type="text" class="form-control"  name="meal_name" required autofocus>{{ meal.meal_name }} </label>
+                <label type="datetime-local" class="form-control" name="start_time"  required> {{ meal.start_time }} </label>
                 <button class="btn btn-lg btn-primary btn-block" type="submit">Edit</button>
                 <p>---------------------</p>
             </form>
