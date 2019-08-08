@@ -9,11 +9,16 @@
 
         <input type="hidden" name="id" value ="{{ meal.id }}">
         <input type="text" class="form-control" placeholder="Meal Name" name="meal_name" value="{{ meal.meal_name }}" required autofocus />
-        <input type="datetime-local" class="form-control" placeholder="Start Time" name="start_time" value="{{ meal.start_time.isoformat() }}" required />
-        <input type="datetime-local" class="form-control" placeholder="End Time" name="end_time" value="{{ meal.end_time.isoformat() }}" required />
-        <input type="datetime-local" class="form-control" placeholder="Cutoff time for ordering" name="cutoff" value="{{ meal.cutoff.isoformat() }}" required />
+        <input type="datetime-local" class="form-control" placeholder="Start Time" name="start_time"
+               {% if meal.start_time %}value="{{ meal.start_time.isoformat() }}"{% endif %} required />
+        <input type="datetime-local" class="form-control" placeholder="End Time" name="end_time"
+               {% if meal.end_time %}value="{{ meal.end_time.isoformat() }}"{% endif %}} required />
+        <input type="datetime-local" class="form-control" placeholder="Cutoff time for ordering" name="cutoff"
+               {% if meal.cutoff %} value="{{ meal.cutoff.isoformat() }}"{% endif %} required />
         <input type="text" class="form-control" placeholder="Description" name="description" value="{{ meal.description }}" required />
-
+        todo: add button_radio for protein options
+        <p>-----Toppings----</p>
+        {{ macros.textbox_list('toppings', toppings) }}
         <button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button>
     </form>
 </div>

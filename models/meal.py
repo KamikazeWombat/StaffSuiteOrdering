@@ -5,8 +5,10 @@ from config import dec_base
 
 
 class Meal(dec_base):
+    """
+    Meal object, like 'this is what we are serving for the lunch meal on this date'
+    """
     __tablename__ = 'meal'
-    print('top of Meal class')
     id = Column('id', Integer, primary_key=True)
     meal_name = Column('meal_name', String)
     start_time = Column('start_time', DateTime)
@@ -18,6 +20,8 @@ class Meal(dec_base):
     #uber/configspec.ini [enums] section contains sample item definitions.
     #read the dang title section!!
 
+    #this is a string field using Multichoice format as modified from Magfest's Uber
+    toppings = Column('toppings', String)
     #toppings_title = Column('toppings_title', String)
     #toppings_id = Column('toppings_id', )
     #toppings = relationship('Topping')

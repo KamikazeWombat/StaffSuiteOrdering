@@ -14,7 +14,7 @@ from models.attendee import Attendee
 from models.meal import Meal
 from models.order import Order
 import shared_functions
-from shared_functions import api_login, HTTPRedirect
+from shared_functions import api_login, HTTPRedirect, multichoice_split, multichoice_join, text_join
 
 
 class Root:
@@ -69,17 +69,22 @@ class Root:
 
     @cherrypy.expose
     #@admin_req
-    def meal_edit(self, meal_id='', message='', **params):
+    def meal_edit(self, options=[], toppings=[], meal_id='', message='', **params):
         template = env.get_template("meal_edit.html")
 
         if 'meal_name' in params:
             session = Session(models.engine)
             thismeal = Meal()
+            print('----------------------')
+           # for param in params:
+            #    print(param)
+             #   print(type(param))
             thismeal.meal_name = params['meal_name']
             thismeal.start_time = parse(params['start_time'])
             thismeal.end_time = parse(params['end_time'])
             thismeal.cutoff = parse(params['cutoff'])
             thismeal.description = params['description']
+            thismeal.toppings = text_join(params, 'toppings')
             #thismeal.detail_link = params['detail_link']
             #with Session() as session:
             session.add(thismeal)
@@ -97,13 +102,17 @@ class Root:
             finally:
                 session.close()
 
+            toppings = thismeal.toppings.split(',')
             return template.render(meal=thismeal,
+                                   toppings=toppings,
                                    message=message,
                                    c=c)
         else:
             thismeal = Meal()
             thismeal.meal_name = ''
             thismeal.description = ''
+            toppings = ['','','']
             return template.render(meal=thismeal,
+                                   toppings=toppings,
                                    message=message,
                                    c=c)

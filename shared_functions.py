@@ -103,3 +103,38 @@ def lookup_attendee(first_name, last_name, email, zip_code):
         # todo: lookup attendee and return it
         att = attendee.Attendee()
         att.public_id = json['public_id']
+
+def multichoice_split(choices):
+    """
+    Takes a string from the database in multichoice format and splits it into
+    the format the checkgroup macro is looking for
+    """
+
+    #produces list of choices
+    print('choices before splitting: ', choices)
+    choices = ';'.split(choices)
+    print('------------')
+    print('choices after first split: ', choices)
+    for choice in choices:
+        choice = tuple(','.split(choice))
+    print('-----------------')
+    print('choices before return: ', choices)
+    return choices
+
+def multichoice_join(choices):
+    print('Multijoin before works: ', choices)
+    return choices
+
+def text_join(params, field):
+    mylist = []
+    count = 1
+    for param in params:
+        index = field + str(count)
+        try:
+            mylist.append(params[index])
+            count += 1
+        except KeyError:
+            count += 1
+
+    mylist = ','.join(mylist)
+    return mylist
