@@ -29,12 +29,6 @@
 {%- endmacro %}
  #}
 
-{% macro stripe_button(label) -%}
-  <button class="btn btn-primary stripe-button-el">
-    <span class="display: block; min-height: 30px;">{{label}}</span>
-  </button>
-{%- endmacro %}
-
 
 {% macro popup_link(href, text='<sup>?</sup>') -%}
   <a onClick='window.open(&quot;{{ href }}&quot;, &quot;info&quot;, &quot;toolbar=no,height=500,width=375,scrollbars=yes&quot;).focus(); return false;' href='{{ href }}'>{{ text|safe }}</a>
@@ -108,15 +102,26 @@
   </div>
 {%- endmacro %}
 
-{% macro textbox_list(field_name, textboxes) %}
+{% macro textbox_list(field_name, textboxes, placeholder) %}
   <div>
-    {% for box in textboxes %}
-      <input type="text" class="form-control" placeholder="{{ field_name }} label" name="{{ field_name }}{{ loop.index }}"
-             value="{{ box }}"/>
-    {% endfor %}
+    
+      {% for box in textboxes %}
+        {% set id = box.0 %}
+        {% set name = box.1 %}
+        {% set desc = box.2 %}
+        <tr>
+          <td><input type="hidden" name="{{ field_name }}id{{ loop.index }}" value="{{ id }}">
+           <input type="text" class="form-control" placeholder="{{ placeholder }} label" name="{{ field_name }}{{ loop.index }}"
+                    value="{{ name }}"/>
+          </td>
+          <td><input type="text" class="form-control" placeholder="{{ placeholder }} description"
+                     name="{{ field_name }}desc{{ loop.index }}" value="{{ desc }}"/> </td>
+        </tr>
+      {% endfor %}
+    
   </div>
-
 {% endmacro %}
+
 
 {% macro button_radio_opts(field_name, choices, suffix='', default='', is_readonly=False, is_required=False) -%}
   <div data-toggle="buttons" class="btn-group btn-group-toggle form-control-static">
@@ -125,7 +130,7 @@
       {%- set label = choice[1] -%}
       {%- set desc = choice[2] -%}
       {%- set has_value = value == default -%}
-      {%- if not is_readonly or has_value -%}
+     {# {%- if not is_readonly or has_value -%} #}
         <label
             class="btn btn-default{% if is_readonly %} disabled{% endif %}{% if has_value %} active{% endif %}"
             {% if desc %}title="{{ desc }}"{% endif %}>
@@ -133,11 +138,11 @@
                 type="radio"
                 name="{{ field_name }}{{ suffix }}"
                 value="{{ value }}"
-                {% if has_value %}checked{% elif is_readonly %}disabled{% endif %}
+                {% if value %}checked{% elif is_readonly %}disabled{% endif %}
                 {% if is_required %} required{% endif %}/>
             {{ label }}
         </label>
-      {% endif %}
+      {# {% endif %} #}
     {% endfor %}
   </div>
 {%- endmacro %}
@@ -149,25 +154,6 @@
   {%- set default = model[field_name] if not default and not is_class else '' -%}
   {%- set choices = model.get_field(field_name).type.choices.items() -%}
   {{ button_radio_opts(field_name, choices, suffix, default, is_readonly, is_required) }}
-{%- endmacro %}
-#}
-
-
-{#
-{% macro access_checkgroup(model, suffix='', is_readonly=False) -%}
-  {%- if is_readonly -%}
-    {{ checkgroup(model, 'access', suffix=suffix, is_readonly=True) }}
-  {%- else -%}
-    {%- set is_class = model is class -%}
-    {%- set defaults = [] if is_class else model.access.split(',') -%}
-    {% for value, label in c.DISALLOWED_ACCESS_OPTS -%}
-      {%- set has_value = value|string in defaults -%}
-      {%- if has_value -%}
-        <input type="hidden" name="access{{ suffix }}" value="{{ value }}"/>
-      {%- endif -%}
-    {%- endfor %}
-    {{ checkgroup_opts('access', c.ALLOWED_ACCESS_OPTS, suffix=suffix, defaults=defaults) }}
-  {%- endif -%}
 {%- endmacro %}
 #}
 
@@ -273,6 +259,7 @@
 {%- endmacro formgroup %}
 #}
 
+
 {#
 {% macro form_checkgroup(
     model,
@@ -375,171 +362,6 @@
 {%- endmacro %}
 
 
-{#
-{% macro prereg_wizard(page_path, prereg_request_hotel_info_open) -%}
-  {%- if prereg_request_hotel_info_open -%}
-    {%-
-            set steps = [
-                (('form', 'post_form'), 'Enter Info'),
-                (('hotel',), 'Hotel Booking'),
-                (('index', 'preregistration', ''), 'Review & Pay'),
-                (('paid_preregistrations',), 'Done')]
-            -%}
-  {% else %}
-    {%-
-            set steps = [
-                (('form', 'post_form'), 'Enter Info'),
-                (('index', 'preregistration', ''), 'Review & Pay'),
-                (('paid_preregistrations',), 'Done')]
-            -%}
-  {%- endif -%}
-  {%- set step_count = steps|length -%}
-  {%- set col_size = (12 / step_count)|round(0, 'floor')|int -%}
-  {%- set vars = {'is_complete': False} -%}
-  <div class="row bs-wizard">
-    {% for url, text in steps -%}
-      <div class="col-xs-{{ col_size }} bs-wizard-step {% if page_path|basename in url -%}active{%- if vars.update({'is_complete': True}) -%}{%- endif -%}{%- elif vars.is_complete -%}disabled{%- else -%}complete{%- endif %}">
-        <div class="text-center bs-wizard-stepnum">Step {{ loop.index }}</div>
-        <div class="progress"><div class="progress-bar"></div></div>
-        <a class="bs-wizard-dot"></a>
-        <div class="bs-wizard-info text-center">{{ text }}</div>
-      </div>
-    {%- endfor %}
-  </div>
-{%- endmacro prereg_wizard %}
-#}
-
-
-{#
-{% macro address_form(model, name_prefix='', model_prefix='', label_prefix='', update_international=False, is_required=False, is_readonly=False) -%}
-  {%- set suffix = model.id|replace("-", "") -%}
-  {%- set zip_code_attr = model_prefix ~ 'zip_code' -%}
-  {%- set address1_attr = model_prefix ~ 'address1' -%}
-  {%- set address2_attr = model_prefix ~ 'address2' -%}
-  {%- set city_attr = model_prefix ~ 'city' -%}
-  {%- set region_attr = model_prefix ~ 'region' -%}
-  {%- set country_attr = model_prefix ~ 'country' -%}
-
-  <script type="text/javascript">
-      var regionChange{{ suffix }} = function() {
-          {% if update_international %}setInternational();{% endif %}
-          var regionopts = $('#region{{ suffix }}');
-          var whichCountry = $('#country{{ suffix }}').find(':selected').text();
-          switch(whichCountry) {
-              case 'United States':
-                  regionopts.replaceWith('<select name="{{ name_prefix }}region" id="region{{ suffix }}" class="form-control"></select>');
-                  $('[name="{{ name_prefix }}region"]').html(regionsforUS);
-                  break;
-              case 'Canada':
-                  regionopts.replaceWith('<select name="{{ name_prefix }}region" id="region{{ suffix }}" class="form-control"></select>');
-                  $('[name="{{ name_prefix }}region"]').html(regionsforCanada);
-                  break;
-          }
-          var optionToSelect{{ suffix }} = $('#region{{ suffix }} option[value="{{ model[region_attr] }}"]');
-          if (optionToSelect{{ suffix }}.length) {
-              optionToSelect{{ suffix }}.prop('selected', true);
-          }
-      };
-      $(function() {
-          {% if update_international %}setInternational();{% endif %}
-          $('#country{{ suffix }}').val('{{ model[country_attr] }}');
-          $('#country{{ suffix }}').selectToAutocomplete();
-          $('#country{{ suffix }}').change(function() {
-              $('#region{{ suffix }}').replaceWith('<input type="text" name="{{ name_prefix }}region" id="region{{ suffix }}" value="{{ model[region_attr] }}" class="form-control" placeholder="State/Province">');
-              regionChange{{ suffix }}();
-          });
-          $('#region{{ suffix }}').val('{{ model[region_attr] }}');
-          regionChange{{ suffix }}();
-          {% if model.is_dealer and model.status in [c.APPROVED, c.CANCELLED, c.DECLINED] and not admin_area %}
-            $(function() {
-                if($("select[name='group_region']").is(":visible")) {
-                  $("[name='group_region']").prop("disabled", false);
-                  $("select[name='group_region']").prop("disabled", true);
-                }
-                $("[placeholder='Country']").prop("readonly", true);
-            });
-          {% endif %}
-      });
-  </script>
-  <input type="hidden" class="address_suffixes" value="{{ suffix }}" />
-  <div class="form-group address_details{{ suffix }}">
-    <label for="country{{ suffix }}" class="col-sm-3 control-label{% if not is_required %} optional-field{% endif %}">{{ label_prefix }} Country</label>
-    <div class="col-sm-6">
-      {%- if is_readonly -%}
-        <div class="form-control-static">
-            {{ model[country_attr]|linebreaksbr }}
-        </div>
-      {%- else -%}
-      <select name="{{ name_prefix }}country" id="country{{ suffix }}" class="form-control" placeholder="Country" autocorrect="off" autocomplete="country" {% if is_required %}required="required"{% endif %}>
-        {% include "country_opts.html" %}
-      </select>
-      {%- endif -%}
-    </div>
-  </div>
-  <div class="form-group address_details{{ suffix }}">
-    <label for="address1{{ suffix }}" class="col-sm-3 control-label{% if not is_required %} optional-field{% endif %}">{{ label_prefix }} Street</label>
-    <div class="col-sm-6">
-      {%- if is_readonly -%}
-        <div class="form-control-static">
-            {{ model[address1_attr]|linebreaksbr }}
-        </div>
-      {%- else -%}
-      <input type="text" name="{{ name_prefix }}address1" class="form-control" placeholder="Address Line 1" value="{{ model[address1_attr] }}" {% if is_required %}required="required"{% endif %}/>
-      {%- endif -%}
-    </div>
-  </div>
-{%- if not is_readonly or model[address2_attr] -%}
-  <div class="form-group address_details{{ suffix }}">
-    <div class="col-sm-6 col-sm-offset-3">
-      {%- if is_readonly -%}
-        <div class="form-control-static">
-            {{ model[address2_attr]|linebreaksbr }}
-        </div>
-      {%- else -%}
-      <input type="text" name="{{ name_prefix }}address2" class="form-control" placeholder="Address Line 2" value="{{ model[address2_attr] }}" />
-      {%- endif -%}
-    </div>
-  </div>
-{%- endif -%}
-  <div class="form-group address_details{{ suffix }}">
-    <label for="city{{ suffix }}" class="col-sm-3 control-label{% if not is_required %} optional-field{% endif %}">{{ label_prefix }} City</label>
-    <div class="col-sm-6">
-      {%- if is_readonly -%}
-        <div class="form-control-static">
-            {{ model[city_attr]|linebreaksbr }}
-        </div>
-      {%- else -%}
-      <input type="text" name="{{ name_prefix }}city" class="form-control" placeholder="City" value="{{ model[city_attr] }}" {% if is_required %}required="required"{% endif %}/>
-      {%- endif -%}
-    </div>
-  </div>
-  <div class="form-group address_details{{ suffix }}">
-    <label for="region{{ suffix }}" class="col-sm-3 control-label{% if not is_required %} optional-field{% endif %}">{{ label_prefix }} State/Region</label>
-    <div class="col-sm-6">
-      {%- if is_readonly -%}
-        <div class="form-control-static">
-            {{ model[region_attr]|linebreaksbr }}
-        </div>
-      {%- else -%}
-      <input type="hidden" name="{{ name_prefix }}region" value="{{ model[region_attr] }}" id="hidden_region{{ suffix }}" disabled />
-      <input type="text" name="{{ name_prefix }}region" id="region{{ suffix }}" class="form-control" placeholder="State/Province" value="{{ model[region_attr] }}" autocomplete="address-level1" {% if is_required %}required="required"{% endif %}/>
-      {%- endif -%}
-    </div>
-  </div>
-  <div class="form-group address_details{{ suffix }}">
-    <label for="zip_code{{ suffix }}" class="col-sm-3 control-label{% if not is_required %} optional-field{% endif %}">{{ label_prefix }} ZIP/Postal Code</label>
-    <div class="col-sm-6">
-      {%- if is_readonly -%}
-        <div class="form-control-static">
-            {{  model[zip_code_attr]|linebreaksbr }}
-        </div>
-      {%- else -%}
-      <input type="text" name="{{ name_prefix }}zip_code" class="form-control" value="{{ model[zip_code_attr] }}" {% if is_required %}required="required"{% endif %}/>
-      {%- endif -%}
-    </div>
-  </div>
-{%- endmacro address_form %}
-#}
 
 
 {% macro toggle_checkbox(selector, label, suffix='', name='', value='1', required_selector=False, hide_on_checked=True, mode='visibility', checked=False) -%}

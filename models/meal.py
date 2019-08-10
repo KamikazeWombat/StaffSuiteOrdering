@@ -16,13 +16,17 @@ class Meal(dec_base):
     cutoff = Column('cutoff', DateTime)
     description = Column('description', String)
     #detail_link = Column('detail_link', String)
-    #options = list of option objects? #todo:setup options/toppings using multichoice objects
-    #uber/configspec.ini [enums] section contains sample item definitions.
-    #read the dang title section!!
+    #toggles are string fields with a comma separated list of topping names, like "Chicken,Tofu"
+    toggle1 = Column('toggle1', String)
+    toggle1_title = Column('toggle1_name', String)
+    #toggle2 = Column('toggle1', String)
+    #toggle2_title = Column('toggle1_name', String)
 
-    #this is a string field using Multichoice format as modified from Magfest's Uber
+
+
+    #this is a string field with a comma separated list of topping names, like "ketchup,mustard,balogna"
     toppings = Column('toppings', String)
-    #toppings_title = Column('toppings_title', String)
+    toppings_title = Column('toppings_title', String)
     #toppings_id = Column('toppings_id', )
     #toppings = relationship('Topping')
     orders = relationship('Order')

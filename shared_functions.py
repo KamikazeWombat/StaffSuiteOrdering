@@ -3,9 +3,12 @@ import requests
 from urllib.parse import quote, urlparse
 
 import cherrypy
+from sqlalchemy.orm import Session
 
 from config import cfg
-from models import attendee
+from models.attendee import Attendee
+from models.ingredient import Ingredient
+
 
 
 class HTTPRedirect(cherrypy.HTTPRedirect):
@@ -101,10 +104,10 @@ def lookup_attendee(first_name, last_name, email, zip_code):
         print('error in lookup_attendee')
     else:
         # todo: lookup attendee and return it
-        att = attendee.Attendee()
+        att = Attendee()
         att.public_id = json['public_id']
 
-def multichoice_split(choices):
+def order_split(choices):
     """
     Takes a string from the database in multichoice format and splits it into
     the format the checkgroup macro is looking for
@@ -121,20 +124,55 @@ def multichoice_split(choices):
     print('choices before return: ', choices)
     return choices
 
-def multichoice_join(choices):
+def order_join(choices):
     print('Multijoin before works: ', choices)
     return choices
 
-def text_join(params, field):
-    mylist = []
+def meal_join(session, params, field):
+    result = []
     count = 1
+    id=''
+
     for param in params:
-        index = field + str(count)
+        labelkey = field + str(count)
+        new_ing = False
+        #checks for relevant parameters and does stuff if found
         try:
-            mylist.append(params[index])
+            label = params[labelkey]
+            try:
+                idkey = field + 'id' + str(count)
+                id = params[idkey]
+            except KeyError:
+                #marks this as a new ingredient if ID field is missing for this field number
+                new_ing = True
+
+            #if the field is there sets contents, otherwise blank
+            try:
+                desc = field + 'desc' + str(count)
+                desc = params[desc]
+            except KeyError:
+                desc = ''
+
+            if new_ing:
+                ing = Ingredient()
+                ing.label = label
+                ing.description = desc
+                session.add(ing)
+                session.commit()
+                #saves ing to DB so it gets an id, then puts result where it can be returned
+                id = ing.id
+            else:
+                ing = session.query(Ingredient).filter_by(id=id).one()
+                #reduce unnecessary calls to DB
+                if not (ing.label == label and ing.desc == desc):
+                    ing.label = label
+                    ing.description = desc
+                    session.commit()
+
+            result.append(id)
             count += 1
         except KeyError:
             count += 1
 
-    mylist = ','.join(mylist)
-    return mylist
+    result = ','.join(result)
+    return result
