@@ -2,7 +2,7 @@
 from sqlalchemy import create_engine
 
 from config import cfg, dec_base
-from models import meal, attendee, order
+from models import meal, attendee, order, ingredient
 
 engine = create_engine(cfg.database_location)
 

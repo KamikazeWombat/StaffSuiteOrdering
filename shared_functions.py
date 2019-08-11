@@ -10,7 +10,6 @@ from models.attendee import Attendee
 from models.ingredient import Ingredient
 
 
-
 class HTTPRedirect(cherrypy.HTTPRedirect):
     #copied from https://github.com/magfest/ubersystem/blob/132143b385442677cb08178e16f714180ad75413/uber/errors.py
     """
@@ -52,6 +51,7 @@ class HTTPRedirect(cherrypy.HTTPRedirect):
     def quote(self, s):
         return quote(s) if isinstance(s, str) else str(s)
 
+
 def create_valid_user_supplied_redirect_url(url, default_url):
     #copied from https://github.com/magfest/ubersystem/blob/e7e9a7ae21097d5db7519d1c985b68feec328d21/uber/utils.py#L177
     """
@@ -76,6 +76,7 @@ def create_valid_user_supplied_redirect_url(url, default_url):
 
     return url
 
+
 def api_login(first_name, last_name, email, zip_code):
     """
     Performs login request against Uber API and returns resulting json data
@@ -93,6 +94,7 @@ def api_login(first_name, last_name, email, zip_code):
     #print(response)
     return response
 
+
 def lookup_attendee(first_name, last_name, email, zip_code):
     """
     Performs login request again Uber API and returns an Attendee object
@@ -107,6 +109,7 @@ def lookup_attendee(first_name, last_name, email, zip_code):
         att = Attendee()
         att.public_id = json['public_id']
 
+
 def order_split(choices):
     """
     Takes a string from the database in multichoice format and splits it into
@@ -115,18 +118,20 @@ def order_split(choices):
 
     #produces list of choices
     print('choices before splitting: ', choices)
-    choices = ';'.split(choices)
+    choices = choices.split(';')
     print('------------')
     print('choices after first split: ', choices)
     for choice in choices:
-        choice = tuple(','.split(choice))
+        choice = tuple()
     print('-----------------')
     print('choices before return: ', choices)
     return choices
 
+
 def order_join(choices):
     print('Multijoin before works: ', choices)
     return choices
+
 
 def meal_join(session, params, field):
     result = []
@@ -139,40 +144,76 @@ def meal_join(session, params, field):
         #checks for relevant parameters and does stuff if found
         try:
             label = params[labelkey]
-            try:
-                idkey = field + 'id' + str(count)
-                id = params[idkey]
-            except KeyError:
-                #marks this as a new ingredient if ID field is missing for this field number
-                new_ing = True
-
-            #if the field is there sets contents, otherwise blank
-            try:
-                desc = field + 'desc' + str(count)
-                desc = params[desc]
-            except KeyError:
-                desc = ''
-
-            if new_ing:
-                ing = Ingredient()
-                ing.label = label
-                ing.description = desc
-                session.add(ing)
-                session.commit()
-                #saves ing to DB so it gets an id, then puts result where it can be returned
-                id = ing.id
-            else:
-                ing = session.query(Ingredient).filter_by(id=id).one()
-                #reduce unnecessary calls to DB
-                if not (ing.label == label and ing.desc == desc):
+            if not label == '' and not label == 'None':
+                try:
+                    idkey = field + 'id' + str(count)
+                    id = params[idkey]
+                except KeyError:
+                    #marks this as a new ingredient if ID field is missing for this field number
+                    new_ing = True
+                    
+                #if the field is there sets contents, otherwise blank
+                try:
+                    desc = field + 'desc' + str(count)
+                    desc = params[desc]
+                except KeyError:
+                    desc = ''
+    
+                if new_ing or id == '':
+                    ing = Ingredient()
                     ing.label = label
                     ing.description = desc
+                    session.add(ing)
                     session.commit()
-
-            result.append(id)
+                    #saves ing to DB so it gets an id, then puts result where it can be returned
+                    id = ing.id
+                else:
+                    ing = session.query(Ingredient).filter_by(id=id).one()
+                    #reduce unnecessary calls to DB
+                    if not (ing.label == label and ing.description == desc):
+                        ing.label = label
+                        ing.description = desc
+                        session.commit()
+                
+                result.append(str(id))
             count += 1
         except KeyError:
             count += 1
 
     result = ','.join(result)
     return result
+
+
+def meal_split(session, toppings):
+    """
+    Creates tuple from list of ingredient IDs in format needed for display on meal screens
+    :param session: SQLAlchemny session passed from above
+    :param toppings: list of ingredient IDs
+    :return:
+    """
+    try:
+        id_list = sorted(toppings.split(','))
+    except ValueError:
+        #this happens if no toppings in list
+        return []
+    
+    ing_list = session.query(Ingredient).filter(Ingredient.id.in_(id_list)).all()
+    tuple_list = []
+    for ing in ing_list:
+        mytuple = (ing.id, ing.label, ing.description)
+        tuple_list.append(mytuple)
+        
+    return tuple_list
+
+
+def meal_blank_toppings(toppings, count):
+    """
+    Adds blank toppings to end of list to make added spaces when editing
+    :param toppings: list of tuples in format needed for display on meal screens
+    :param count: How many lines do you want
+    """
+    
+    while len(toppings) < count:
+        toppings.append(('', '', ''))
+        
+    return toppings
