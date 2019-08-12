@@ -17,6 +17,7 @@ class Config():
     orders_open = '' #todo: probably needs to be function rather than simple attribute
     sticker_count = '' #how many stickers will print from each time pressing 'print' button
     multi_select_count = ''  # how many lines to do in the multi select section when editing a Meal
+    radio_select_count = '' #how many options in single option selects when editing
     cherrypy = '' #cherrypy config dict
 
     def __init__(self):
@@ -34,6 +35,7 @@ class Config():
         self.orders_open = cdata['orders_open']
         self.sticker_count = cdata['sticker_count']
         self.multi_select_count = cdata['multi_select_count']
+        self.radio_select_count = cdata['radio_select_count']
         self.cherrypy = cdata['cherrypy']
         self.cherrypy['/']['tools.staticdir.root'] = os.path.abspath(os.getcwd())
 

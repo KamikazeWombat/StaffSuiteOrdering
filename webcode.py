@@ -70,7 +70,7 @@ class Root:
 
     @cherrypy.expose
     #@admin_req
-    def meal_edit(self, options=[], toppings=[], meal_id='', message='', **params):
+    def meal_edit(self, meal_id='', message='', **params):
         template = env.get_template("meal_edit.html")
 
         #save new / updated meal
@@ -89,10 +89,7 @@ class Root:
                     thismeal = Meal()
             except KeyError:
                 thismeal = Meal()
-           # print('----------------------')
-           # for param in params:
-            #    print(param)
-             #   print(type(param))
+           
             thismeal.meal_name = params['meal_name']
             thismeal.start_time = parse(params['start_time'])
             thismeal.end_time = parse(params['end_time'])
@@ -100,6 +97,10 @@ class Root:
             thismeal.description = params['description']
             thismeal.toppings_title = params['toppings_title']
             thismeal.toppings = meal_join(session, params, field='toppings')
+            thismeal.toggle1_title = params['toggle1_title']
+            thismeal.toggle1 = meal_join(session, params, field='toggle1')
+            thismeal.toggle2_title = params['toggle2_title']
+            thismeal.toggle2 = meal_join(session, params, field='toggle2')
             #thismeal.detail_link = params['detail_link']
 
             session.add(thismeal)
@@ -108,34 +109,36 @@ class Root:
             raise HTTPRedirect('meal_setup_list?message=Meal succesfully added!')
 
         if meal_id:
-            print('------------------')
-            print('beginning meal_id section')
+            #load existing meal
             try:
                 session = Session(models.engine)
                 thismeal = session.query(Meal).filter_by(id=meal_id).one()
-               # print(thismeal.meal_name)
-                #print(thismeal.toppings)
-                #print(type(thismeal.toppings))
+               
                 toppings = meal_blank_toppings(meal_split(session, thismeal.toppings), cfg.multi_select_count)
+                toggles1 = meal_blank_toppings(meal_split(session, thismeal.toggle1), cfg.radio_select_count)
+                toggles2 = meal_blank_toppings(meal_split(session, thismeal.toggle2), cfg.radio_select_count)
             except sqlalchemy.orm.exc.NoResultFound:
                 message = 'Requested Meal ID '+meal_id+' not found'
                 raise HTTPRedirect('meal_setup_list?message='+message)
             
             session.close()
-            return template.render(meal=thismeal,
-                                   toppings=toppings,
-                                   message=message,
-                                   c=c)
         else:
             thismeal = Meal()
             thismeal.meal_name = ''
             thismeal.description = ''
             thismeal.toppings_title = ''
+            thismeal.toggle1_title = ''
+            thismeal.toggle2_title = ''
             #make blank boxes for new meal.  todo: make number configurable
             print('----------------------------------')
             print(cfg.multi_select_count)
             toppings = meal_blank_toppings([], cfg.multi_select_count)
-            return template.render(meal=thismeal,
-                                   toppings=toppings,
-                                   message=message,
-                                   c=c)
+            toggles1 = meal_blank_toppings([], cfg.radio_select_count)
+            toggles2 = meal_blank_toppings([], cfg.radio_select_count)
+            
+        return template.render(meal=thismeal,
+                               toppings=toppings,
+                               toggles1=toggles1,
+                               toggles2=toggles2,
+                               message=message,
+                               c=c)

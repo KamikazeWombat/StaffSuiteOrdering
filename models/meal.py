@@ -19,11 +19,8 @@ class Meal(dec_base):
     #toggles are string fields with a comma separated list of topping names, like "Chicken,Tofu"
     toggle1 = Column('toggle1', String)
     toggle1_title = Column('toggle1_name', String)
-    #toggle2 = Column('toggle1', String)
-    #toggle2_title = Column('toggle1_name', String)
-
-
-
+    toggle2 = Column('toggle2', String)
+    toggle2_title = Column('toggle2_name', String)
     #this is a string field with a comma separated list of topping names, like "ketchup,mustard,balogna"
     toppings = Column('toppings', String)
     toppings_title = Column('toppings_title', String)

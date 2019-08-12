@@ -104,7 +104,6 @@
 
 {% macro textbox_list(field_name, textboxes, placeholder) %}
   <div>
-    
       {% for box in textboxes %}
         {% set id = box.0 %}
         {% set name = box.1 %}
@@ -123,7 +122,7 @@
 {% endmacro %}
 
 
-{% macro button_radio_opts(field_name, choices, suffix='', default='', is_readonly=False, is_required=False) -%}
+{% macro button_radio_opts(field_name, choices, is_readonly=False, is_required=False) -%}
   <div data-toggle="buttons" class="btn-group btn-group-toggle form-control-static">
     {% for choice in choices -%}
       {%- set value = choice[0] -%}
@@ -131,17 +130,23 @@
       {%- set desc = choice[2] -%}
       {%- set has_value = value == default -%}
      {# {%- if not is_readonly or has_value -%} #}
+    <tr>
+      <td>
         <label
             class="btn btn-default{% if is_readonly %} disabled{% endif %}{% if has_value %} active{% endif %}"
-            {% if desc %}title="{{ desc }}"{% endif %}>
-            <input
-                type="radio"
-                name="{{ field_name }}{{ suffix }}"
-                value="{{ value }}"
-                {% if value %}checked{% elif is_readonly %}disabled{% endif %}
-                {% if is_required %} required{% endif %}/>
+            title="{{ label }}">
             {{ label }}
-        </label>
+        </label>>
+      </td>
+      <td>
+        <input
+          type="radio"
+          name="{{ field_name }}"
+          value="{{ value }}"
+          {% if value %}checked{% elif is_readonly %}disabled{% endif %}
+          {% if is_required %} required{% endif %}/>
+      </td>
+    </tr>
       {# {% endif %} #}
     {% endfor %}
   </div>
