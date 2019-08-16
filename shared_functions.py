@@ -110,30 +110,78 @@ def lookup_attendee(first_name, last_name, email, zip_code):
         att.public_id = json['public_id']
 
 
-def order_split(choices):
+def order_split(session, choices, orders=""):
     """
-    Takes a string from the database in multichoice format and splits it into
-    the format the checkgroup macro is looking for
+    Creates tuple from list of ingredient IDs in format needed for display on order screens
+    :param session: SQLAlchemny session passed from above
+    :param orders: list of ingredient IDs that were chosen in order
+    :param choices: list of ingredient IDs that are available
+    :return: list of tuple(checked, label, description)
     """
+    try:
+        choices_list = sorted(choices.split(','))
+    except ValueError:
+        #this happens if no toppings in list
+        return []
+    
+    choices_list = session.query(Ingredient).filter(Ingredient.id.in_(choices_list)).all()
+    tuple_list = []
+    
+    if orders:
+        orders_id = sorted(orders.split(','))
+        orders_list = session.query(Ingredient).filter(Ingredient.id.in_(orders_id)).all()
+    else: orders_list = []
+    
+    for choice in choices_list:
+        if choice in orders_list:
+            mytuple = (1, choice.label, choice.description)
+        else:
+            mytuple = ('', choice.label, choice.description)
+        tuple_list.append(mytuple)
+    
+    return tuple_list
 
-    #produces list of choices
-    print('choices before splitting: ', choices)
-    choices = choices.split(';')
-    print('------------')
-    print('choices after first split: ', choices)
-    for choice in choices:
-        choice = tuple()
-    print('-----------------')
-    print('choices before return: ', choices)
-    return choices
 
-
-def order_join(choices):
-    print('Multijoin before works: ', choices)
-    return choices
+def order_selections(session, params, field, choices):
+    """
+    Takes field name and list of ingredient choice IDs and goes through params to find which of the available choices
+    was actually selected
+    :param session: SLQAlchemy session
+    :param params: web page submitted parameter list
+    :param field: name of the field it should check for in params
+    :param choices: list of ingredient IDs available to choose from
+    :return: result is a string which contains a comma separated list of selected ingredient IDs
+    """
+    
+    result = []
+    count = 1
+    choices = sorted(choices)
+    
+    for param in params:
+        valuekey = field + str(count)
+        # checks for relevant parameters and does stuff if found
+        try:
+            value = params[valuekey]
+            if not value == '' and not value == 'None' and not value == 0:
+                result.append(str(choices[count]))
+            count += 1
+        except KeyError:
+            count += 1
+    
+    result = ','.join(result)
+    
+    return result
 
 
 def meal_join(session, params, field):
+    """
+    Goes through paramaters and finds ingredients based upon which field it is asked to look for.
+    Adds new ingredients if not in DB, loads then updates ingredients if they are already existing in DB
+    :param session: SQLAlchemy session
+    :param params: web form parameters submitted
+    :param field: string name of field to look for
+    :return: result is a string containing a comma separated list of ingredient IDs
+    """
     result = []
     count = 1
     id=''
@@ -168,6 +216,11 @@ def meal_join(session, params, field):
                     #saves ing to DB so it gets an id, then puts result where it can be returned
                     id = ing.id
                 else:
+                    # if not a new ingredient, but the label and description are both blank
+                    # then it is one that was deleted from the meal.  do not load from DB, do not add to result.
+                    if label == '' and desc == '':
+                        break
+                        
                     ing = session.query(Ingredient).filter_by(id=id).one()
                     #reduce unnecessary calls to DB
                     if not (ing.label == label and ing.description == desc):
@@ -217,3 +270,4 @@ def meal_blank_toppings(toppings, count):
         toppings.append(('', '', ''))
         
     return toppings
+

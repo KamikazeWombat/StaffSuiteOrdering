@@ -53,7 +53,6 @@ class Uberconfig():
     request_data = {'method': 'config.info'}
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
     response = json.loads(request.text)
-    #print(response)
 
     try:
         response = response['error']

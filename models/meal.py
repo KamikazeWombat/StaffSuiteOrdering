@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from sqlalchemy.orm import relationship
 
 from config import dec_base
@@ -14,16 +14,15 @@ class Meal(dec_base):
     start_time = Column('start_time', DateTime)
     end_time = Column('end_time', DateTime)
     cutoff = Column('cutoff', DateTime)
+    locked = Column('locked', Boolean) #marked locked when order fulfilment starts
     description = Column('description', String)
     #detail_link = Column('detail_link', String)
-    #toggles are string fields with a comma separated list of topping names, like "Chicken,Tofu"
+
     toggle1 = Column('toggle1', String)
     toggle1_title = Column('toggle1_name', String)
     toggle2 = Column('toggle2', String)
     toggle2_title = Column('toggle2_name', String)
-    #this is a string field with a comma separated list of topping names, like "ketchup,mustard,balogna"
+
     toppings = Column('toppings', String)
     toppings_title = Column('toppings_title', String)
-    #toppings_id = Column('toppings_id', )
-    #toppings = relationship('Topping')
     orders = relationship('Order')

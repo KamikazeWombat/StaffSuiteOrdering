@@ -10,9 +10,9 @@ def restricted(func):
     def with_restrictions(*args, **kwargs):
         print('beginning restricted')
         try:
-            print('beginning try')
+            print('beginning try assign session')
             staff_id = cherrypy.session['staffer_id']
-            print('after try')
+            print('session id succeeded')
         except KeyError:
             print('KeyError started')
             raise HTTPRedirect('login?message=You+are+not+logged+in', save_location=True)
@@ -21,6 +21,7 @@ def restricted(func):
     return with_restrictions
 
 def admin_req(func):
+    print(fix_admin_req_function_first)
     @wraps(func)
     def with_admin(*args, **kwargs):
         try:
