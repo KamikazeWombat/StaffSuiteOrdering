@@ -13,15 +13,19 @@ from models.meal import Meal
 from models.order import Order
 import shared_functions
 from shared_functions import api_login, HTTPRedirect, order_split, order_selections
-from shared_functions import meal_join, meal_split, meal_blank_toppings
+from shared_functions import meal_join, meal_split, meal_blank_toppings, department_split
 
 
 class Root:
     @cherrypy.expose
-    def index(self):
+    def index(self, load_depts=False):
         #todo: add check for if mealorders open
         template = env.get_template('index.html')
-
+        if load_depts:
+            session = models.new_sesh()
+            shared_functions.load_departments(session)
+            session.close()
+            
         return template.render()
 
     @cherrypy.expose
@@ -130,6 +134,7 @@ class Root:
                 session = models.new_sesh()
                 thismeal = session.query(Meal).filter_by(id=meal_id).one()
                
+                # loads list of existing toppings, adds blank toppings to list up to configured #
                 toppings = meal_blank_toppings(meal_split(session, thismeal.toppings), cfg.multi_select_count)
                 toggles1 = meal_blank_toppings(meal_split(session, thismeal.toggle1), cfg.radio_select_count)
                 toggles2 = meal_blank_toppings(meal_split(session, thismeal.toggle2), cfg.radio_select_count)
@@ -145,7 +150,7 @@ class Root:
             thismeal.toppings_title = ''
             thismeal.toggle1_title = ''
             thismeal.toggle2_title = ''
-            # make blank boxes for new meal.  todo: make number configurable
+            # make blank boxes for new meal.
             toppings = meal_blank_toppings([], cfg.multi_select_count)
             toggles1 = meal_blank_toppings([], cfg.radio_select_count)
             toggles2 = meal_blank_toppings([], cfg.radio_select_count)
@@ -157,9 +162,10 @@ class Root:
                                message=message,
                                c=c)
 
+
     #@restricted
     @cherrypy.expose
-    def order_edit(self, meal_id='', save_order='', order_id='', message='', meal_name='', **params):
+    def order_edit(self, meal_id='', save_order='', order_id='', message='', notes='', **params):
         template = env.get_template('order_edit.html')
         session = models.new_sesh()
         
@@ -168,16 +174,20 @@ class Root:
             print('start save_order')
             # todo: save it lol
             
-            thismeal = session.query(Meal).filter_by(id=save_order).one()
+            # thismeal = session.query(Meal).filter_by(id=save_order).one()
             if order_id:
                 thisorder = session.query(Order).filter_by(id=order_id).one(())
             else:
                 thisorder = Order()
-                
-            thisorder.toppings = order_selections(session, params,
-                                                  field='toppings', choices=thismeal.toppings)
-            #toggles1 = order_selections(session, thismeal.toggle1)
-            #toggles2 = order_selections(session, thismeal.toggle2)
+            
+            thisorder.attendee_id = cherrypy.session['staffer_id']
+            thisorder.department_id = params['department'] #todo: department dropdown
+            thisorder.meal_id = params['save_order']  # save order kinda wonky, it will be meal id
+            # todo: do something with overridden field
+            thisorder.toggle1 = order_selections(field='toggle1', params=params)
+            thisorder.toggle2 = order_selections(field='toggle2', params=params)
+            thisorder.toppings = order_selections(field='toppings', params=params)
+            thisorder.notes = notes
             
             session.close()
             #todo: replace with redirect to user orders list
@@ -195,6 +205,7 @@ class Root:
             toppings = order_split(session, thismeal.toppings)
             toggles1 = order_split(session, thismeal.toggle1)
             toggles2 = order_split(session, thismeal.toggle2)
+            departments = department_split(session)
             thisorder.notes = ''
             
         else:
@@ -207,5 +218,6 @@ class Root:
                                toppings=toppings,
                                toggles1=toggles1,
                                toggles2=toggles2,
+                               departments=departments,
                                message=message,
                                c=c)

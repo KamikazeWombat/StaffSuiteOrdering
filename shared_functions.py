@@ -6,8 +6,10 @@ import cherrypy
 from sqlalchemy.orm import Session
 
 from config import cfg
+import models
 from models.attendee import Attendee
 from models.ingredient import Ingredient
+from models.department import Department
 
 
 class HTTPRedirect(cherrypy.HTTPRedirect):
@@ -95,6 +97,27 @@ def api_login(first_name, last_name, email, zip_code):
     return response
 
 
+def load_departments(session):
+    # runs API request
+    REQUEST_HEADERS = {'X-Auth-Token': cfg.apiauthkey}
+    # data being sent to API
+    request_data = {'method': 'dept.list'}
+    
+    request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
+    response = json.loads(request.text)
+    response = response['result'].items()
+    session.query(Department).delete()
+    session.commit()
+    print('loading departments')
+    for dept in response:
+        mydept = Department()
+        mydept.id = dept[0]
+        mydept.name = dept[1]
+        session.add(mydept)
+    session.commit()
+    return
+    
+
 def lookup_attendee(first_name, last_name, email, zip_code):
     """
     Performs login request again Uber API and returns an Attendee object
@@ -121,7 +144,7 @@ def order_split(session, choices, orders=""):
     try:
         choices_list = sorted(choices.split(','))
     except ValueError:
-        #this happens if no toppings in list
+        # this happens if no toppings in list
         return []
     
     choices_list = session.query(Ingredient).filter(Ingredient.id.in_(choices_list)).all()
@@ -130,40 +153,42 @@ def order_split(session, choices, orders=""):
     if orders:
         orders_id = sorted(orders.split(','))
         orders_list = session.query(Ingredient).filter(Ingredient.id.in_(orders_id)).all()
-    else: orders_list = []
+    else:
+        orders_list = []
     
     for choice in choices_list:
         if choice in orders_list:
-            mytuple = (1, choice.label, choice.description)
+            mytuple = (1, choice.label, choice.description, choice.id)
         else:
-            mytuple = ('', choice.label, choice.description)
+            mytuple = ('', choice.label, choice.description, choice.id)
         tuple_list.append(mytuple)
     
     return tuple_list
 
 
-def order_selections(session, params, field, choices):
+def order_selections(field, params):
     """
     Takes field name and list of ingredient choice IDs and goes through params to find which of the available choices
     was actually selected
-    :param session: SLQAlchemy session
-    :param params: web page submitted parameter list
     :param field: name of the field it should check for in params
-    :param choices: list of ingredient IDs available to choose from
+    :param params: web page submitted parameter list
     :return: result is a string which contains a comma separated list of selected ingredient IDs
     """
     
     result = []
     count = 1
-    choices = sorted(choices)
-    
+  
     for param in params:
         valuekey = field + str(count)
         # checks for relevant parameters and does stuff if found
         try:
             value = params[valuekey]
+            
             if not value == '' and not value == 'None' and not value == 0:
-                result.append(str(choices[count]))
+                # if checked loads id into result
+                idkey = field + 'id' + str(count)
+                id = params[idkey]
+                result.append(str(id))
             count += 1
         except KeyError:
             count += 1
@@ -189,7 +214,7 @@ def meal_join(session, params, field):
     for param in params:
         labelkey = field + str(count)
         new_ing = False
-        #checks for relevant parameters and does stuff if found
+        # checks for relevant parameters and does stuff if found
         try:
             label = params[labelkey]
             if not label == '' and not label == 'None':
@@ -197,10 +222,10 @@ def meal_join(session, params, field):
                     idkey = field + 'id' + str(count)
                     id = params[idkey]
                 except KeyError:
-                    #marks this as a new ingredient if ID field is missing for this field number
+                    # marks this as a new ingredient if ID field is missing for this field number
                     new_ing = True
                     
-                #if the field is there sets contents, otherwise blank
+                # if the field is there sets contents, otherwise blank
                 try:
                     desc = field + 'desc' + str(count)
                     desc = params[desc]
@@ -213,16 +238,17 @@ def meal_join(session, params, field):
                     ing.description = desc
                     session.add(ing)
                     session.commit()
-                    #saves ing to DB so it gets an id, then puts result where it can be returned
+                    # saves ing to DB so it gets an id, then puts result where it can be returned
                     id = ing.id
                 else:
                     # if not a new ingredient, but the label and description are both blank
                     # then it is one that was deleted from the meal.  do not load from DB, do not add to result.
                     if label == '' and desc == '':
+                        count += 1
                         break
                         
                     ing = session.query(Ingredient).filter_by(id=id).one()
-                    #reduce unnecessary calls to DB
+                    # reduce unnecessary calls to DB
                     if not (ing.label == label and ing.description == desc):
                         ing.label = label
                         ing.description = desc
@@ -244,6 +270,7 @@ def meal_split(session, toppings):
     :param toppings: list of ingredient IDs
     :return:
     """
+    
     try:
         id_list = sorted(toppings.split(','))
     except ValueError:
@@ -271,3 +298,17 @@ def meal_blank_toppings(toppings, count):
         
     return toppings
 
+
+def department_split(session):
+    """
+    Creates list of tuples of all departments
+    :param session: SQLAlchemy session
+    :return: sorted list of tuples of departments
+    """
+    result = []
+    departments = session.query(Department).all()
+    
+    for dept in departments:
+        result.append((dept.name, dept.id))
+    
+    return sorted(result)

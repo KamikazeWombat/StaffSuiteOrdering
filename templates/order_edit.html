@@ -7,8 +7,9 @@
   <form role="form">
     <h2 class="form-signin-heading">Create/Edit Order</h2>
     <table style="width:100%">
-      <tr> <td> <input type="hidden" name="id" value ="{{ order.id }}"/>
-        <input type="hidden" name="save_order" value ="{{ meal.id }}"/>Meal Name</td>
+      <tr> <td> <input type="hidden" name="id" value="{{ order.id }}"/>
+        <input type="hidden" name="save_order" value="{{ meal.id }}"/>
+      </td>
         <td> <input type="text" class="form-control" placeholder="Meal Name" name="meal_name" value="{{ meal.meal_name }}" disabled /> </td>
       </tr>
       <tr> <td>Start Time</td>
@@ -28,10 +29,27 @@
         <td><input type="text" class="form-control" placeholder="Description" name="description" value="{{ meal.description }}" disabled /></td>
       </tr>
       <tr><td>
-        <p>-----------------------</p>
-        {{ macros.checkgroup_opts('toppings', toppings) }}
+        {{ macros.dropdown('department', departments) }}
       </td></tr>
-            <tr><td><h3>{{ meal.toggle1_name }}</h3></td></tr>
+      {% if not meal.toggle1_title == '' %}
+        <tr><td><h3>{{ meal.toggle1_title }}</h3></td></tr>
+        {{ macros.checkgroup_opts('toggle1', toggles1) }}
+      {% endif %}
+      {% if not meal.toggle2_title == '' %}
+        <tr><td><h3>{{ meal.toggle2_title }}</h3></td></tr>
+        {{ macros.checkgroup_opts('toggle2', toggles2) }}
+      {% endif %}
+      {% if not meal.toppings_title == '' %}
+        <tr><td><h3>{{ meal.toppings_title }}</h3></td></tr>
+        {{ macros.checkgroup_opts('toppings', toppings) }}
+      {% endif %}
+     <tr><td>Notes</td>
+       <td>
+         <textarea name="notes" value="{{ order.notes }}" cols="50" rows="4"
+           >Notes/requests. No guarantees that requests will be honored, you are responsible for your own allergies.</textarea>
+       </td>
+       
+     </tr>
       <tr><td><button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button></td>
       <td><button class="btn btn-lg btn-primary btn-block" onclick="window.location.href = 'meal_setup_list';">Cancel</button></td></tr>
     </table>

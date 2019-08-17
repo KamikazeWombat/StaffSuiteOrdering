@@ -69,12 +69,13 @@
 {%- endmacro checkbox %}
 #}
 
-{% macro checkgroup_opts(field_name, choices, is_readonly=False, include_empty_hidden=False) -%}
+{% macro checkgroup_opts(field_name, choices, is_readonly=False) -%}
   <div class="checkgroup">
     {% for choice in choices -%}
       {%- set value = choice.0 -%}
       {%- set label = choice.1 -%}
       {%- set desc = choice.2 -%}
+      {% set index = choice.3 %}
      {# {%- set has_value = value|0 -%} #}
      {# {%- if not is_readonly or has_value -%} #}
         <tr><td><label
@@ -86,9 +87,9 @@
             <input type="checkbox" disabled checked/>
             {{ label }}
           {% else %}
-            {% if include_empty_hidden %}
-              <input type="hidden" name="{{ field_name }}{{ loop.index }}" value=""/>
-            {% endif %}
+            
+              <input type="hidden" name="{{ field_name }}id{{ loop.index }}" value="{{ index }}"/>
+
             <input
                 type="checkbox"
                 name="{{ field_name }}{{ loop.index }}"
@@ -103,22 +104,32 @@
 {%- endmacro %}
 
 {% macro textbox_list(field_name, textboxes, placeholder) %}
-  <div>
-      {% for box in textboxes %}
-        {% set id = box.0 %}
-        {% set name = box.1 %}
-        {% set desc = box.2 %}
-        <tr>
-          <td><input type="hidden" name="{{ field_name }}id{{ loop.index }}" value="{{ id }}">
-           <input type="text" class="form-control" placeholder="{{ placeholder }} label" name="{{ field_name }}{{ loop.index }}"
-                    value="{{ name }}"/>
-          </td>
-          <td><input type="text" class="form-control" placeholder="{{ placeholder }} description"
-                     name="{{ field_name }}desc{{ loop.index }}" value="{{ desc }}"/> </td>
-        </tr>
-      {% endfor %}
-    
-  </div>
+ 
+  {% for box in textboxes %}
+    {% set id = box.0 %}
+    {% set name = box.1 %}
+    {% set desc = box.2 %}
+    <tr>
+      <td><input type="hidden" name="{{ field_name }}id{{ loop.index }}" value="{{ id }}">
+       <input type="text" class="form-control" placeholder="{{ placeholder }} label" name="{{ field_name }}{{ loop.index }}"
+                value="{{ name }}"/>
+      </td>
+      <td><input type="text" class="form-control" placeholder="{{ placeholder }} description"
+                 name="{{ field_name }}desc{{ loop.index }}" value="{{ desc }}"/> </td>
+    </tr>
+  {% endfor %}
+
+{% endmacro %}
+
+
+{% macro dropdown(field, options) %}
+  <select name="{{ field }}">
+    {% for option in options %}
+      {% set id = option.1 %}
+      {% set name = option.0 %}
+      <option value="{{ id }}">{{ name }}</option>
+    {% endfor %}
+  </select>
 {% endmacro %}
 
 
