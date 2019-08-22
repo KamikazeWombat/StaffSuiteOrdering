@@ -12,6 +12,9 @@
       </td>
         <td> <input type="text" class="form-control" placeholder="Meal Name" name="meal_name" value="{{ meal.meal_name }}" disabled /> </td>
       </tr>
+      <tr><td>
+        <h3>{{ attendee.badge_printed_name }}</h3>
+      </td></tr>
       <tr> <td>Start Time</td>
         <td> <input type="datetime-local" class="form-control" placeholder="Start Time" name="start_time"
                     {% if meal.start_time %}value="{{ meal.start_time.isoformat() }}"{% endif %} disabled /> </td>
@@ -28,16 +31,17 @@
       <tr><td>Meal Description</td>
         <td><input type="text" class="form-control" placeholder="Description" name="description" value="{{ meal.description }}" disabled /></td>
       </tr>
-      <tr><td>
-        {{ macros.dropdown('department', departments) }}
+      <tr><td>Department to deliver to</td>
+        <td>
+          {{ macros.dropdown(field='department', options=departments, is_required=True) }}
       </td></tr>
       {% if not meal.toggle1_title == '' %}
         <tr><td><h3>{{ meal.toggle1_title }}</h3></td></tr>
-        {{ macros.checkgroup_opts('toggle1', toggles1) }}
+        {{ macros.button_radio_opts('toggle1', toggles1, is_required=True) }}
       {% endif %}
       {% if not meal.toggle2_title == '' %}
         <tr><td><h3>{{ meal.toggle2_title }}</h3></td></tr>
-        {{ macros.checkgroup_opts('toggle2', toggles2) }}
+        {{ macros.button_radio_opts('toggle2', toggles2, is_required=True) }}
       {% endif %}
       {% if not meal.toppings_title == '' %}
         <tr><td><h3>{{ meal.toppings_title }}</h3></td></tr>
@@ -46,7 +50,8 @@
      <tr><td>Notes</td>
        <td>
          <textarea name="notes" value="{{ order.notes }}" cols="50" rows="4"
-           >Notes/requests. No guarantees that requests will be honored, you are responsible for your own allergies.</textarea>
+                   placeholder="Notes/requests. No guarantees that requests will be honored, you are responsible for your own allergies."
+           ></textarea>
        </td>
        
      </tr>

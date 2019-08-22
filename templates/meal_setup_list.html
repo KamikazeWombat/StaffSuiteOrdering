@@ -4,17 +4,22 @@
 {% block content %}
 
 <div class="container">
-    <h2>{{ message }} <br/></h2>
-    <h2 class="form-signin-heading">Meal List</h2>
-        {% for meal in meallist %}
-            <form role="form">
-                <input type="hidden" name="id" value ="{{ meal.id }}">
-                <label type="text" class="form-control"  name="meal_name" required autofocus>{{ meal.meal_name }} </label>
-                <label type="datetime-local" class="form-control" name="start_time"  required> {{ meal.start_time }} </label>
-                <button class="btn btn-lg btn-primary btn-block" type="submit">Edit</button>
-                <p>---------------------</p>
-            </form>
-        {% endfor %}
+  <h2>{{ message }} <br/></h2>
+  <h2 class="form-signin-heading">Meal List</h2>
+  {% for meal in meallist %}
+    <form role="form">
+      <table>
+        <tr>
+          <td>
+            <input type="hidden" name="id" value ="{{ meal.id }}">
+            <label class="form-control">{{ meal.meal_name }} </label>
+          </td>
+            <td><label class="form-control">{{ meal.start_time }}</label></td>
+            <td><button class="btn btn-lg btn-primary btn-block" type="submit">Edit</button></td>
+        </tr>
+      </table>
+    </form>
+  {% endfor %}
 
 </div>
 {% endblock content %}

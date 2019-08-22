@@ -75,7 +75,7 @@
       {%- set value = choice.0 -%}
       {%- set label = choice.1 -%}
       {%- set desc = choice.2 -%}
-      {% set index = choice.3 %}
+      {% set id = choice.3 %}
      {# {%- set has_value = value|0 -%} #}
      {# {%- if not is_readonly or has_value -%} #}
         <tr><td><label
@@ -88,7 +88,7 @@
             {{ label }}
           {% else %}
             
-              <input type="hidden" name="{{ field_name }}id{{ loop.index }}" value="{{ index }}"/>
+              <input type="hidden" name="{{ field_name }}id{{ loop.index }}" value="{{ id }}"/>
 
             <input
                 type="checkbox"
@@ -122,12 +122,13 @@
 {% endmacro %}
 
 
-{% macro dropdown(field, options) %}
-  <select name="{{ field }}">
+{% macro dropdown(field, options, is_required=False) %}
+  <select name="{{ field }}"{% if is_required %} required{% endif %}>
     {% for option in options %}
-      {% set id = option.1 %}
-      {% set name = option.0 %}
-      <option value="{{ id }}">{{ name }}</option>
+      {% set value = option.1 %}
+      {% set label = option.0 %}
+      {% set selected = option.2 %}
+      <option value="{{ value }}"{% if selected %} selected {% endif %}>{{ label }}</option>
     {% endfor %}
   </select>
 {% endmacro %}
@@ -135,31 +136,28 @@
 
 {% macro button_radio_opts(field_name, choices, is_readonly=False, is_required=False) -%}
   <div data-toggle="buttons" class="btn-group btn-group-toggle form-control-static">
+    <tr><td>
     {% for choice in choices -%}
       {%- set value = choice[0] -%}
       {%- set label = choice[1] -%}
       {%- set desc = choice[2] -%}
-      {%- set has_value = value == default -%}
+      {% set id = choice[3] %}
      {# {%- if not is_readonly or has_value -%} #}
-    <tr>
-      <td>
         <label
-            class="btn btn-default{% if is_readonly %} disabled{% endif %}{% if has_value %} active{% endif %}"
-            title="{{ label }}">
-            {{ label }}
-        </label>>
-      </td>
-      <td>
-        <input
-          type="radio"
-          name="{{ field_name }}"
-          value="{{ value }}"
-          {% if value %}checked{% elif is_readonly %}disabled{% endif %}
-          {% if is_required %} required{% endif %}/>
-      </td>
-    </tr>
+          class="btn btn-default{% if is_readonly %} disabled{% endif %}{% if has_value %} active{% endif %}"
+          {% if desc %}title="{{ desc }}"{% endif %}>
+          <input
+            type="radio"
+            name="{{ field_name }}"
+            value="{{ id }}"
+            {% if value %}checked="checked"{% endif %}
+            {% if value %} checked{% elif is_readonly %} disabled{% endif %}
+            {% if is_required %} required{% endif %}/>
+          {{ label }}
+        </label>
       {# {% endif %} #}
     {% endfor %}
+    </td></tr>
   </div>
 {%- endmacro %}
 

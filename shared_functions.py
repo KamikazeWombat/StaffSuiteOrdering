@@ -161,6 +161,8 @@ def order_split(session, choices, orders=""):
             mytuple = (1, choice.label, choice.description, choice.id)
         else:
             mytuple = ('', choice.label, choice.description, choice.id)
+            print('-----------------')
+            print(mytuple)
         tuple_list.append(mytuple)
     
     return tuple_list
@@ -299,16 +301,19 @@ def meal_blank_toppings(toppings, count):
     return toppings
 
 
-def department_split(session):
+def department_split(session, department=""):
     """
     Creates list of tuples of all departments
     :param session: SQLAlchemy session
     :return: sorted list of tuples of departments
     """
-    result = []
+    result = [('','','')]
     departments = session.query(Department).all()
     
     for dept in departments:
-        result.append((dept.name, dept.id))
+        if dept.id == department:
+            result.append((dept.name, dept.id, True))
+        else:
+            result.append((dept.name, dept.id, False))
     
     return sorted(result)

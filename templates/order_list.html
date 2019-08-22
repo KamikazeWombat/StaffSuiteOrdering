@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% set admin_area=True %}
+{% block title %}Order List{% endblock %}
+{% block backlink %}{% endblock %}
+{% block content %}
+
+<div class="container">
+  <h2>{{ message }} <br/></h2>
+  <h2 class="form-signin-heading">Order List</h2>
+  {% for order in order_list %}
+    <form role="form">
+      <table>
+        <tr>
+          <td>
+            <input type="hidden" name="order_id" value ="{{ order.id }}">
+            <label class="form-control">{{ order.meal.meal_name }} </label> <br/>
+          </td>
+            <td><label class="form-control">{{ order.meal.start_time }}</label><br/></td>
+            <td><button class="btn btn-lg btn-primary btn-block" type="submit">Edit</button><br/></td>
+        </tr>
+      </table>
+    </form>
+  {% endfor %}
+
+</div>
+{% endblock content %}

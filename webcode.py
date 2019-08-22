@@ -17,6 +17,8 @@ from shared_functions import meal_join, meal_split, meal_blank_toppings, departm
 
 
 class Root:
+    
+    @restricted
     @cherrypy.expose
     def index(self, load_depts=False):
         #todo: add check for if mealorders open
@@ -36,6 +38,7 @@ class Root:
         
         if logout:
             cherrypy.lib.sessions.expire()
+            
         if first_name and last_name and email and zip_code:
             response = api_login(first_name=first_name, last_name=last_name,
                        email=email, zip_code=zip_code)
@@ -74,7 +77,7 @@ class Root:
                                c=c)
 
     @cherrypy.expose
-    #@restricted
+    @restricted
     #@admin_req todo: setup admin_req for requiring admin access
     def meal_setup_list(self, message='', id=''):
         template = env.get_template('meal_setup_list.html')
@@ -84,7 +87,7 @@ class Root:
         if id:
             raise HTTPRedirect('meal_edit?meal_id='+id)
 
-        meallist = session.query(Meal).all()
+        meallist = session.query(Meal).order_by(models.meal.Meal.start_time).all()
         session.close()
         return template.render(message=message,
                                meallist=meallist,
@@ -92,6 +95,7 @@ class Root:
 
     @cherrypy.expose
     #@admin_req
+    @restricted  # todo: code admin_req and remove restricted tag
     def meal_edit(self, meal_id='', message='', **params):
         template = env.get_template("meal_edit.html")
 
@@ -163,61 +167,109 @@ class Root:
                                c=c)
 
 
-    #@restricted
+    @restricted
     @cherrypy.expose
     def order_edit(self, meal_id='', save_order='', order_id='', message='', notes='', **params):
         template = env.get_template('order_edit.html')
         session = models.new_sesh()
+        thisorder = ''
+        thismeal = ''
         
         # parameter save_order should only be present if saving
         if save_order:
             print('start save_order')
-            # todo: save it lol
+            # : save it lol
             
-            # thismeal = session.query(Meal).filter_by(id=save_order).one()
             if order_id:
-                thisorder = session.query(Order).filter_by(id=order_id).one(())
+                thisorder = session.query(Order).filter_by(id=order_id).one()
             else:
                 thisorder = Order()
             
             thisorder.attendee_id = cherrypy.session['staffer_id']
-            thisorder.department_id = params['department'] #todo: department dropdown
-            thisorder.meal_id = params['save_order']  # save order kinda wonky, it will be meal id
+            thisorder.department_id = params['department']
+            thisorder.meal_id = save_order  # save order kinda wonky, data will be meal id if 'Submit' is clicked
             # todo: do something with overridden field
             thisorder.toggle1 = order_selections(field='toggle1', params=params)
             thisorder.toggle2 = order_selections(field='toggle2', params=params)
             thisorder.toppings = order_selections(field='toppings', params=params)
             thisorder.notes = notes
             
+            session.add(thisorder)
+            session.commit()
             session.close()
-            #todo: replace with redirect to user orders list
-            raise HTTPRedirect('meal_setup_list?message=saved meal')
+            
+            raise HTTPRedirect('staffer_order_list?message=saved order')
         
         if order_id:
             print('start order_id')
-            # todo: load order
+            # load order
+            thisorder = session.query(Order).filter_by(id=order_id).one()
+            thismeal = thisorder.meal  # session.query(Meal).filter_by(id=thisorder.meal_id).one()
+            
+            toppings = order_split(session, choices=thismeal.toppings, orders=thisorder.toppings)
+            toggles1 = order_split(session, choices=thismeal.toggle1, orders=thisorder.toggle1)
+            toggles2 = order_split(session, choices=thismeal.toggle2, orders=thisorder.toggle2)
+            departments = department_split(session)
+            message = 'Order ID {} loaded'.format(order_id)
+            attend = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id'])
+            session.close()
+            
+            return template.render(order=thisorder,
+                                   meal=thismeal,
+                                   attendee=attend,
+                                   toppings=toppings,
+                                   toggles1=toggles1,
+                                   toggles2=toggles2,
+                                   departments=departments,
+                                   message=message,
+                                   c=c)
+            
         if meal_id:
             print('start meal_id')
-            # todo: new blank order based on meal_id
+            # new blank order from meal_id
+            # todo: check if attendee already has an order for this meal
             thismeal = session.query(Meal).filter_by(id=meal_id).one()
             thisorder = Order()
-            #thisorder.attendee_id = cherrypy.session['staffer_id']
+            thisorder.attendee_id = cherrypy.session['staffer_id']
             toppings = order_split(session, thismeal.toppings)
             toggles1 = order_split(session, thismeal.toggle1)
             toggles2 = order_split(session, thismeal.toggle2)
             departments = department_split(session)
             thisorder.notes = ''
+            attend = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id'])
+            session.close()
             
-        else:
+            return template.render(order=thisorder,
+                                   meal=thismeal,
+                                   attendee=attend,
+                                   toppings=toppings,
+                                   toggles1=toggles1,
+                                   toggles2=toggles2,
+                                   departments=departments,
+                                   message=message,
+                                   c=c)
+        elif not message:
             print('start no meal id')
             # todo: redirect to non-admin meal list
+            
         
-        session.close()
-        return template.render(order=thisorder,
-                               meal=thismeal,
-                               toppings=toppings,
-                               toggles1=toggles1,
-                               toggles2=toggles2,
-                               departments=departments,
-                               message=message,
+        
+
+
+    @cherrypy.expose
+    @restricted
+    #@admin_req todo: setup admin_req for requiring admin access
+    def staffer_order_list(self, message='', order_id=''):
+        template = env.get_template('order_list.html')
+        session = models.new_sesh()
+
+        # this should be triggered if an edit button is clicked from the list
+        if order_id:
+            raise HTTPRedirect('order_edit?order_id='+order_id)
+
+        order_list = session.query(Order).all()
+        # todo: fix so it loads meals associated with the orders for lazy loading error
+        # session.close()
+        return template.render(message=message,
+                               order_list=order_list,
                                c=c)
