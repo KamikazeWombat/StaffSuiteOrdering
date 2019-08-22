@@ -3,6 +3,8 @@
   "order_message": "test order completion message",
   "api_endpoint": "https://staging-west.reggie.magfest.org/jsonrpc/",
   "database_location": "sqlite:///testdb.db",
+  "multi_select_count": 5,
+  "radio_select_count": 3,
   "cherrypy": {
     "/": {
       "tools.sessions.on": true

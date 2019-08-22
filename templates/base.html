@@ -2,7 +2,7 @@
 {# copied from https://github.com/magfest/ubersystem/blob/master/uber/templates/base.html #}
 {# and modified for my needs #}
 <!DOCTYPE HTML>
-<html>
+<html xmlns:style="http://www.w3.org/1999/xhtml">
 <head>
     {{ macros.ie7_compatibility_check() }}
     <title>{{ c.EVENT_NAME }} - {% block title %}{% endblock %}</title>
@@ -95,18 +95,25 @@
 </head>
 <body>
     {% block top_of_body_additional %}
-        {% if admin_area %}
             <div id="floating_logo">
                 <img src={{ c.EVENT_URL_ROOT }}/static/theme/bg-logo.png/>
+                <div style="text-align:center;"><h1>{{ c.EVENT_NAME }}</h1></div>
             </div>
-
-        {% endif %}
     {% endblock %}
     <div id="mainContainer" class="container-fluid">
         {% block backlink %}
 
         {% endblock %}
-        {% block header %}{% endblock %}
+        {% block header %}
+        <nav>
+            <tr>
+                <td><a href="meal_setup_list">Admin Meal List</a> |</td>
+                <td><a href="meal_edit">Create Meal</a> |</td>
+                <td><a href="staffer_order_list">Order List</a> |</td>
+                <td><a href="login?logout=True">Logout</a></td>
+            </tr>
+        </nav>
+        {% endblock %}
         {% block content %}{% endblock %}
         <div id="bottomAnchor"></div>
     </div>

@@ -4,17 +4,44 @@
 {% block content %}
 
 <div class="container">
-    <form role="form">
-        <h2 class="form-signin-heading">Edit Meal</h2>
-
-        <input type="hidden" name="id" value ="{{ meal.id }}">
-        <input type="text" class="form-control" placeholder="Meal Name" name="meal_name" value="{{ meal.meal_name }}" required autofocus />
-        <input type="datetime-local" class="form-control" placeholder="Start Time" name="start_time" value="{{ meal.start_time.isoformat() }}" required />
-        <input type="datetime-local" class="form-control" placeholder="End Time" name="end_time" value="{{ meal.end_time.isoformat() }}" required />
-        <input type="datetime-local" class="form-control" placeholder="Cutoff time for ordering" name="cutoff" value="{{ meal.cutoff.isoformat() }}" required />
-        <input type="text" class="form-control" placeholder="Description" name="description" value="{{ meal.description }}" required />
-
-        <button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button>
-    </form>
+  <form role="form">
+    <h2 class="form-signin-heading">Edit Meal</h2>
+    <table style="width:100%">
+      <tr> <td> <input type="hidden" name="id" value ="{{ meal.id }}">Meal Name</td>
+        <td> <input type="text" class="form-control" placeholder="Meal Name" name="meal_name" value="{{ meal.meal_name }}" required autofocus /> </td>
+      </tr>
+      <tr> <td>Start Time</td>
+        <td> <input type="datetime-local" class="form-control" placeholder="Start Time" name="start_time"
+                    {% if meal.start_time %}value="{{ meal.start_time.isoformat() }}"{% endif %} required /> </td>
+      </tr>
+      <tr><td>End Time</td>
+      <td> <input type="datetime-local" class="form-control" placeholder="End Time" name="end_time"
+                  {% if meal.end_time %}value="{{ meal.end_time.isoformat() }}"{% endif %}} required /></td>
+      </tr>
+      <tr><td>Order Cutoff Time</td>
+      <td>
+        <input type="datetime-local" class="form-control" placeholder="Cutoff time for ordering" name="cutoff"
+                 {% if meal.cutoff %} value="{{ meal.cutoff.isoformat() }}"{% endif %} required /></td>
+      </tr>
+      <tr><td>Meal Description</td>
+        <td><input type="text" class="form-control" placeholder="Description" name="description" value="{{ meal.description }}" required /></td>
+      </tr>
+      <tr><td>
+        <input type="text" class="form-control" placeholder="First Toggle Select Title" name="toggle1_title" value="{{ meal.toggle1_title }}"/>
+        {{ macros.textbox_list('toggle1', toggles1, 'First Toggle Option') }}
+      </td></tr>
+      <tr><td>
+        <input type="text" class="form-control" placeholder="Second Toggle Select Title" name="toggle2_title" value="{{ meal.toggle2_title }}"/>
+        {{ macros.textbox_list('toggle2', toggles2, 'Second Toggle Option') }}
+      </td></tr>
+      <tr><td>
+        <input type="text" class="form-control" placeholder="Multi-Select Title" name="toppings_title" value="{{ meal.toppings_title }}"/>
+      </td></tr>
+        {{ macros.textbox_list('toppings', toppings, 'Multiple Select Option') }}
+      <tr><td><button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button></td>
+      <td><button class="btn btn-lg btn-primary btn-block" onclick="window.location.href = 'meal_setup_list';">Cancel</button></td></tr>
+    </table>
+    
+  </form>
 </div>
 {% endblock content %}
