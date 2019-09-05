@@ -49,9 +49,9 @@
       {% endif %}
      <tr><td>Notes</td>
        <td>
-         <textarea name="notes" value="{{ order.notes }}" cols="50" rows="4"
+         <textarea name="notes" cols="50" rows="4"
                    placeholder="Notes/requests. No guarantees that requests will be honored, you are responsible for your own allergies."
-           ></textarea>
+           >{{ order.notes }}</textarea>
        </td>
        
      </tr>

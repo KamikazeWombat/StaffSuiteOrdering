@@ -1,0 +1,37 @@
+{% extends "base.html" %}{% set admin_area=True %}
+{% block title %}Settings Config{% endblock %}
+{% block backlink %}{% endblock %}
+{% block content %}
+<br/>
+<p>saving settings not coded yet, just display for now.</p>
+<div class="container">
+  <h2>{{ message }} <br/></h2>
+  <h2 class="form-signin-heading">Settings Config</h2>
+    <form role="form">
+      <table>
+        <tr><td>API Auth Key</td>
+          <td><input type="text" name="apiauthkey" value="{{ cfg.apiauthkey }}"
+          placeholder="API auth key from Uber instance you are connecting to"/>
+        </td></tr>
+        <tr><td>API Endpoint</td>
+          <td><input type="text" name="api_endpoint" value="{{ cfg.api_endpoint }}"
+          placeholder="API endpoint for Uber instance, like 'https://staging-west.reggie.magfest.org/jsonrpc/'"/>
+        </td></tr>
+        <tr><td>Database URL</td>
+          <td><input type="text" name="database_location" value="{{ cfg.database_location }}"
+          placeholder="Database link for SQLAlchemy"/>
+        </td></tr>
+        <tr><td>Cherrypy Settings</td></tr>
+        
+      </table>
+      <textarea name="cherrypy_cfg" value="{{ cherrypy_cfg }}"
+          cols="100"
+          rows="20"
+          placeholder="Cherrypy settings in JSON format">{{ cherrypy_cfg }}</textarea>
+      <br/>
+      <button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button>
+      <button class="btn btn-lg btn-primary btn-block" onclick="window.location.href = 'meal_setup_list';">Cancel</button>
+    </form>
+
+</div>
+{% endblock content %}

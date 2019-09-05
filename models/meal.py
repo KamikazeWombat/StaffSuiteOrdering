@@ -14,9 +14,9 @@ class Meal(dec_base):
     start_time = Column('start_time', DateTime)
     end_time = Column('end_time', DateTime)
     cutoff = Column('cutoff', DateTime)
-    locked = Column('locked', Boolean) #marked locked when order fulfilment starts
+    locked = Column('locked', Boolean) # marked locked when order fulfilment starts
     description = Column('description', String)
-    #detail_link = Column('detail_link', String)
+    # detail_link = Column('detail_link', String)
 
     toggle1 = Column('toggle1', String)
     toggle1_title = Column('toggle1_name', String)
@@ -26,3 +26,4 @@ class Meal(dec_base):
     toppings = Column('toppings', String)
     toppings_title = Column('toppings_title', String)
     orders = relationship('Order')
+    eligible = False

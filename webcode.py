@@ -1,9 +1,13 @@
 # sections of this are copied from https://github.com/magfest/ubersystem/blob/master/uber/site_sections/signups.py
 # then modified for my needs.
-from dateutil.parser import parse
+import json
+import requests
 
 import cherrypy
+from dateutil.parser import parse
+from dateutil.relativedelta import relativedelta
 import sqlalchemy.orm.exc
+from sqlalchemy.orm import joinedload
 
 from config import env, cfg, c
 from decorators import restricted
@@ -12,13 +16,14 @@ from models.attendee import Attendee
 from models.meal import Meal
 from models.order import Order
 import shared_functions
-from shared_functions import api_login, HTTPRedirect, order_split, order_selections
-from shared_functions import meal_join, meal_split, meal_blank_toppings, department_split
+from shared_functions import api_login, HTTPRedirect, order_split, order_selections, \
+                         meal_join, meal_split, meal_blank_toppings, department_split, \
+                        ss_eligible, carryout_eligible, combine_shifts
 
 
 class Root:
     
-    @restricted
+   # @restricted
     @cherrypy.expose
     def index(self, load_depts=False):
         #todo: add check for if mealorders open
@@ -28,7 +33,7 @@ class Root:
             shared_functions.load_departments(session)
             session.close()
             
-        return template.render()
+        return template.render(c=c)
 
     @cherrypy.expose
     def login(self, message='', first_name='', last_name='',
@@ -45,10 +50,17 @@ class Root:
 
             if 'error' in response:
                 message = response['error']['message']
+            
+            if not message:
+                # is staff?
+                if not response['result']['staffing']:
+                    message = 'You are not currently signed up as staff/volunteer.' \
+                              'See below for information on how to volunteer.'
 
             if not message:
                 # ensure_csrf_token_exists()
                 cherrypy.session['staffer_id'] = response['result']['public_id']
+                cherrypy.session['badge_num'] = response['result']['badge_num']
                 session = models.new_sesh()
                 
                 # add or update attendee record in DB
@@ -56,15 +68,20 @@ class Root:
                     attendee = session.query(Attendee).filter_by(public_id=response['result']['public_id']).one()
                     
                     # only update record if different
-                    if not attendee.badge_printed_name == response['result']['badge_printed_name']:
+                    if not attendee.badge_printed_name == response['result']['badge_printed_name'] \
+                            and not attendee.badge_num == response['result']['badge_num']:
                         attendee.badge_printed_name = response['result']['badge_printed_name']
+                        attendee.badge_num = response['result']['badge_num']
                         session.commit()
                 except sqlalchemy.orm.exc.NoResultFound:
                     attendee = Attendee()
+                    attendee.badge_num = response['result']['badge_num']
                     attendee.public_id = response['result']['public_id']
                     attendee.badge_printed_name = response['result']['badge_printed_name']
                     session.add(attendee)
                     session.commit()
+                    
+                session.close()
                     
                 raise HTTPRedirect(original_location)
 
@@ -77,7 +94,7 @@ class Root:
                                c=c)
 
     @cherrypy.expose
-    @restricted
+   # @restricted
     #@admin_req todo: setup admin_req for requiring admin access
     def meal_setup_list(self, message='', id=''):
         template = env.get_template('meal_setup_list.html')
@@ -95,7 +112,7 @@ class Root:
 
     @cherrypy.expose
     #@admin_req
-    @restricted  # todo: code admin_req and remove restricted tag
+   # @restricted  # todo: code admin_req and remove restricted tag
     def meal_edit(self, meal_id='', message='', **params):
         template = env.get_template("meal_edit.html")
 
@@ -250,16 +267,55 @@ class Root:
                                    c=c)
         elif not message:
             print('start no meal id')
-            # todo: redirect to non-admin meal list
-            
+            raise HTTPRedirect('staffer_order_list?message="You must specify a meal or order ID to create/edit an order."')
         
-        
-
-
     @cherrypy.expose
     @restricted
+    def staffer_meal_list(self, message='', display_all=False):
+        """
+        Display list of meals staffer is eligible for, unless requested to show all
+        """
+        template = env.get_template('staffer_meal_list.html')
+        session = models.new_sesh()
+        
+        hours, shifts = ss_eligible(cherrypy.session['badge_num'], return_shifts=True)
+        
+        if hours < cfg.ss_hours:
+            # todo: change this to be a list of messages so they can get their own lines and more easily have multiple
+            message += 'You are not scheduled for enough volunteer hours to be eligible for Staff Suite.\n' \
+                      'You will need to get a Department Head to authorize any orders you place.'
+        
+        meals = session.query(Meal).all()
+        sorted_shifts = combine_shifts(shifts)
+        meal_display = []
+        
+        for meal in meals:
+            eligible = carryout_eligible(sorted_shifts, parse(meal.start_time), parse(meal.end_time))
+            
+            if eligible:
+                meal.eligible = True
+                
+            if eligible or display_all:
+                meal_display.append()
+               
+        if len(meal_display) == 0:
+            message += 'You do not have any shifts that are eligible for Carryout.\n' \
+                            'For eligibility rules see: link'  # todo: add link or change text
+        
+        session.close()
+        
+        return template.render(message=message,
+                               meallist=meal_display,
+                               c=c)
+            
+        
+
+    @cherrypy.expose
+   # @restricted
     #@admin_req todo: setup admin_req for requiring admin access
     def staffer_order_list(self, message='', order_id=''):
+        # todo: check if eligible to staff suite at all, display warning message at top if not
+        # letting user know orders will need to be overidden by a dept head.
         template = env.get_template('order_list.html')
         session = models.new_sesh()
 
@@ -267,9 +323,55 @@ class Root:
         if order_id:
             raise HTTPRedirect('order_edit?order_id='+order_id)
 
-        order_list = session.query(Order).all()
-        # todo: fix so it loads meals associated with the orders for lazy loading error
-        # session.close()
+        # todo: list only orders associated with session['staffer_id']
+        order_list = session.query(Order).options(joinedload('meal')).all()
+        
+        session.close()
+        
         return template.render(message=message,
                                order_list=order_list,
                                c=c)
+
+    @cherrypy.expose
+    # @admin_req
+    def config(self, message='', database_url=''):
+        template = env.get_template('config.html')
+        
+        if database_url:
+            print('-----------------------')
+            print('saving config')
+            # todo: save to config file
+            
+        print('---------------------')
+        print('config loading')
+        cherrypy_cfg = json.dumps(cfg.cherrypy, indent=4)
+        print(cherrypy_cfg)
+        print(type(cherrypy_cfg))
+        return template.render(message=message,
+                               cherrypy_cfg=cherrypy_cfg,
+                               c=c,
+                               cfg=cfg)
+    
+    
+    @cherrypy.expose
+    # @restricted
+    def dept_test(self):
+        template = env.get_template('dept_test.html')
+        REQUEST_HEADERS = {'X-Auth-Token': cfg.apiauthkey}
+        # data being sent to API
+        request_data = {'method': 'attendee.search',
+                        'params': ['kamikaze wombat', 'full']}
+        request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
+        response = json.loads(request.text)
+        result = response['result'][0]['shifts']
+        print('--------------------')
+        #print(result)
+        #print(type(result))
+        start = parse(result[0]['job']['start_time'])
+        end = parse(result[0]['job']['end_time'])
+        test = relativedelta(end, start)
+        
+        print(test)
+        print(test.hours)
+        print(type(test.hours))
+        return template.render(text=response, type=type(result))
