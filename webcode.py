@@ -24,7 +24,7 @@ from shared_functions import api_login, HTTPRedirect, order_split, order_selecti
 
 class Root:
     
-   # @restricted
+    @restricted
     @cherrypy.expose
     def index(self, load_depts=False):
         #todo: add check for if mealorders open
@@ -95,7 +95,7 @@ class Root:
                                c=c)
 
     @cherrypy.expose
-   # @restricted
+    @restricted
     #@admin_req todo: setup admin_req for requiring admin access
     def meal_setup_list(self, message='', id=''):
         template = env.get_template('meal_setup_list.html')
@@ -113,7 +113,7 @@ class Root:
 
     @cherrypy.expose
     #@admin_req
-   # @restricted  # todo: code admin_req and remove restricted tag
+    @restricted  # todo: code admin_req and remove restricted tag
     def meal_edit(self, meal_id='', message='', **params):
         template = env.get_template("meal_edit.html")
 
