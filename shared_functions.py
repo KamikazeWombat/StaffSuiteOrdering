@@ -369,7 +369,7 @@ def ss_eligible(badge_num, return_shifts=False):
     """
     # todo: add code to show a message on staffer meal list page if not eligible based on hours
     response = lookup_attendee(badge_num, full=True)
-    weighted_hours = 0
+    weighted_minutes = 0
     shift_list = []
     message = ''
     
@@ -387,13 +387,13 @@ def ss_eligible(badge_num, return_shifts=False):
                          )
             shift_list.append(item)
             
-            weighted_hours += item.weighted_length
-            print(weighted_hours)
+            weighted_minutes += item.weighted_length
+            #print(weighted_hours)
         
     if return_shifts:
-        return weighted_hours, shift_list
+        return weighted_minutes, shift_list
     else:
-        return weighted_hours
+        return weighted_minutes
 
 
 def combine_shifts(shifts):
@@ -413,9 +413,11 @@ def combine_shifts(shifts):
         delta = relativedelta(shifts[i].end + shift_buffer, shifts[i+1].start)
         # rd is positive if first item is after second
         if delta.minutes >= 0 or delta.hours >= 0:
+            print("combining shift")
             combined.append(Shift(shifts[i].start, shifts[i+1].end))
             i += 1
         else:
+            print("shift left unchanged")
             combined.append(shifts[i])
             i += 1
             if i == (len(shifts)-1):
@@ -429,16 +431,17 @@ def carryout_eligible(shifts, meal_start, meal_end):
     Takes a list of shifts and checks if they overlap the given meal period
     Uses rules for allowable gaps configured in system
     :param shifts: List of shift objects. Concurrent shifts must already be merged or this will not work correctly!
-    :param meal_start : date object for the meal start
-    :param meal_end : date object for the meal end
+    :param meal_start : date object for the meal start in python dateutil datetime format
+    :param meal_end : date object for the meal end in python dateutil datetime format
     :return: returns True or False
     """
     # need to check combined if shift starts within <<buffer>> after start of meal time
     # AND ends within <<buffer>> before end of meal time
     
     meal_buffer = relativedelta(minutes=cfg.schedule_tolerance)
-    
+    print("Meal start: {} Meal End {}".format(str(meal_start),str(meal_end)))
     for shift in shifts:
+        print("shift start : {} Shift end: {}".format(str(shift.start),str(shift.end)))
         sdelta = relativedelta((meal_start + meal_buffer), shift.start)
         start_delta = sdelta.minutes + (sdelta.hours * 60)
         

@@ -8,13 +8,13 @@ from shared_functions import HTTPRedirect
 def restricted(func):
     @wraps(func)
     def with_restrictions(*args, **kwargs):
-        print('beginning restricted')
+        #print('beginning restricted')
         try:
-            print('checking if staffer id is already assigned')
+         #   print('checking if staffer id is already assigned')
             staff_id = cherrypy.session['staffer_id']
-            print('staffer id already assigned')
+          #  print('staffer id already assigned')
         except KeyError:
-            print('Redirect to login page')
+           # print('Redirect to login page')
             raise HTTPRedirect('login?message=You+are+not+logged+in', save_location=True)
 
         return func(*args, **kwargs)

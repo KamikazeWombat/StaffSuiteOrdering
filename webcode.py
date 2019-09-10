@@ -20,6 +20,7 @@ from shared_functions import api_login, HTTPRedirect, order_split, order_selecti
                          meal_join, meal_split, meal_blank_toppings, department_split, \
                         ss_eligible, carryout_eligible, combine_shifts
 
+#todo: department select dropdown needs to restrict based upon if a department's order is already being processed or has been.
 
 class Root:
     
@@ -290,13 +291,15 @@ class Root:
         meal_display = []
         
         for meal in meals:
-            eligible = carryout_eligible(sorted_shifts, parse(meal.start_time), parse(meal.end_time))
+            print("checking meal")
+            eligible = carryout_eligible(sorted_shifts, meal.start_time, meal.end_time)
+            
             
             if eligible:
                 meal.eligible = True
                 
             if eligible or display_all:
-                meal_display.append()
+                meal_display.append(meal)
                
         if len(meal_display) == 0:
             message += 'You do not have any shifts that are eligible for Carryout.\n' \
