@@ -3,6 +3,8 @@ import requests
 from urllib.parse import quote, urlparse
 
 import cherrypy
+from dateutil.parser import parse
+from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session
 
 from config import cfg
@@ -92,14 +94,13 @@ def api_login(first_name, last_name, email, zip_code):
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
     response = json.loads(request.text)
 
-    error = '' #todo: process actual error checking
     #print(response)
     return response
 
 
 def load_departments(session):
-    # runs API request
     REQUEST_HEADERS = {'X-Auth-Token': cfg.apiauthkey}
+    
     # data being sent to API
     request_data = {'method': 'dept.list'}
     
@@ -118,19 +119,25 @@ def load_departments(session):
     return
     
 
-def lookup_attendee(first_name, last_name, email, zip_code):
+def lookup_attendee(badge_num, full=False):
     """
-    Performs login request again Uber API and returns an Attendee object
-    This returns StaffSuiteOrdering Attendee object, not an Uber object
+    Looks up an existing attendee by badge_num and returns the resulting json data
     """
-    json = api_login(first_name, last_name, email, zip_code)
-    if error:
-        #todo: raise exception probably
-        print('error in lookup_attendee')
+    REQUEST_HEADERS = {'X-Auth-Token': cfg.apiauthkey}
+    
+    # data being sent to API
+    if full:
+        request_data = {'method': 'attendee.lookup',
+                        'params': [badge_num, full]}
     else:
-        # todo: lookup attendee and return it
-        att = Attendee()
-        att.public_id = json['public_id']
+        request_data = {'method': 'attendee.lookup',
+                        'params': [badge_num]}
+        
+    request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
+    response = json.loads(request.text)
+
+    # print(response)
+    return response
 
 
 def order_split(session, choices, orders=""):
@@ -161,8 +168,7 @@ def order_split(session, choices, orders=""):
             mytuple = (1, choice.label, choice.description, choice.id)
         else:
             mytuple = ('', choice.label, choice.description, choice.id)
-            print('-----------------')
-            print(mytuple)
+            
         tuple_list.append(mytuple)
     
     return tuple_list
@@ -307,7 +313,7 @@ def department_split(session, department=""):
     :param session: SQLAlchemy session
     :return: sorted list of tuples of departments
     """
-    result = [('','','')]
+    result = [('', '', '')]
     departments = session.query(Department).all()
     
     for dept in departments:
@@ -317,3 +323,133 @@ def department_split(session, department=""):
             result.append((dept.name, dept.id, False))
     
     return sorted(result)
+
+
+class Shift:
+    """
+    Contains relevant info for a shift needed to do eligibility calculations.
+    Times are python dateutil objects, optional weight is whatever the shift is weighted for
+    """
+    #start_time = ''
+    #end_time = ''
+    #weight = ''
+    
+    def __init__(self, start_time, end_time, weight=1, extra_15=False):
+        self.start = start_time
+        self.weight = weight
+        self.extra_15 = extra_15
+        if extra_15:
+            self.end = end_time + relativedelta(minutes=15)
+        else:
+            self.end = end_time
+    
+    @property
+    def length(self):
+        return relativedelta(self.end, self.start)
+        
+    @property
+    def weighted_length(self):
+        # returns weight in minutes
+        delta = self.length
+        minutes = (delta.hours * 60) + delta.minutes
+
+        return self.weight * minutes
+    
+    def __lt__(self, other):
+        return self.start < other.start
+       
+
+def ss_eligible(badge_num, return_shifts=False):
+    """
+    Performs calculations to determine if eligible for StaffSuite and optionally returns a list of shift objects
+    for the requested badge number
+    :param badge_num: attendee's badge number for lookup
+    :param return_shifts: whether or not to return a list of shifts
+    :return: returns weighted hours, and optionally a list of shift objects
+    """
+    # todo: add code to show a message on staffer meal list page if not eligible based on hours
+    response = lookup_attendee(badge_num, full=True)
+    weighted_minutes = 0
+    shift_list = []
+    message = ''
+    
+    if 'error' in response:
+        message = response['error']['message']
+        #print(message)
+        
+    if not message:
+        shifts = response['result']['shifts']
+        for shift in shifts:
+            item = Shift(parse(shift['job']['start_time']),
+                         parse(shift['job']['end_time']),
+                         # weight=shift['job']['weight'], # todo: change back after 'weight' field added to API
+                         extra_15=shift['job']['extra15']
+                         )
+            shift_list.append(item)
+            
+            weighted_minutes += item.weighted_length
+            #print(weighted_hours)
+        
+    if return_shifts:
+        return weighted_minutes, shift_list
+    else:
+        return weighted_minutes
+
+
+def combine_shifts(shifts):
+    """
+    Takes list of shifts, sorts it, then combines any that are close together based on settings for allowable gaps
+    :param shifts: list of shift objects
+    :return: returns sorted and merged list of shifts
+    """
+    # todo: does this sort properly based on start being first property or is more needed?
+    shifts = sorted(shifts)
+    combined = []
+    i=0
+    shift_buffer = relativedelta(minutes=cfg.schedule_tolerance)
+    
+    while i < (len(shifts) - 1):
+        # want to know if the end of the first shift touches or is after the next shift (+ buffers)
+        delta = relativedelta(shifts[i].end + shift_buffer, shifts[i+1].start)
+        # rd is positive if first item is after second
+        if delta.minutes >= 0 or delta.hours >= 0:
+            print("combining shift")
+            combined.append(Shift(shifts[i].start, shifts[i+1].end))
+            i += 1
+        else:
+            print("shift left unchanged")
+            combined.append(shifts[i])
+            i += 1
+            if i == (len(shifts)-1):
+                combined.append(shifts[i])  # adds last shift if last pair not being merged
+        
+    return combined
+
+
+def carryout_eligible(shifts, meal_start, meal_end):
+    """
+    Takes a list of shifts and checks if they overlap the given meal period
+    Uses rules for allowable gaps configured in system
+    :param shifts: List of shift objects. Concurrent shifts must already be merged or this will not work correctly!
+    :param meal_start : date object for the meal start in python dateutil datetime format
+    :param meal_end : date object for the meal end in python dateutil datetime format
+    :return: returns True or False
+    """
+    # need to check combined if shift starts within <<buffer>> after start of meal time
+    # AND ends within <<buffer>> before end of meal time
+    
+    meal_buffer = relativedelta(minutes=cfg.schedule_tolerance)
+    print("Meal start: {} Meal End {}".format(str(meal_start),str(meal_end)))
+    for shift in shifts:
+        print("shift start : {} Shift end: {}".format(str(shift.start),str(shift.end)))
+        sdelta = relativedelta((meal_start + meal_buffer), shift.start)
+        start_delta = sdelta.minutes + (sdelta.hours * 60)
+        
+        edelta = relativedelta(shift.end, (meal_end - meal_buffer))
+        end_delta = edelta.minutes + (edelta.hours * 60)
+        
+        if start_delta >= 0 and end_delta >= 0:
+            return True
+        
+    # if none of the combined shifts match the meal period, return false.
+    return False

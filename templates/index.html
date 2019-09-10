@@ -1,6 +1,10 @@
-<html>
-finally freaking displayed a page!
+{% extends "base.html" %}{% set admin_area=True %}
+{% block title %}Index Page{% endblock %}
+{% block backlink %}{% endblock %}
+{% block content %}
 <p/>
-{{ staff_id }}
-<a href="?load_depts">Load Departments list from Uber</a>
-</html>
+<br> <br>
+
+<a href="?load_depts=True">Load Departments list from Uber</a>
+
+{% endblock content %}

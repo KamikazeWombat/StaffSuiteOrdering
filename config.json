@@ -5,6 +5,8 @@
   "database_location": "sqlite:///testdb.db",
   "multi_select_count": 5,
   "radio_select_count": 3,
+  "schedule_tolerance": 45,
+  "ss_hours": 12,
   "cherrypy": {
     "/": {
       "tools.sessions.on": true

@@ -1,5 +1,5 @@
 {% extends "base.html" %}{% set admin_area=True %}
-{% block title %}Meal List for Setup{% endblock %}
+{% block title %}Staffer Meal List{% endblock %}
 {% block backlink %}{% endblock %}
 {% block content %}
 
@@ -10,13 +10,15 @@
     <form role="form">
       <table>
         <tr>
+          {% if meal.eligible == False %}
+            <td><label>Not Eligible for Carryout</label></td>
+          {% endif %}
           <td>
             <input type="hidden" name="id" value ="{{ meal.id }}">
             <label class="form-control">{{ meal.meal_name }} </label>
           </td>
             <td><label class="form-control">{{ meal.start_time }}</label></td>
             <td><button class="btn btn-lg btn-primary btn-block" onclick="window.location.href = 'order_edit?meal_id={{ meal.id }}';">Create Order</button></td>
-            <td><button class="btn btn-lg btn-primary btn-block" type="submit">Edit Meal</button></td>
         </tr>
       </table>
     </form>
