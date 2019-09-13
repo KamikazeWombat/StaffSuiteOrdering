@@ -110,10 +110,18 @@
                 <td><a href="meal_setup_list">Admin Meal List</a> |</td>
                 <td><a href="meal_edit">Create Meal</a> |</td>
                 <td><a href="staffer_order_list">Order List</a> |</td>
+                <td><a href="staffer_meal_list">Staffer Meal List</a> |</td>
                 <td><a href="config">Config</a> |</td>
                 <td><a href="login?logout=True">Logout</a></td>
             </tr>
         </nav>
+        
+        <div class="container">
+            {% for message in messages %}
+            
+                <h2>{{ message }}<br/></h2>
+            {% endfor %}
+        </div>
         {% endblock %}
         {% block content %}{% endblock %}
         <div id="bottomAnchor"></div>

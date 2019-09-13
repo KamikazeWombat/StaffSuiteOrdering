@@ -372,10 +372,10 @@ def ss_eligible(badge_num, return_shifts=False):
     weighted_minutes = 0
     shift_list = []
     message = ''
-    
+    #todo damnit, there's a built in thing to return weighted_hours.  wtf I didn't need this
     if 'error' in response:
         message = response['error']['message']
-        #print(message)
+        print(message)
         
     if not message:
         shifts = response['result']['shifts']
@@ -437,7 +437,7 @@ def carryout_eligible(shifts, meal_start, meal_end):
     """
     # need to check combined if shift starts within <<buffer>> after start of meal time
     # AND ends within <<buffer>> before end of meal time
-    
+    # todo: make time zone localization, check if eligibility checking actually works
     meal_buffer = relativedelta(minutes=cfg.schedule_tolerance)
     print("Meal start: {} Meal End {}".format(str(meal_start),str(meal_end)))
     for shift in shifts:
