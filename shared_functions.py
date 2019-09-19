@@ -334,9 +334,8 @@ class Shift:
     #end_time = ''
     #weight = ''
     
-    def __init__(self, start_time, end_time, weight=1, extra_15=False):
+    def __init__(self, start_time, end_time, extra_15=False):
         self.start = start_time
-        self.weight = weight
         self.extra_15 = extra_15
         if extra_15:
             self.end = end_time + relativedelta(minutes=15)
@@ -346,66 +345,58 @@ class Shift:
     @property
     def length(self):
         return relativedelta(self.end, self.start)
-        
-    @property
-    def weighted_length(self):
-        # returns weight in minutes
-        delta = self.length
-        minutes = (delta.hours * 60) + delta.minutes
-
-        return self.weight * minutes
     
     def __lt__(self, other):
         return self.start < other.start
        
 
-def ss_eligible(badge_num, return_shifts=False):
+def ss_eligible(badge_num):
     """
     Performs calculations to determine if eligible for StaffSuite and optionally returns a list of shift objects
     for the requested badge number
     :param badge_num: attendee's badge number for lookup
-    :param return_shifts: whether or not to return a list of shifts
-    :return: returns weighted hours, and optionally a list of shift objects
+    :return: returns True or False, unless error performing the API Lookup in which case it returns the error
     """
-    # todo: add code to show a message on staffer meal list page if not eligible based on hours
+    
     response = lookup_attendee(badge_num, full=True)
-    weighted_minutes = 0
-    shift_list = []
     message = ''
-    #todo damnit, there's a built in thing to return weighted_hours.  wtf I didn't need this
+    
     if 'error' in response:
         message = response['error']['message']
         print(message)
         
     if not message:
+        return response['result']['weighted_hours'] > cfg.ss_hours
+    else:
+        return message
+
+
+def combine_shifts(badge_num):
+    """
+    Takes badge number and performs lookup against Uber API
+    Gets list of shifts, sorts it, then combines any that are close together based on settings for allowable gaps
+    :param badge_num: Staffer's badge number
+    :return: returns sorted and merged list of shifts
+    """
+    
+    response = lookup_attendee(badge_num, full=True)
+    shift_list = []
+    
+    if 'error' in response:
+        message = response['error']['message']
+        print(message)
+    else:
         shifts = response['result']['shifts']
         for shift in shifts:
             item = Shift(parse(shift['job']['start_time']),
                          parse(shift['job']['end_time']),
-                         # weight=shift['job']['weight'], # todo: change back after 'weight' field added to API
                          extra_15=shift['job']['extra15']
                          )
             shift_list.append(item)
-            
-            weighted_minutes += item.weighted_length
-            #print(weighted_hours)
         
-    if return_shifts:
-        return weighted_minutes, shift_list
-    else:
-        return weighted_minutes
-
-
-def combine_shifts(shifts):
-    """
-    Takes list of shifts, sorts it, then combines any that are close together based on settings for allowable gaps
-    :param shifts: list of shift objects
-    :return: returns sorted and merged list of shifts
-    """
-    # todo: does this sort properly based on start being first property or is more needed?
-    shifts = sorted(shifts)
+    shifts = sorted(shift_list)
     combined = []
-    i=0
+    i = 0
     shift_buffer = relativedelta(minutes=cfg.schedule_tolerance)
     
     while i < (len(shifts) - 1):
@@ -413,11 +404,11 @@ def combine_shifts(shifts):
         delta = relativedelta(shifts[i].end + shift_buffer, shifts[i+1].start)
         # rd is positive if first item is after second
         if delta.minutes >= 0 or delta.hours >= 0:
-            print("combining shift")
+            # print("combining shift")
             combined.append(Shift(shifts[i].start, shifts[i+1].end))
             i += 1
         else:
-            print("shift left unchanged")
+            # print("shift left unchanged")
             combined.append(shifts[i])
             i += 1
             if i == (len(shifts)-1):
@@ -439,9 +430,9 @@ def carryout_eligible(shifts, meal_start, meal_end):
     # AND ends within <<buffer>> before end of meal time
     # todo: make time zone localization, check if eligibility checking actually works
     meal_buffer = relativedelta(minutes=cfg.schedule_tolerance)
-    print("Meal start: {} Meal End {}".format(str(meal_start),str(meal_end)))
+    # print("Meal start: {} Meal End {}".format(str(meal_start),str(meal_end)))
     for shift in shifts:
-        print("shift start : {} Shift end: {}".format(str(shift.start),str(shift.end)))
+        # print("shift start : {} Shift end: {}".format(str(shift.start),str(shift.end)))
         sdelta = relativedelta((meal_start + meal_buffer), shift.start)
         start_delta = sdelta.minutes + (sdelta.hours * 60)
         

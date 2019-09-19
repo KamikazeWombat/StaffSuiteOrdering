@@ -39,12 +39,13 @@ class Root:
     @cherrypy.expose
     def login(self, message=[], first_name='', last_name='',
               email='', zip_code='', original_location=None, logout=False):
-        original_location = shared_functions.create_valid_user_supplied_redirect_url(original_location, default_url='index')
-        
+        original_location = shared_functions.create_valid_user_supplied_redirect_url(original_location,
+                                                                                     default_url='index')
+        error = False
+        messages = []
         if message:
             text = message
-            message = []
-            message.append(text)
+            messages.append(text)
             
         if logout:
             cherrypy.lib.sessions.expire()
@@ -55,15 +56,17 @@ class Root:
                        email=email, zip_code=zip_code)
 
             if 'error' in response:
-                message.append(response['error']['message'])
+                messages.append(response['error']['message'])
+                error = True
                 
-            if not message:
+            if not error:
                 # is staff?
                 if not response['result']['staffing']:
-                    message.append('You are not currently signed up as staff/volunteer.'
+                    messages.append('You are not currently signed up as staff/volunteer.'
                               'See below for information on how to volunteer.')
+                    not_volunteer = True
 
-            if not message:
+            if not error:
                 # ensure_csrf_token_exists()
                 cherrypy.session['staffer_id'] = response['result']['public_id']
                 cherrypy.session['badge_num'] = response['result']['badge_num']
@@ -75,7 +78,7 @@ class Root:
                     
                     # only update record if different
                     if not attendee.badge_printed_name == response['result']['badge_printed_name'] \
-                            and not attendee.badge_num == response['result']['badge_num']:
+                            or not attendee.badge_num == response['result']['badge_num']:
                         attendee.badge_printed_name = response['result']['badge_printed_name']
                         attendee.badge_num = response['result']['badge_num']
                         session.commit()
@@ -92,7 +95,7 @@ class Root:
                 raise HTTPRedirect(original_location)
 
         template = env.get_template('login.html')
-        return template.render(messages=message,
+        return template.render(messages=messages,
                                first_name=first_name,
                                last_name=last_name,
                                email=email,
@@ -104,11 +107,11 @@ class Root:
     @restricted
     #@admin_req todo: setup admin_req for requiring admin access
     def meal_setup_list(self, message=[], id=''):
-        
+    
+        messages = []
         if message:
             text = message
-            message = []
-            message.append(text)
+            messages.append(text)
             
         session = models.new_sesh()
         
@@ -119,7 +122,7 @@ class Root:
         meallist = session.query(Meal).order_by(models.meal.Meal.start_time).all()
         session.close()
         template = env.get_template('meal_setup_list.html')
-        return template.render(messages=message,
+        return template.render(messages=messages,
                                meallist=meallist,
                                c=c)
 
@@ -127,11 +130,11 @@ class Root:
     #@admin_req
     @restricted  # todo: code admin_req and remove restricted tag
     def meal_edit(self, meal_id='', message=[], **params):
-        
+    
+        messages = []
         if message:
             text = message
-            message = []
-            message.append(text)
+            messages.append(text)
             
         # save new / updated meal
         if 'meal_name' in params:
@@ -198,18 +201,18 @@ class Root:
                                toppings=toppings,
                                toggles1=toggles1,
                                toggles2=toggles2,
-                               messages=message,
+                               messages=messages,
                                c=c)
 
 
     @restricted
     @cherrypy.expose
     def order_edit(self, meal_id='', save_order='', order_id='', message=[], notes='', delete_order=False, **params):
-        
+    
+        messages = []
         if message:
             text = message
-            message = []
-            message.append(text)
+            messages.append(text)
             
         session = models.new_sesh()
         thisorder = ''
@@ -249,9 +252,9 @@ class Root:
             toppings = order_split(session, choices=thismeal.toppings, orders=thisorder.toppings)
             toggles1 = order_split(session, choices=thismeal.toggle1, orders=thisorder.toggle1)
             toggles2 = order_split(session, choices=thismeal.toggle2, orders=thisorder.toggle2)
-            departments = department_split(session)
+            departments = department_split(session, thisorder.department_id)
             message = 'Order ID {} loaded'.format(order_id)
-            attend = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id'])
+            attend = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
             session.close()
 
             template = env.get_template('order_edit.html')
@@ -262,22 +265,23 @@ class Root:
                                    toggles1=toggles1,
                                    toggles2=toggles2,
                                    departments=departments,
-                                   messages=message,
+                                   messages=messages,
                                    c=c)
             
         if meal_id:
             print('start meal_id')
-            # new order from meal_id
+            # attempt new order from meal_id
             
             try:
-                thismeal = session.query(Order).filter_by(attendee_id=session['staffer_id'], meal_id=meal_id).one()
-                raise HTTPRedirect('order_edit?order_id=' + thismeal.id + '&message=An order already exists for this '
-                                                                          'Meal, previously created order selections '
+                thismeal = session.query(Order).filter_by(attendee_id=cherrypy.session['staffer_id'], meal_id=meal_id).one()
+                raise HTTPRedirect('order_edit?order_id=' + str(thismeal.id) +
+                                   '&message=An order already exists for this Meal, previously created order selections '
                                                                           'loaded.')
             except sqlalchemy.orm.exc.NoResultFound:
-                print("not a duplicate order")
+                pass
                 
             thismeal = session.query(Meal).filter_by(id=meal_id).one()
+            
             thisorder = Order()
             thisorder.attendee_id = cherrypy.session['staffer_id']
             toppings = order_split(session, thismeal.toppings)
@@ -285,7 +289,8 @@ class Root:
             toggles2 = order_split(session, thismeal.toggle2)
             departments = department_split(session)
             thisorder.notes = ''
-            attend = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id'])
+            
+            attend = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
             session.close()
 
             template = env.get_template('order_edit.html')
@@ -300,26 +305,34 @@ class Root:
                                    c=c)
         # todo: add delete/cancel order function
         if delete_order:
-            template = env.get_template('order_delete_confirm')
-            raise HTTPRedirect('order_delete_comfirm?order_id=delete_order')
+            raise HTTPRedirect('order_delete_comfirm?order_id=' + str(delete_order))
         
         # if nothing else matched, not creating, loading, saving, or deleting.  therefore, error.
         raise HTTPRedirect('staffer_order_list?message=You must specify a meal or order ID to create/edit an order.')
     
     @cherrypy.expose
     @restricted
-    def order_delete_confirm(self, order_id=''):
+    def order_delete_confirm(self, order_id='', confirm=False):
         session = models.new_sesh()
         
         thisorder = session.query(Order).filter_by(id=order_id).one()
-        if thisorder.attendee_id == session['public_id']:
-            session.delete(thisorder)
-            session.commit()
-            session.close
-        else:
-            session.close()
-            raise HTTPRedirect('staffer_order_list?message=Order does not belong to you?')
-        raise HTTPRedirect('staffer_order_list?message=Order Deleteed.')
+        
+        if confirm:
+            if thisorder.attendee_id == cherrypy.session['staffer_id']:
+                session.delete(thisorder)
+                session.commit()
+                session.close
+                raise HTTPRedirect('staffer_order_list?message=Order Deleted.')
+            else:
+                session.close()
+                raise HTTPRedirect('staffer_order_list?message=Order does not belong to you?')
+        
+        template = env.get_template('order_delete_confirm.html')
+        return template.render(
+            order=thisorder,
+            c=c
+        )
+        
         
     @cherrypy.expose
     @restricted
@@ -327,31 +340,32 @@ class Root:
         """
         Display list of meals staffer is eligible for, unless requested to show all
         """
-        if message:
-            text = message
-            message = []
-            message.append(text)
         
+        # present if Create Order button clicked
         if id:
             raise HTTPRedirect('order_edit?meal_id='+id)
         
+        messages = []
+        if message:
+            text = message
+            messages.append(text)
+            
         session = models.new_sesh()
         
-        weighted_minutes, shifts = ss_eligible(cherrypy.session['badge_num'], return_shifts=True)
+        eligible = ss_eligible(cherrypy.session['badge_num'])
         
-        if weighted_minutes < (cfg.ss_hours * 60):
-            # todo: change this to be a list of messages so they can get their own lines and more easily have multiple
-            message.append('You are not scheduled for enough volunteer hours to be eligible for Staff Suite.\n'
+        if not eligible:
+            print("appending not enough hours")
+            messages.append('You are not scheduled for enough volunteer hours to be eligible for Staff Suite.\n'
                       'You will need to get a Department Head to authorize any orders you place.')
         
         meals = session.query(Meal).all()
-        sorted_shifts = combine_shifts(shifts)
+        sorted_shifts = combine_shifts(cherrypy.session['badge_num'])
         meal_display = []
         
         for meal in meals:
             print("checking meal")
             eligible = carryout_eligible(sorted_shifts, meal.start_time, meal.end_time)
-            
             
             if eligible:
                 meal.eligible = True
@@ -360,13 +374,13 @@ class Root:
                 meal_display.append(meal)
         
         if len(meal_display) == 0:
-            message.append('You do not have any shifts that are eligible for Carryout.%0A'
+            messages.append('You do not have any shifts that are eligible for Carryout.%0A'
                             'For eligibility rules see: add link')  # todo: add link or change text
         
         session.close()
         
         template = env.get_template('staffer_meal_list.html')
-        return template.render(messages=message,
+        return template.render(messages=messages,
                                meallist=meal_display,
                                c=c)
             
@@ -378,15 +392,15 @@ class Root:
     def staffer_order_list(self, message=[], order_id=''):
         # todo: check if eligible to staff suite at all, display warning message at top if not
         # letting user know orders will need to be overidden by a dept head.
-        template = env.get_template('order_list.html')
+        
+        messages = []
         if message:
             text = message
-            message = []
-            message.append(text)
+            messages.append(text)
             
         session = models.new_sesh()
 
-        # this should be triggered if an edit button is clicked from the list
+        # this should be triggered if a create button is clicked from the list
         if order_id:
             raise HTTPRedirect('order_edit?order_id='+order_id)
 
@@ -394,19 +408,20 @@ class Root:
         order_list = session.query(Order).options(joinedload('meal')).all()
         
         session.close()
-        
-        return template.render(messages=message,
+
+        template = env.get_template('order_list.html')
+        return template.render(messages=messages,
                                order_list=order_list,
                                c=c)
 
     @cherrypy.expose
     # @admin_req
     def config(self, message=[], database_url=''):
-        template = env.get_template('config.html')
+        messages = []
+
         if message:
             text = message
-            message = []
-            message.append(text)
+            messages.append(text)
             
         if database_url:
             print('-----------------------')
@@ -418,7 +433,9 @@ class Root:
         cherrypy_cfg = json.dumps(cfg.cherrypy, indent=4)
         print(cherrypy_cfg)
         print(type(cherrypy_cfg))
-        return template.render(messages=message,
+        
+        template = env.get_template('config.html')
+        return template.render(messages=messages,
                                cherrypy_cfg=cherrypy_cfg,
                                c=c,
                                cfg=cfg)
