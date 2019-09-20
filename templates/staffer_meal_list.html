@@ -4,8 +4,8 @@
 {% block content %}
 
 <div class="container">
-  <h2>{{ message }} <br/></h2>
   <h2 class="form-signin-heading">Meal List</h2>
+  <a href="staffer_meal_list/?display_all=True">Display all Meals</a>
   {% for meal in meallist %}
     <form role="form">
       <table>

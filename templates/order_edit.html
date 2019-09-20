@@ -5,16 +5,13 @@
 
 <div class="container">
   <form role="form">
-    <h2 class="form-signin-heading">Create/Edit Order</h2>
+    <h2 class="form-signin-heading">Create/Edit Order for: {{ attendee.badge_printed_name }}</h2>
     <table style="width:100%">
       <tr> <td> <input type="hidden" name="id" value="{{ order.id }}"/>
         <input type="hidden" name="save_order" value="{{ meal.id }}"/>
       </td>
         <td> <input type="text" class="form-control" placeholder="Meal Name" name="meal_name" value="{{ meal.meal_name }}" disabled /> </td>
       </tr>
-      <tr><td>
-        <h3>{{ attendee.badge_printed_name }}</h3>
-      </td></tr>
       <tr> <td>Start Time</td>
         <td> <input type="datetime-local" class="form-control" placeholder="Start Time" name="start_time"
                     {% if meal.start_time %}value="{{ meal.start_time.isoformat() }}"{% endif %} disabled /> </td>
@@ -55,8 +52,9 @@
        </td>
        
      </tr>
-      <tr><td><button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button></td>
-      <td><button class="btn btn-lg btn-primary btn-block" onclick="window.location.href = 'meal_setup_list';">Cancel</button></td></tr>
+      <tr><td><button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button>  </td>
+      <td><a class="btn btn-lg btn-primary btn-block" href="meal_setup_list">Cancel</a>  </td>
+      <td><a class="btn btn-lg btn-primary btn-block" href="order_delete_confirm?order_id={{ order.id }}">Delete</a></td></tr>
     </table>
     
   </form>

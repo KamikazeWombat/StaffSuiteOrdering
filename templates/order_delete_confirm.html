@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% set admin_area=True %}
+{% block title %}Confirm Order Deletion{% endblock %}
+{% block backlink %}{% endblock %}
+{% block content %}
+
+<div class="container">
+  <form role="form">
+    <h2 class="form-signin-heading">Edit Meal</h2>
+    <p>Are you absolutely sure you want to delete this order?</p>
+    <table>
+     <tr> <td>
+       <input type="hidden" name="order_id" value="{{ order.id }}"/>
+       <input type="hidden" name="confirm" value=True/>
+     </td></tr>
+      <tr><td><button class="btn btn-lg btn-primary btn-block" type="submit">Delete</button></td>
+      <td><a class="btn btn-lg btn-primary btn-block" href="staffer_meal_list">Cancel</a></td></tr>
+    </table>
+  </form>
+</div>
+{% endblock content %}

@@ -15,7 +15,7 @@
             <label class="form-control">{{ meal.meal_name }} </label>
           </td>
             <td><label class="form-control">{{ meal.start_time }}</label></td>
-            <td><button class="btn btn-lg btn-primary btn-block" onclick="window.location.href = 'order_edit?meal_id={{ meal.id }}';">Create Order</button></td>
+            <td><a class="btn btn-lg btn-primary btn-block" href="order_edit?meal_id={{ meal.id }}">Create Order</a></td>
             <td><button class="btn btn-lg btn-primary btn-block" type="submit">Edit Meal</button></td>
         </tr>
       </table>
