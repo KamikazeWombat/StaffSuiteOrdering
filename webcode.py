@@ -387,7 +387,7 @@ class Root:
         
 
     @cherrypy.expose
-   # @restricted
+    @restricted
     #@admin_req todo: setup admin_req for requiring admin access
     def staffer_order_list(self, message=[], order_id=''):
         # todo: check if eligible to staff suite at all, display warning message at top if not
@@ -415,6 +415,7 @@ class Root:
                                c=c)
 
     @cherrypy.expose
+    @restricted
     # @admin_req
     def config(self, message=[], database_url=''):
         messages = []
@@ -442,7 +443,7 @@ class Root:
     
     
     @cherrypy.expose
-    # @restricted
+    @restricted
     def dept_test(self):
         template = env.get_template('dept_test.html')
         REQUEST_HEADERS = {'X-Auth-Token': cfg.apiauthkey}
