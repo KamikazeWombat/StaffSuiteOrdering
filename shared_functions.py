@@ -174,6 +174,19 @@ def order_split(session, choices, orders=""):
     return tuple_list
 
 
+def return_selected_only(session, choices, orders):
+    """
+    Runs order_split and only returns the items that were actually selected
+    """
+    mylist = order_split(session, choices, orders)
+    selected = []
+    for item in mylist:
+        if item[0] == 1:
+            selected.append(item)
+    
+    return selected
+
+
 def order_selections(field, params):
     """
     Takes field name and list of ingredient choice IDs and goes through params to find which of the available choices
@@ -402,8 +415,8 @@ def combine_shifts(badge_num):
     while i < (len(shifts) - 1):
         # want to know if the end of the first shift touches or is after the next shift (+ buffers)
         delta = relativedelta(shifts[i].end + shift_buffer, shifts[i+1].start)
-        # rd is positive if first item is after second
-        if delta.minutes >= 0 or delta.hours >= 0:
+        # rd is positive if first item is after second.  delta.days will be nonzero if shifts more than 24 hours apart
+        if (delta.minutes >= 0 or delta.hours >= 0) and delta.days == 0:
             # print("combining shift")
             combined.append(Shift(shifts[i].start, shifts[i+1].end))
             i += 1
@@ -439,7 +452,8 @@ def carryout_eligible(shifts, meal_start, meal_end):
         edelta = relativedelta(shift.end, (meal_end - meal_buffer))
         end_delta = edelta.minutes + (edelta.hours * 60)
         
-        if start_delta >= 0 and end_delta >= 0:
+        if start_delta >= 0 and end_delta >= 0 and sdelta.days == 0:
+            # start_delta.days being anything other than 0 means the shift is more than 24 hours from the meal
             return True
         
     # if none of the combined shifts match the meal period, return false.

@@ -59,17 +59,23 @@ class Uberconfig:
     # data being sent to API
     request_data = {'method': 'config.info'}
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
+    # print("------printing request before json load")
+    # print(request.text)
     response = json.loads(request.text)
-
+    
     try:
         response = response['error']
-        # print(response)
+        print("error in response")
+        print(response)
     except KeyError:
         response = response['result']
+        print("no error in response")
         # print(response)
-        EVENT_NAME = response['EVENT_NAME']
-        EVENT_URL_ROOT = response['URL_ROOT']
-
+        
+    EVENT_NAME = response['EVENT_NAME']
+    EVENT_URL_ROOT = response['URL_ROOT']
+    #EVENT_TIMEZONE = response['EVENT_TIMEZONE']
+    
 
 c = Uberconfig()
 

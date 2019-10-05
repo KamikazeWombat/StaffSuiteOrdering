@@ -1,0 +1,32 @@
+{% extends "base.html" %}{% set admin_area=True %}
+{% block title %}{{ dept }} Order List{% endblock %}
+{% block backlink %}{% endblock %}
+{% block content %}
+
+<div class="container">
+  <h2>{{ message }} <br/></h2>
+  <h2 class="form-signin-heading">{{ dept }} Order List</h2>
+  {% for order in order_list %}
+    <form role="form">
+      <table>
+        <tr>
+          <td><label>{{ order.badge_num }}</label></td>
+          <td>
+            <input type="hidden" name="order_id" value ="{{ order.id }}">
+            <label class="form-control">{{ order.badge_printed_name }}</label>
+          </td>
+          <td><label class="form-control">{{ order.toggle1[1] }}</label><br/></td>
+          <td><label class="form-control">{{ order.toggle2[1] }}</label><br/></td>
+          <!--todo: add rest of fields -->
+        </tr>
+        {% if not order.notes == "" %}
+          <tr>
+            <td>{{ order.notes }}</td>
+          </tr>
+        {% endif %}
+      </table>
+    </form>
+  {% endfor %}
+
+</div>
+{% endblock content %}

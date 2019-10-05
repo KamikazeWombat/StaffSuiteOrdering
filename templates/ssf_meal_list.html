@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% set admin_area=True %}
+{% block title %}Meal List for Fulfilment{% endblock %}
+{% block backlink %}{% endblock %}
+{% block content %}
+
+<div class="container">
+  <h2>{{ message }} <br/></h2>
+  <h2 class="form-signin-heading">Meal List</h2>
+  <a href="?display_all=True">Display all Meals</a>
+  {% for meal in meallist %}
+    {% set name = meal.name %}
+    {% set id = meal.id %}
+    {% set start = meal.start %}
+    <form role="form">
+      <table>
+        <tr>
+          <td>
+            <input type="hidden" name="id" value ="{{ id }}">
+            <label class="form-control">{{ name }} </label>
+          </td>
+            <td><label class="form-control">{{ start }}</label></td>
+            <td><a class="btn btn-lg btn-primary btn-block" href="ssf_dept_list?meal_id={{ id }}">Select Meal</a></td>
+        </tr>
+      </table>
+    </form>
+  {% endfor %}
+
+</div>
+{% endblock content %}

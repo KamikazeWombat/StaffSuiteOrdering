@@ -14,7 +14,7 @@ class Meal(dec_base):
     start_time = Column('start_time', DateTime)
     end_time = Column('end_time', DateTime)
     cutoff = Column('cutoff', DateTime)
-    locked = Column('locked', Boolean) # marked locked when order fulfilment starts
+    locked = Column('locked', Boolean, default=False)  # marked locked when order fulfilment starts todo: probably remove
     description = Column('description', String)
     # detail_link = Column('detail_link', String)
 

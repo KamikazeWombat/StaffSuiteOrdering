@@ -5,7 +5,7 @@
 
 <div class="container">
   <h2 class="form-signin-heading">Meal List</h2>
-  <a href="staffer_meal_list/?display_all=True">Display all Meals</a>
+  <a href="?display_all=True">Display all Meals</a>
   {% for meal in meallist %}
     <form role="form">
       <table>
@@ -18,7 +18,7 @@
             <label class="form-control">{{ meal.meal_name }} </label>
           </td>
             <td><label class="form-control">{{ meal.start_time }}</label></td>
-            <td><button class="btn btn-lg btn-primary btn-block" onclick="window.location.href = 'order_edit?meal_id={{ meal.id }}';">Create Order</button></td>
+            <td><button class="btn btn-lg btn-primary btn-block" href="order_edit?meal_id={{ meal.id }}">Create Order</button></td>
         </tr>
       </table>
     </form>
