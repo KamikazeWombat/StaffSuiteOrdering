@@ -3,11 +3,13 @@ import requests
 from urllib.parse import quote, urlparse
 
 import cherrypy
+import dateutil
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
+import pytz
 from sqlalchemy.orm import Session
 
-from config import cfg
+from config import cfg, c
 import models
 from models.attendee import Attendee
 from models.ingredient import Ingredient
@@ -81,6 +83,45 @@ def create_valid_user_supplied_redirect_url(url, default_url):
     return url
 
 
+def parse_utc(date):
+    """
+    takes datetime string and makes it a datetime object with timezone UTC
+    :param date: string date
+    :return: datetime object with tzinfo set to UTC
+    """
+    date = parse(date)
+    date = pytz.utc.localize(date)
+    return date
+
+
+def utc_tz(date):
+    """converts a datetime object OR a date string (assumed event local) to UTC TZ datetime object for storage"""
+    if isinstance(date, str):
+        date = parse(date)
+    
+    try:
+        date = c.EVENT_TIMEZONE.localize(date)
+    except ValueError:
+        pass  # would happen if already has tzinfo
+    
+    date = date.astimezone(pytz.utc)
+    return date
+
+
+def con_tz(date):
+    """converts a datetime object OR a date string (assumed UTC) to local TZ datetime object for display"""
+    if isinstance(date, str):
+        date = parse_utc(date)
+        
+    try:
+        date = pytz.utc.localize(date)
+    except ValueError:
+        pass  # would happen if already has tzinfo
+    
+    date = date.astimezone(c.EVENT_TIMEZONE)
+    return date
+
+
 def api_login(first_name, last_name, email, zip_code):
     """
     Performs login request against Uber API and returns resulting json data
@@ -135,8 +176,21 @@ def lookup_attendee(badge_num, full=False):
         
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
     response = json.loads(request.text)
-
-    # print(response)
+    # todo: remove testing stuff here
+    """
+    date = response['result']['shifts'][0]['job']['start_time'] #date string
+    date = parse_utc(date) #convert to datetime object
+    
+    local_dt = con_tz(date)
+    fmt = '%Y-%m-%d %H:%M:%S %Z%z'
+    print(date.strftime(fmt))
+    print(date.tzinfo)
+    print(local_dt.strftime(fmt))
+    """
+    # end of testing stuff
+    # todo: need to convert pages to store times as UTC
+    # todo: need to convert stored times to Con_TZ for display purposes
+    #print(response['result']['shifts'][0]['job']['start_time'])
     return response
 
 
@@ -174,6 +228,19 @@ def order_split(session, choices, orders=""):
     return tuple_list
 
 
+def return_selected_only(session, choices, orders):
+    """
+    Runs order_split and only returns the items that were actually selected
+    """
+    mylist = order_split(session, choices, orders)
+    selected = []
+    for item in mylist:
+        if item[0] == 1:
+            selected.append(item)
+    
+    return selected
+
+
 def order_selections(field, params):
     """
     Takes field name and list of ingredient choice IDs and goes through params to find which of the available choices
@@ -208,11 +275,11 @@ def order_selections(field, params):
 
 def meal_join(session, params, field):
     """
-    Goes through paramaters and finds ingredients based upon which field it is asked to look for.
+    Goes through parameters and finds ingredients based upon which form field it is asked to look for.
     Adds new ingredients if not in DB, loads then updates ingredients if they are already existing in DB
     :param session: SQLAlchemy session
     :param params: web form parameters submitted
-    :param field: string name of field to look for
+    :param field: string name of form field to look for
     :return: result is a string containing a comma separated list of ingredient IDs
     """
     result = []
@@ -402,8 +469,8 @@ def combine_shifts(badge_num):
     while i < (len(shifts) - 1):
         # want to know if the end of the first shift touches or is after the next shift (+ buffers)
         delta = relativedelta(shifts[i].end + shift_buffer, shifts[i+1].start)
-        # rd is positive if first item is after second
-        if delta.minutes >= 0 or delta.hours >= 0:
+        # rd is positive if first item is after second.  delta.days will be nonzero if shifts more than 24 hours apart
+        if (delta.minutes >= 0 or delta.hours >= 0) and delta.days == 0:
             # print("combining shift")
             combined.append(Shift(shifts[i].start, shifts[i+1].end))
             i += 1
@@ -428,7 +495,7 @@ def carryout_eligible(shifts, meal_start, meal_end):
     """
     # need to check combined if shift starts within <<buffer>> after start of meal time
     # AND ends within <<buffer>> before end of meal time
-    # todo: make time zone localization, check if eligibility checking actually works
+    # todo: check if eligibility checking actually works
     meal_buffer = relativedelta(minutes=cfg.schedule_tolerance)
     # print("Meal start: {} Meal End {}".format(str(meal_start),str(meal_end)))
     for shift in shifts:
@@ -439,7 +506,8 @@ def carryout_eligible(shifts, meal_start, meal_end):
         edelta = relativedelta(shift.end, (meal_end - meal_buffer))
         end_delta = edelta.minutes + (edelta.hours * 60)
         
-        if start_delta >= 0 and end_delta >= 0:
+        if start_delta >= 0 and end_delta >= 0 and sdelta.days == 0:
+            # start_delta.days being anything other than 0 means the shift is more than 24 hours from the meal
             return True
         
     # if none of the combined shifts match the meal period, return false.

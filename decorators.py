@@ -22,7 +22,7 @@ def restricted(func):
 
 
 def admin_req(func):
-    print(fix_admin_req_function_first)
+    print(fix_admin_req_function)
     @wraps(func)
     def with_admin(*args, **kwargs):
         try:

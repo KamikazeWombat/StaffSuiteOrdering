@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% set admin_area=True %}
+{% block title %}SS Department List{% endblock %}
+{% block backlink %}{% endblock %}
+{% block content %}
+
+<div class="container">
+  <h2 class="form-signin-heading">Department Order List</h2>
+  
+  {% for dept in depts %}
+    {% set name = dept[0] %}
+    {% set count = dept[1] %}
+    {% set dept_id = dept[2] %}
+    <form role="form">
+      <table>
+        <tr>
+          <td>
+            <input type="hidden" name="id" value="{{ dept_id }}">
+            <label class="form-control">{{ name }}</label>
+          </td>
+            <td><label class="form-control">{{ count }}</label></td>
+            <td><a class="btn btn-lg btn-primary btn-block" href="ssf_orders?meal_id={{ meal_id }}&dept_id={{ dept_id }}">View Dept Orders</a></td>
+        </tr>
+      </table>
+    </form>
+  {% endfor %}
+
+</div>
+{% endblock content %}

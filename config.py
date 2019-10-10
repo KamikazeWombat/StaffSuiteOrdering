@@ -3,6 +3,7 @@ import os
 import requests
 
 from jinja2 import Environment, FileSystemLoader
+import pytz
 from sqlalchemy.ext.declarative import declarative_base
 
 
@@ -41,6 +42,7 @@ class Config:
         self.multi_select_count = cdata['multi_select_count']
         self.radio_select_count = cdata['radio_select_count']
         self.schedule_tolerance = cdata['schedule_tolerance']
+        self.date_format = cdata['date_format']
         self.ss_hours = cdata['ss_hours']
         self.cherrypy = cdata['cherrypy']
         self.cherrypy['/']['tools.staticdir.root'] = os.path.abspath(os.getcwd())
@@ -59,17 +61,24 @@ class Uberconfig:
     # data being sent to API
     request_data = {'method': 'config.info'}
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
+    # print("------printing request before json load")
+    # print(request.text)
     response = json.loads(request.text)
-
+    
     try:
         response = response['error']
-        # print(response)
+        print("error in response")
+        print(response)
     except KeyError:
         response = response['result']
+        print("no error in response")
         # print(response)
-        EVENT_NAME = response['EVENT_NAME']
-        EVENT_URL_ROOT = response['URL_ROOT']
-
+        
+    EVENT_NAME = response['EVENT_NAME']
+    EVENT_URL_ROOT = response['URL_ROOT']
+    #EVENT_TIMEZONE = pytz.timezone(response['EVENT_TIMEZONE'])
+    EVENT_TIMEZONE = pytz.timezone('US/Pacific')
+    EVENT_TZ = EVENT_TIMEZONE
 
 c = Uberconfig()
 
