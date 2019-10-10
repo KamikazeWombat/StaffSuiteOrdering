@@ -7,6 +7,7 @@ import cherrypy
 from datetime import datetime
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
+import pytz
 import sqlalchemy.orm.exc
 from sqlalchemy.orm import joinedload
 
@@ -20,7 +21,8 @@ from models.department import Department
 import shared_functions
 from shared_functions import api_login, HTTPRedirect, order_split, order_selections, \
                          meal_join, meal_split, meal_blank_toppings, department_split, \
-                        ss_eligible, carryout_eligible, combine_shifts, return_selected_only
+                        ss_eligible, carryout_eligible, combine_shifts, return_selected_only, \
+                        con_tz, utc_tz
 
 #todo: department select dropdown needs to restrict based upon if a department's order is already being processed or has been.
 
@@ -123,6 +125,10 @@ class Root:
 
         meallist = session.query(Meal).order_by(models.meal.Meal.start_time).all()
         session.close()
+        
+        for meal in meallist:
+            meal.start_time = con_tz(meal.start_time)
+
         template = env.get_template('meal_setup_list.html')
         return template.render(messages=messages,
                                meallist=meallist,
@@ -154,9 +160,9 @@ class Root:
                 thismeal = Meal()
            
             thismeal.meal_name = params['meal_name']
-            thismeal.start_time = parse(params['start_time'])
-            thismeal.end_time = parse(params['end_time'])
-            thismeal.cutoff = parse(params['cutoff'])
+            thismeal.start_time = utc_tz(params['start_time'])
+            thismeal.end_time = utc_tz(params['end_time'])
+            thismeal.cutoff = utc_tz(params['cutoff'])
             thismeal.description = params['description']
             thismeal.toppings_title = params['toppings_title']
             thismeal.toppings = meal_join(session, params, field='toppings')
@@ -176,8 +182,10 @@ class Root:
             try:
                 session = models.new_sesh()
                 thismeal = session.query(Meal).filter_by(id=meal_id).one()
-               
-                # loads list of existing toppings, adds blank toppings to list up to configured #
+                thismeal.start_time = con_tz(thismeal.start_time)
+                thismeal.end_time = con_tz(thismeal.end_time)
+                thismeal.cutoff = con_tz(thismeal.cutoff)
+                # loads list of existing toppings, adds blank toppings to list up to configured quantity
                 toppings = meal_blank_toppings(meal_split(session, thismeal.toppings), cfg.multi_select_count)
                 toggles1 = meal_blank_toppings(meal_split(session, thismeal.toggle1), cfg.radio_select_count)
                 toggles2 = meal_blank_toppings(meal_split(session, thismeal.toggle2), cfg.radio_select_count)
@@ -250,14 +258,18 @@ class Root:
             # load order
             thisorder = session.query(Order).filter_by(id=order_id).one()
             thismeal = thisorder.meal  # session.query(Meal).filter_by(id=thisorder.meal_id).one()
+            attend = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
+            session.close()
             
+            thismeal.start_time = con_tz(thismeal.start_time)
+            thismeal.end_time = con_tz(thismeal.end_time)
+            thismeal.cutoff = con_tz(thismeal.cutoff)
             toppings = order_split(session, choices=thismeal.toppings, orders=thisorder.toppings)
             toggles1 = order_split(session, choices=thismeal.toggle1, orders=thisorder.toggle1)
             toggles2 = order_split(session, choices=thismeal.toggle2, orders=thisorder.toggle2)
             departments = department_split(session, thisorder.department_id)
             message = 'Order ID {} loaded'.format(order_id)
-            attend = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
-            session.close()
+            
 
             template = env.get_template('order_edit.html')
             return template.render(order=thisorder,
@@ -283,7 +295,12 @@ class Root:
                 pass
                 
             thismeal = session.query(Meal).filter_by(id=meal_id).one()
+            attend = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
+            session.close()
             
+            thismeal.start_time = con_tz(thismeal.start_time)
+            thismeal.end_time = con_tz(thismeal.end_time)
+            thismeal.cutoff = con_tz(thismeal.cutoff)
             thisorder = Order()
             thisorder.attendee_id = cherrypy.session['staffer_id']
             toppings = order_split(session, thismeal.toppings)
@@ -292,9 +309,6 @@ class Root:
             departments = department_split(session)
             thisorder.notes = ''
             
-            attend = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
-            session.close()
-
             template = env.get_template('order_edit.html')
             return template.render(order=thisorder,
                                    meal=thismeal,
@@ -323,7 +337,7 @@ class Root:
             if thisorder.attendee_id == cherrypy.session['staffer_id']:
                 session.delete(thisorder)
                 session.commit()
-                session.close
+                session.close()
                 raise HTTPRedirect('staffer_order_list?message=Order Deleted.')
             else:
                 session.close()
@@ -359,16 +373,16 @@ class Root:
         if not eligible:
             print("appending not enough hours")
             messages.append('You are not scheduled for enough volunteer hours to be eligible for Staff Suite.\n'
-                      'You will need to get a Department Head to authorize any orders you place.')
+                            'You will need to get a Department Head to authorize any orders you place.')
         
         meals = session.query(Meal).all()
         sorted_shifts = combine_shifts(cherrypy.session['badge_num'])
         meal_display = []
         
         session.close()  # session close is here to make sure the eligible mark doesn't get put into the DB
-                         # yes I know it should not cause not a column, but for my own paranoia
+                         # yes I know it should not because not a column, but for my own paranoia
         for meal in meals:
-            print("checking meal")
+            # print("checking meal")
             meal.eligible = carryout_eligible(sorted_shifts, meal.start_time, meal.end_time)
             
             if meal.eligible or display_all:
@@ -376,7 +390,8 @@ class Root:
                 delta = relativedelta(meal.end_time, datetime.now())
                 # rd is negative if first item is before second
                 rd = 0
-                """"#todo: section removed for testing since West is currently in the past.
+                # todo: section removed for testing since West is currently in the past.
+                """"
                 rd += delta.minutes
                 rd += delta.hours * 60
                 rd += delta.days * 1440
@@ -384,10 +399,14 @@ class Root:
                 if rd >= 0 or display_all:
                     meal_display.append(meal)
         
-        
         if len(meal_display) == 0:
             messages.append('You do not have any shifts that are eligible for Carryout.'
                             'For eligibility rules see: add link')  # todo: add link or change text
+        
+        for thismeal in meal_display:
+            thismeal.start_time = con_tz(thismeal.start_time)
+            thismeal.end_time = con_tz(thismeal.end_time)
+            thismeal.cutoff = con_tz(thismeal.cutoff)
         
         template = env.get_template('staffer_meal_list.html')
         return template.render(messages=messages,
@@ -418,6 +437,11 @@ class Root:
         order_list = session.query(Order).options(joinedload('meal')).all()
         
         session.close()
+        
+        for order in order_list:
+            order.meal.start_time = con_tz(order.meal.start_time)
+            order.meal.end_time = con_tz(order.meal.end_time)
+            order.meal.cutoff = con_tz(order.meal.cutoff)
 
         template = env.get_template('order_list.html')
         return template.render(messages=messages,
@@ -488,10 +512,11 @@ class Root:
                 continue
             # only runs these two lines if meal is in future or display_all is True
             count = session.query(Order).filter_by(meal_id=meal.id).count()
-            meal_list.append({'id': meal.id, 'name': meal.meal_name, 'start': meal.start_time.strftime("%d-%m-%Y %H:%M"),
-                              'end': meal.end_time.strftime("%d-%m-%Y %H:%M"), 'count': count})
+            session.close()
+            # todo: figure out how to count just ones that are still in future
+            meal_list.append({'id': meal.id, 'name': meal.meal_name, 'start': con_tz(meal.start_time),
+                              'end': con_tz(meal.end_time), 'count': count})
         
-        session.close()
         template = env.get_template('ssf_meal_list.html')
         return template.render(meallist=meal_list,
                                c=c)

@@ -3,6 +3,7 @@ import os
 import requests
 
 from jinja2 import Environment, FileSystemLoader
+import pytz
 from sqlalchemy.ext.declarative import declarative_base
 
 
@@ -41,6 +42,7 @@ class Config:
         self.multi_select_count = cdata['multi_select_count']
         self.radio_select_count = cdata['radio_select_count']
         self.schedule_tolerance = cdata['schedule_tolerance']
+        self.date_format = cdata['date_format']
         self.ss_hours = cdata['ss_hours']
         self.cherrypy = cdata['cherrypy']
         self.cherrypy['/']['tools.staticdir.root'] = os.path.abspath(os.getcwd())
@@ -74,8 +76,9 @@ class Uberconfig:
         
     EVENT_NAME = response['EVENT_NAME']
     EVENT_URL_ROOT = response['URL_ROOT']
-    #EVENT_TIMEZONE = response['EVENT_TIMEZONE']
-    
+    #EVENT_TIMEZONE = pytz.timezone(response['EVENT_TIMEZONE'])
+    EVENT_TIMEZONE = pytz.timezone('US/Pacific')
+    EVENT_TZ = EVENT_TIMEZONE
 
 c = Uberconfig()
 
