@@ -495,7 +495,7 @@ def carryout_eligible(shifts, meal_start, meal_end):
     """
     # need to check combined if shift starts within <<buffer>> after start of meal time
     # AND ends within <<buffer>> before end of meal time
-    # todo: make time zone localization, check if eligibility checking actually works
+    # todo: check if eligibility checking actually works
     meal_buffer = relativedelta(minutes=cfg.schedule_tolerance)
     # print("Meal start: {} Meal End {}".format(str(meal_start),str(meal_end)))
     for shift in shifts:

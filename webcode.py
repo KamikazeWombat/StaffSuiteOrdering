@@ -489,7 +489,7 @@ class Root:
         """
 
     @cherrypy.expose
-    # @restricted
+    @restricted
     # todo: restricted to SS Staff
     def ssf_meal_list(self, display_all=False):
         """
@@ -522,7 +522,7 @@ class Root:
                                c=c)
 
     @cherrypy.expose
-    # @restricted
+    @restricted
     # todo: restricted to SS Staff
     def ssf_dept_list(self, meal_id):
         """
@@ -547,7 +547,7 @@ class Root:
         
         
     @cherrypy.expose
-    # @restricted
+    @restricted
     # todo: restricted to SS Staff
     def ssf_orders(self, meal_id, dept_id):
         """
