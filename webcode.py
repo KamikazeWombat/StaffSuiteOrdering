@@ -7,6 +7,7 @@ import cherrypy
 from datetime import datetime
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
+from dateutil.tz import tzlocal
 import pytz
 import sqlalchemy.orm.exc
 from sqlalchemy.orm import joinedload
@@ -381,13 +382,15 @@ class Root:
         
         session.close()  # session close is here to make sure the eligible mark doesn't get put into the DB
                          # yes I know it should not because not a column, but for my own paranoia
+        now = datetime.now()
+        now = now.replace(tzinfo=tzlocal())
+        now = now.astimezone(pytz.utc)
         for meal in meals:
             # print("checking meal")
             meal.eligible = carryout_eligible(sorted_shifts, meal.start_time, meal.end_time)
             
             if meal.eligible or display_all:
-                
-                delta = relativedelta(meal.end_time, datetime.now())
+                delta = relativedelta(meal.end_time, now)
                 # rd is negative if first item is before second
                 rd = 0
                 # todo: section removed for testing since West is currently in the past.
@@ -500,9 +503,12 @@ class Root:
         meals = session.query(Meal).all()
         shift_buffer = relativedelta(minutes=cfg.schedule_tolerance)
         meal_list = []
+        now = datetime.now()
+        now = now.replace(tzinfo=tzlocal())
+        now = now.astimezone(pytz.utc)
         for meal in meals:
             # rd is positive if first item is after second.
-            rd = relativedelta(meal.end_time + shift_buffer, datetime.now())
+            rd = relativedelta(meal.end_time + shift_buffer, now)
             # skips adding to list if item is in past
             if rd.days < 0 and not display_all:
                 continue
