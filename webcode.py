@@ -462,14 +462,18 @@ class Root:
             raise HTTPRedirect('order_edit?order_id='+order_id)
 
         # todo: list only orders associated with session['staffer_id']
-        order_list = session.query(Order).options(joinedload('meal')).all()
+        order_query = session.query(Order).options(joinedload('meal')).all()
         
         session.close()
-        
-        for order in order_list:
-            order.meal.start_time = con_tz(order.meal.start_time)
-            order.meal.end_time = con_tz(order.meal.end_time)
-            order.meal.cutoff = con_tz(order.meal.cutoff)
+        order_list = list()
+        for order in order_query:
+            try:
+                order.meal.start_time = con_tz(order.meal.start_time)
+                order.meal.end_time = con_tz(order.meal.end_time)
+                order.meal.cutoff = con_tz(order.meal.cutoff)
+                order_list.append(order)
+            except AttributeError:
+                print('order# ' + str(order.id) + ' is orphaned and has no valid meal associated')
 
         template = env.get_template('order_list.html')
         return template.render(messages=messages,
