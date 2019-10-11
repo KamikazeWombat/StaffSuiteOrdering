@@ -41,7 +41,7 @@ def admin_req(func):
 
 def ss_staffer(func):
     @wraps(func)
-    def is_ss_staffer(*args, **kwargs):
+    def is_StaffSuite_staffer(*args, **kwargs):
         try:
             staff_id = cherrypy.session['staffer_id']
         except KeyError:
@@ -55,5 +55,5 @@ def ss_staffer(func):
     
         return func(*args, **kwargs)
 
-    return is_ss_staffer
+    return is_StaffSuite_staffer
 
