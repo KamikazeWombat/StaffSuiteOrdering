@@ -11,6 +11,7 @@
     {% set name = meal.name %}
     {% set id = meal.id %}
     {% set start = meal.start %}
+    {% set count = meal.count %}
     <form role="form">
       <table>
         <tr>
@@ -19,6 +20,7 @@
             <label class="form-control">{{ name }} </label>
           </td>
             <td><label class="form-control">{{ start }}</label></td>
+          <td><label class="form-control">{{ count }}</label></td>
             <td><a class="btn btn-lg btn-primary btn-block" href="ssf_dept_list?meal_id={{ id }}">Select Meal</a></td>
         </tr>
       </table>

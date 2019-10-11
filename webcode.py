@@ -411,6 +411,7 @@ class Root:
         now = datetime.now()
         now = now.replace(tzinfo=tzlocal())
         now = now.astimezone(pytz.utc)
+        now = now.replace(tzinfo=None)
         for meal in meals:
             # print("checking meal")
             meal.eligible = carryout_eligible(sorted_shifts, meal.start_time, meal.end_time)
@@ -534,16 +535,19 @@ class Root:
         now = datetime.now()
         now = now.replace(tzinfo=tzlocal())
         now = now.astimezone(pytz.utc)
+        now = now.replace(tzinfo=None)
         for meal in meals:
             # rd is positive if first item is after second.
             rd = relativedelta(meal.end_time + shift_buffer, now)
             # skips adding to list if item is in past
+            """ removed during testing cause West is in past
             if rd.days < 0 and not display_all:
                 continue
             if rd.hours < 0 and not display_all:
                 continue
             if rd.minutes < 0 and not display_all:
                 continue
+            """
             # only runs these two lines if meal is in future or display_all is True
             count = session.query(Order).filter_by(meal_id=meal.id).count()
             session.close()

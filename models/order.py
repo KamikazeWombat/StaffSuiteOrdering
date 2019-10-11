@@ -15,7 +15,7 @@ class Order(dec_base):
     meal_id = Column(Integer, ForeignKey('meal.id'))
     meal = relationship('Meal', back_populates='orders')
     overridden = Column('overridden', Boolean, default=False)
-    #locked = Column('locked', Boolean, default=False)  # marked locked when order fulfilment begins
+    locked = Column('locked', Boolean, default=False)  # marked locked when order fulfilment begins
     toggle1 = Column('toggle1', String)
     toggle2 = Column('toggle2', String)
     toppings = Column('toppings', String)

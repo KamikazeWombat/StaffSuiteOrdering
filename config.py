@@ -90,7 +90,7 @@ class Uberconfig:
         print(response)
     except KeyError:
         response = response['result']
-        print("no error in response")
+        # print("no error in response")
         # print(response)
         
     EVENT_NAME = response['EVENT_NAME']
