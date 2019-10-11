@@ -512,3 +512,17 @@ def carryout_eligible(shifts, meal_start, meal_end):
         
     # if none of the combined shifts match the meal period, return false.
     return False
+
+
+def is_admin(staff_id):
+    if staff_id in cfg.admin_list:
+        return True
+    else:
+        return False
+
+
+def is_ss_staffer(staff_id):
+    if staff_id in cfg.admin_list or staff_id in cfg.staffer_list:
+        return True
+    else:
+        return False
