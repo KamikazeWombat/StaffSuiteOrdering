@@ -10,4 +10,4 @@ class Department(dec_base):
     id = Column('id', String, primary_key=True)
     name = Column('name', String)
     orders = relationship('Order')
-    # todo: contact info here?  or separately for each department order? - decided both!
+    # todo: contact info here?  or separately for each department order?  both?!

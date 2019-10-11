@@ -9,6 +9,6 @@ class Ingredient(dec_base):
     """
     __tablename__ = 'ingredient'
     id = Column('id', Integer, primary_key=True)
-    #meal_id = Column(Integer, ForeignKey('meal.id'))
+    # meal_id = Column(Integer, ForeignKey('meal.id'))
     label = Column('label', String)
     description = Column('description', String)

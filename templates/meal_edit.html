@@ -40,6 +40,7 @@
         {{ macros.textbox_list('toppings', toppings, 'Multiple Select Option') }}
       <tr><td><button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button></td>
       <td><button class="btn btn-lg btn-primary btn-block" onclick="window.location.href = 'meal_setup_list';">Cancel</button></td></tr>
+      <tr><td></td><td><a class="btn btn-lg btn-primary btn-block" href="meal_delete_confirm?meal_id={{ meal.id }}">Delete</a></td><td></td></tr>
     </table>
     
   </form>

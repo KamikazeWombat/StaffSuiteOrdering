@@ -24,16 +24,35 @@ class Config:
     # todo: system may need separate tolerance for connecting shifts together?
     cherrypy = ''  # cherrypy config dict
     """
-
+    
     def __init__(self):
         # read in config from files.  todo: option to load other config files than default
         authfile = open('authtoken.cfg', 'r')
         self.apiauthkey = authfile.read()
         authfile.close()
+        
         configfile = open('config.json', 'r')
         cdata = json.load(configfile)
         configfile.close()
-
+        
+        adminfile = open('admin_list.cfg', 'r')
+        admins = adminfile.read()
+        adminfile.close()
+        admin_list = admins.split(',')
+        self.admin_list = list()
+        for admin in admin_list:
+            admin = admin.strip()
+            self.admin_list.append(admin)
+            
+        ssfile = open('ss_staffer_list.cfg', 'r')
+        staffers = ssfile.read()
+        ssfile.close()
+        staffer_list = staffers.split(',')
+        self.staffer_list = list()
+        for staffer in staffer_list:
+            staffer = staffer.strip()
+            self.staffer_list.append(staffer)
+        
         self.api_endpoint = cdata['api_endpoint']
         self.database_location = cdata['database_location']
         self.order_message = cdata['order_message']
@@ -71,7 +90,7 @@ class Uberconfig:
         print(response)
     except KeyError:
         response = response['result']
-        print("no error in response")
+        # print("no error in response")
         # print(response)
         
     EVENT_NAME = response['EVENT_NAME']

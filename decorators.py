@@ -3,11 +3,12 @@ from functools import wraps
 
 import cherrypy
 
-from shared_functions import HTTPRedirect
+from shared_functions import HTTPRedirect, is_admin, is_ss_staffer
+
 
 def restricted(func):
     @wraps(func)
-    def with_restrictions(*args, **kwargs):
+    def logged_in(*args, **kwargs):
         #print('beginning restricted')
         try:
          #   print('checking if staffer id is already assigned')
@@ -18,19 +19,41 @@ def restricted(func):
             raise HTTPRedirect('login?message=You+are+not+logged+in', save_location=True)
 
         return func(*args, **kwargs)
-    return with_restrictions
+    return logged_in
 
 
 def admin_req(func):
-    print(fix_admin_req_function)
     @wraps(func)
     def with_admin(*args, **kwargs):
         try:
-            admin_id = cherrypy.session['staff_id']
+            staff_id = cherrypy.session['staffer_id']
         except KeyError:
-            raise HTTPRedirect('admin_required')
-        # todo: make admin_required page that just says you need admin for this page
-        # todo: admin_req error page show public_id and tell user to give this to an existing admin for access
+            raise HTTPRedirect('login?message=You+are+not+logged+in - admin page', save_location=True)
+        
+        if is_admin(staff_id):
+            cherrypy.session['is_admin'] = True
+        else:
+            cherrypy.session['is_admin'] = False
+            raise HTTPRedirect('staffer_order_list?message=You are not admin, your id: ' + staff_id)
 
         return func(*args, **kwargs)
     return with_admin
+
+def ss_staffer(func):
+    @wraps(func)
+    def is_StaffSuite_staffer(*args, **kwargs):
+        try:
+            staff_id = cherrypy.session['staffer_id']
+        except KeyError:
+            raise HTTPRedirect('login?message=You+are+not+logged+in - ss_staffer page', save_location=True)
+    
+        if is_ss_staffer(staff_id):
+            cherrypy.session['is_ss_staffer'] = True
+        else:
+            cherrypy.session['is_ss_staffer'] = False
+            raise HTTPRedirect('staffer_order_list?message=You are not SS Staffer, your id: ' + staff_id)
+    
+        return func(*args, **kwargs)
+
+    return is_StaffSuite_staffer
+

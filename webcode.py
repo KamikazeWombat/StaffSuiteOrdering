@@ -7,12 +7,13 @@ import cherrypy
 from datetime import datetime
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
+from dateutil.tz import tzlocal
 import pytz
 import sqlalchemy.orm.exc
 from sqlalchemy.orm import joinedload
 
 from config import env, cfg, c
-from decorators import restricted
+from decorators import restricted, admin_req, ss_staffer
 import models
 from models.attendee import Attendee
 from models.meal import Meal
@@ -44,7 +45,7 @@ class Root:
     def login(self, message=[], first_name='', last_name='',
               email='', zip_code='', original_location=None, logout=False):
         original_location = shared_functions.create_valid_user_supplied_redirect_url(original_location,
-                                                                                     default_url='index')
+                                                                                     default_url='staffer_order_list')
         error = False
         messages = []
         if message:
@@ -57,7 +58,7 @@ class Root:
             
         if first_name and last_name and email and zip_code:
             response = api_login(first_name=first_name, last_name=last_name,
-                       email=email, zip_code=zip_code)
+                                 email=email, zip_code=zip_code)
 
             if 'error' in response:
                 messages.append(response['error']['message'])
@@ -75,7 +76,7 @@ class Root:
                 cherrypy.session['staffer_id'] = response['result']['public_id']
                 cherrypy.session['badge_num'] = response['result']['badge_num']
                 session = models.new_sesh()
-                
+                print('succesful login, updating record')
                 # add or update attendee record in DB
                 try:
                     attendee = session.query(Attendee).filter_by(public_id=response['result']['public_id']).one()
@@ -86,7 +87,9 @@ class Root:
                         attendee.badge_printed_name = response['result']['badge_printed_name']
                         attendee.badge_num = response['result']['badge_num']
                         session.commit()
+                    print('record update complete')
                 except sqlalchemy.orm.exc.NoResultFound:
+                    print('new attendee login, creating record')
                     attendee = Attendee()
                     attendee.badge_num = response['result']['badge_num']
                     attendee.public_id = response['result']['public_id']
@@ -108,8 +111,8 @@ class Root:
                                c=c)
 
     @cherrypy.expose
-    @restricted
-    #@admin_req todo: setup admin_req for requiring admin access
+    # @restricted
+    @admin_req
     def meal_setup_list(self, message=[], id=''):
     
         messages = []
@@ -135,8 +138,8 @@ class Root:
                                c=c)
 
     @cherrypy.expose
-    #@admin_req
-    @restricted  # todo: code admin_req and remove restricted tag
+    @admin_req
+    # @restricted
     def meal_edit(self, meal_id='', message=[], **params):
     
         messages = []
@@ -348,6 +351,30 @@ class Root:
             order=thisorder,
             c=c
         )
+
+    @cherrypy.expose
+    # @restricted
+    @admin_req
+    def meal_delete_confirm(self, meal_id='', confirm=False):
+        session = models.new_sesh()
+        # todo: something to block malicious users from doctoring links and tricking admins into deleting meals.
+        #       perhaps check if meal_delete_confirm is in link at login page?
+        
+        # todo: add meal name, time to html
+        thismeal = session.query(Meal).filter_by(id=meal_id).one()
+    
+        if confirm:
+            
+            session.delete(thismeal)
+            session.commit()
+            session.close()
+            raise HTTPRedirect('meal_setup_list?message=Meal Deleted.')
+            
+        template = env.get_template('meal_delete_confirm.html')
+        return template.render(
+            meal=thismeal,
+            c=c
+        )
         
         
     @cherrypy.expose
@@ -381,13 +408,16 @@ class Root:
         
         session.close()  # session close is here to make sure the eligible mark doesn't get put into the DB
                          # yes I know it should not because not a column, but for my own paranoia
+        now = datetime.now()
+        now = now.replace(tzinfo=tzlocal())
+        now = now.astimezone(pytz.utc)
+        now = now.replace(tzinfo=None)
         for meal in meals:
             # print("checking meal")
             meal.eligible = carryout_eligible(sorted_shifts, meal.start_time, meal.end_time)
             
             if meal.eligible or display_all:
-                
-                delta = relativedelta(meal.end_time, datetime.now())
+                delta = relativedelta(meal.end_time, now)
                 # rd is negative if first item is before second
                 rd = 0
                 # todo: section removed for testing since West is currently in the past.
@@ -417,7 +447,6 @@ class Root:
 
     @cherrypy.expose
     @restricted
-    #@admin_req todo: setup admin_req for requiring admin access
     def staffer_order_list(self, message=[], order_id=''):
         # todo: check if eligible to staff suite at all, display warning message at top if not
         # letting user know orders will need to be overidden by a dept head.
@@ -434,14 +463,18 @@ class Root:
             raise HTTPRedirect('order_edit?order_id='+order_id)
 
         # todo: list only orders associated with session['staffer_id']
-        order_list = session.query(Order).options(joinedload('meal')).all()
+        order_query = session.query(Order).options(joinedload('meal')).all()
         
         session.close()
-        
-        for order in order_list:
-            order.meal.start_time = con_tz(order.meal.start_time)
-            order.meal.end_time = con_tz(order.meal.end_time)
-            order.meal.cutoff = con_tz(order.meal.cutoff)
+        order_list = list()
+        for order in order_query:
+            try:
+                order.meal.start_time = con_tz(order.meal.start_time)
+                order.meal.end_time = con_tz(order.meal.end_time)
+                order.meal.cutoff = con_tz(order.meal.cutoff)
+                order_list.append(order)
+            except AttributeError:
+                print('order# ' + str(order.id) + ' is orphaned and has no valid meal associated')
 
         template = env.get_template('order_list.html')
         return template.render(messages=messages,
@@ -449,8 +482,8 @@ class Root:
                                c=c)
 
     @cherrypy.expose
-    @restricted
-    # @admin_req
+    # @restricted
+    @admin_req
     def config(self, message=[], database_url=''):
         messages = []
 
@@ -476,8 +509,7 @@ class Root:
                                cfg=cfg)
     
 
-    @cherrypy.expose
-    #@restricted
+    #@cherrypy.expose
     # todo: restricted to DH
     def dept_order(self):
         """
@@ -489,8 +521,8 @@ class Root:
         """
 
     @cherrypy.expose
-    @restricted
-    # todo: restricted to SS Staff
+    # @restricted
+    @ss_staffer
     def ssf_meal_list(self, display_all=False):
         """
         Displays list of Meals to be fulfilled
@@ -500,16 +532,22 @@ class Root:
         meals = session.query(Meal).all()
         shift_buffer = relativedelta(minutes=cfg.schedule_tolerance)
         meal_list = []
+        now = datetime.now()
+        now = now.replace(tzinfo=tzlocal())
+        now = now.astimezone(pytz.utc)
+        now = now.replace(tzinfo=None)
         for meal in meals:
             # rd is positive if first item is after second.
-            rd = relativedelta(meal.end_time + shift_buffer, datetime.now())
+            rd = relativedelta(meal.end_time + shift_buffer, now)
             # skips adding to list if item is in past
+            """ removed during testing cause West is in past
             if rd.days < 0 and not display_all:
                 continue
             if rd.hours < 0 and not display_all:
                 continue
             if rd.minutes < 0 and not display_all:
                 continue
+            """
             # only runs these two lines if meal is in future or display_all is True
             count = session.query(Order).filter_by(meal_id=meal.id).count()
             session.close()
@@ -522,8 +560,8 @@ class Root:
                                c=c)
 
     @cherrypy.expose
-    @restricted
-    # todo: restricted to SS Staff
+    # @restricted
+    @ss_staffer
     def ssf_dept_list(self, meal_id):
         """
         For chosen meal, shows list of departments with how many orders are currently submitted for that department
@@ -547,8 +585,8 @@ class Root:
         
         
     @cherrypy.expose
-    @restricted
-    # todo: restricted to SS Staff
+    # @restricted
+    @ss_staffer
     def ssf_orders(self, meal_id, dept_id):
         """
         Shows list of orders for selected meal and dept.
