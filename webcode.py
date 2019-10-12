@@ -245,8 +245,8 @@ class Root:
             thisorder.department_id = params['department']
             thisorder.meal_id = save_order  # save order kinda wonky, data will be meal id if 'Submit' is clicked
             # todo: do something with overridden field
-            thisorder.toggle1 = order_selections(field='toggle1', params=params)
-            thisorder.toggle2 = order_selections(field='toggle2', params=params)
+            thisorder.toggle1 = order_selections(field='toggle1', params=params, is_toggle=True)
+            thisorder.toggle2 = order_selections(field='toggle2', params=params, is_toggle=True)
             thisorder.toppings = order_selections(field='toppings', params=params)
             thisorder.notes = notes
             
@@ -622,6 +622,8 @@ class Root:
             horder = Horder()
             horder.id = order.id
             horder.toggle1 = return_selected_only(session, choices=thismeal.toggle1, orders=order.toggle1)
+            #print('----------toggle1----------------')
+            #print(horder.toggle1)
             horder.toggle2 = return_selected_only(session, choices=thismeal.toggle2, orders=order.toggle2)
             horder.toppings = return_selected_only(session, choices=thismeal.toppings, orders=order.toppings)
             horder.notes = order.notes

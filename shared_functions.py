@@ -119,6 +119,7 @@ def con_tz(date):
         pass  # would happen if already has tzinfo
     
     date = date.astimezone(c.EVENT_TIMEZONE)
+    date = date.replace(tzinfo=None)
     return date
 
 
@@ -233,15 +234,18 @@ def return_selected_only(session, choices, orders):
     Runs order_split and only returns the items that were actually selected
     """
     mylist = order_split(session, choices, orders)
-    selected = []
+    selected = list()
     for item in mylist:
+        #print(item)
         if item[0] == 1:
+            #print('selecting', item)
             selected.append(item)
-    
+    print('-----------------')
+    print(selected)
     return selected
 
 
-def order_selections(field, params):
+def order_selections(field, params, is_toggle=False):
     """
     Takes field name and list of ingredient choice IDs and goes through params to find which of the available choices
     was actually selected
@@ -252,9 +256,13 @@ def order_selections(field, params):
     
     result = []
     count = 1
-  
+    
+    if is_toggle:
+        return params[field]
+    
     for param in params:
         valuekey = field + str(count)
+        #print(field + ' ' + valuekey)
         # checks for relevant parameters and does stuff if found
         try:
             value = params[valuekey]
