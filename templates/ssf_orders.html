@@ -15,8 +15,8 @@
             <input type="hidden" name="order_id" value ="{{ order.id }}">
             <label class="form-control">{{ order.badge_printed_name }}</label>
           </td>
-          <td><label class="form-control">{{ order.toggle1[1] }}</label><br/></td>
-          <td><label class="form-control">{{ order.toggle2[1] }}</label><br/></td>
+          <td><label class="form-control">{{ order.toggle1[0] }}</label><br/></td>
+          <td><label class="form-control">{{ order.toggle2[0] }}</label><br/></td>
           <!--todo: add rest of fields -->
         </tr>
         {% if not order.notes == "" %}

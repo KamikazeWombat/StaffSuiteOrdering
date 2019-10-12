@@ -7,7 +7,7 @@
   <form role="form">
     <h2 class="form-signin-heading">Create/Edit Order for: {{ attendee.badge_printed_name }}</h2>
     <table style="width:100%">
-      <tr> <td> <input type="hidden" name="id" value="{{ order.id }}"/>
+      <tr> <td> <input type="hidden" name="order_id" value="{{ order.id }}"/>
         <input type="hidden" name="save_order" value="{{ meal.id }}"/>
       </td>
         <td> <input type="text" class="form-control" placeholder="Meal Name" name="meal_name" value="{{ meal.meal_name }}" disabled /> </td>
