@@ -19,20 +19,20 @@ from models.attendee import Attendee
 from models.meal import Meal
 from models.order import Order
 from models.department import Department
+from models.dept_order import DeptOrder
 import shared_functions
 from shared_functions import api_login, HTTPRedirect, order_split, order_selections, \
                          meal_join, meal_split, meal_blank_toppings, department_split, \
                         ss_eligible, carryout_eligible, combine_shifts, return_selected_only, \
-                        con_tz, utc_tz
+                        con_tz, utc_tz, is_admin, is_ss_staffer, is_dh
 
-#todo: department select dropdown needs to restrict based upon if a department's order is already being processed or has been.
 
 class Root:
     
     @restricted
     @cherrypy.expose
     def index(self, load_depts=False):
-        #todo: add check for if mealorders open
+        raise HTTPRedirect('staffer_meal_list')
         template = env.get_template('index.html')
         if load_depts:
             session = models.new_sesh()
@@ -59,7 +59,7 @@ class Root:
         if first_name and last_name and email and zip_code:
             response = api_login(first_name=first_name, last_name=last_name,
                                  email=email, zip_code=zip_code)
-
+            
             if 'error' in response:
                 messages.append(response['error']['message'])
                 error = True
@@ -70,7 +70,7 @@ class Root:
                     messages.append('You are not currently signed up as staff/volunteer.'
                               'See below for information on how to volunteer.')
                     not_volunteer = True
-
+            
             if not error:
                 # ensure_csrf_token_exists()
                 cherrypy.session['staffer_id'] = response['result']['public_id']
@@ -82,9 +82,9 @@ class Root:
                     attendee = session.query(Attendee).filter_by(public_id=response['result']['public_id']).one()
                     
                     # only update record if different
-                    if not attendee.badge_printed_name == response['result']['badge_printed_name'] \
+                    if not attendee.full_name == response['result']['full_name'] \
                             or not attendee.badge_num == response['result']['badge_num']:
-                        attendee.badge_printed_name = response['result']['badge_printed_name']
+                        attendee.full_name = response['result']['full_name']
                         attendee.badge_num = response['result']['badge_num']
                         session.commit()
                     print('record update complete')
@@ -93,13 +93,16 @@ class Root:
                     attendee = Attendee()
                     attendee.badge_num = response['result']['badge_num']
                     attendee.public_id = response['result']['public_id']
-                    attendee.badge_printed_name = response['result']['badge_printed_name']
+                    attendee.full_name = response['result']['full_name']
                     session.add(attendee)
                     session.commit()
                     
                 session.close()
-                    
-                raise HTTPRedirect(original_location)
+
+                if not cfg.orders_open and not is_admin:
+                    messages.append('Orders are not yet open')
+                else:
+                    raise HTTPRedirect(original_location)
 
         template = env.get_template('login.html')
         return template.render(messages=messages,
@@ -156,12 +159,13 @@ class Root:
                 message = 'Meal succesfully updated!'
                 if not id == '' and not id == 'None':
                     thismeal = session.query(Meal).filter_by(id=id).one()
+                    
                     message = 'Meal succesfully added!'
                 else:
                     thismeal = Meal()
             except KeyError:
                 thismeal = Meal()
-           
+            
             thismeal.meal_name = params['meal_name']
             thismeal.start_time = utc_tz(params['start_time'])
             thismeal.end_time = utc_tz(params['end_time'])
@@ -197,6 +201,7 @@ class Root:
                 raise HTTPRedirect('meal_setup_list?message='+message)
             
             session.close()
+            
         else:
             thismeal = Meal()
             thismeal.meal_name = ''
@@ -220,8 +225,16 @@ class Root:
 
     @restricted
     @cherrypy.expose
-    def order_edit(self, meal_id='', save_order='', order_id='', message=[], notes='', delete_order=False, **params):
+    def order_edit(self, meal_id='', save_order='', order_id='', message=[], notes='', delete_order=False,
+                   dh_edit=False, **params):
         # todo: do something with Uber allergies info
+        # todo: link to allergies SOP somewhere
+        
+        # todo: needs to check if the dept_order for selected meal time and department is marked started,
+        # todo: if dept_order is started do not allow saving new order
+        
+        # todo: html needs to do extra stuff if is DH
+        # todo: department select dropdown needs to restrict based upon if a department's order is already being processed or has been.
         messages = []
         if message:
             text = message
@@ -236,12 +249,44 @@ class Root:
             print('start save_order')
             # : save it lol
             
-            if order_id:
+            try:
                 thisorder = session.query(Order).filter_by(id=order_id).one()
-            else:
+                #does not update if not belong to user or user is DH/Admin
+                if not thisorder.attendee.public_id == cherrypy.session['staffer_id']:
+                    if not shared_functions.is_dh(cherrypy.session['staffer_id']):
+                        if not shared_functions.is_admin(cherrypy.session['staffer_id']):
+                            raise HTTPRedirect("staffer_meal_list?message=This isn't your order.")
+                        
+                if thisorder.locked and not cherrypy.session['is_admin']:
+                    raise HTTPRedirect("staffer_meal_list?message=This order has already been started by Staff Suite"
+                                       " and cannot be changed except by Staff Suite Admins")
+            except sqlalchemy.orm.exc.NoResultFound:
                 thisorder = Order()
-            
-            thisorder.attendee_id = cherrypy.session['staffer_id']
+                
+            if dh_edit:
+                # actually verifies you are admin and not just you edited URL
+                print('starting dh_edit')
+                if is_dh(cherrypy.session['staffer_id']) or is_admin(cherrypy.session['staffer_id']):
+                    print('is actualy dh or admin')
+                    try:
+                        attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
+                    except sqlalchemy.orm.exc.NoResultFound:
+                        response = shared_functions.lookup_attendee(params['badge_number'])
+                        attend = Attendee()
+                        attend.badge_num = response['result']['badge_num']
+                        attend.public_id = response['result']['public_id']
+                        attend.full_name = response['result']['full_name']
+                        session.add(attend)
+                        session.commit()
+                        
+                    thisorder.attendee_id = attend.public_id
+                    
+                else:
+                    raise HTTPRedirect('staffer_meal_list?message=You must be DH or admin to use this feature')
+            else:
+                print('not dh_edit')
+                thisorder.attendee_id = cherrypy.session['staffer_id']
+             
             thisorder.department_id = params['department']
             thisorder.meal_id = save_order  # save order kinda wonky, data will be meal id if 'Submit' is clicked
             # todo: do something with overridden field
@@ -261,9 +306,26 @@ class Root:
             # load order
             thisorder = session.query(Order).filter_by(id=order_id).one()
             thismeal = thisorder.meal  # session.query(Meal).filter_by(id=thisorder.meal_id).one()
-            attend = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
+            if dh_edit:
+                try:
+                    attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
+                except sqlalchemy.orm.exc.NoResultFound:
+                    response = shared_functions.lookup_attendee(params['badge_number'])
+                    attend = Attendee()
+                    attend.badge_num = response['result']['badge_num']
+                    attend.public_id = response['result']['public_id']
+                    attend.full_name = response['result']['full_name']
+                    session.add(attend)
+                    session.commit()
+            else:
+                attend = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
+                
             session.close()
-            
+            if not attend.public_id == cherrypy.session['staffer_id']:
+                if not shared_functions.is_dh(cherrypy.session['staffer_id']):
+                    if not shared_functions.is_admin(cherrypy.session['staffer_id']):
+                        raise HTTPRedirect("staffer_meal_list?message=This isn't your order.")
+                    
             thismeal.start_time = con_tz(thismeal.start_time)
             thismeal.end_time = con_tz(thismeal.end_time)
             thismeal.cutoff = con_tz(thismeal.cutoff)
@@ -271,9 +333,8 @@ class Root:
             toggles1 = order_split(session, choices=thismeal.toggle1, orders=thisorder.toggle1)
             toggles2 = order_split(session, choices=thismeal.toggle2, orders=thisorder.toggle2)
             departments = department_split(session, thisorder.department_id)
-            message = 'Order ID {} loaded'.format(order_id)
+            messages.append('Order ID ' + str(order_id) + ' loaded')
             
-
             template = env.get_template('order_edit.html')
             return template.render(order=thisorder,
                                    meal=thismeal,
@@ -283,22 +344,65 @@ class Root:
                                    toggles2=toggles2,
                                    departments=departments,
                                    messages=messages,
+                                   dh_edit=dh_edit,
                                    c=c)
             
         if meal_id:
+            print('------------------------')
             print('start meal_id')
             # attempt new order from meal_id
-            
-            try:
-                thismeal = session.query(Order).filter_by(attendee_id=cherrypy.session['staffer_id'], meal_id=meal_id).one()
-                raise HTTPRedirect('order_edit?order_id=' + str(thismeal.id) +
-                                   '&message=An order already exists for this Meal, previously created order selections '
-                                                                          'loaded.')
-            except sqlalchemy.orm.exc.NoResultFound:
-                pass
-                
+            if dh_edit and (is_dh(cherrypy.session['staffer_id']) or is_admin(cherrypy.session['staffer_id'])):
+                print('attempting dh_edit start')
+                try:
+                    attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
+                    print('loaded attendee')
+                except sqlalchemy.orm.exc.NoResultFound:
+                    response = shared_functions.lookup_attendee(params['badge_number'])
+                    attend = Attendee()
+                    attend.badge_num = response['result']['badge_num']
+                    attend.public_id = response['result']['public_id']
+                    attend.full_name = response['result']['full_name']
+                    session.add(attend)
+                    session.commit()
+                print('starting load order')
+                try:
+                    print('test 1')
+                    thisorder = session.query(Order).filter_by(attendee_id=attend.public_id, meal_id=meal_id).one()
+                    print('test 2')
+                    raise HTTPRedirect('order_edit?dh_edit=True&badge_number=' + str(params['badge_number']) +
+                                       '&order_id=' + str(thisorder.id) +
+                                       '&message=An order already exists for this Meal, previously created '
+                                       'order selections loaded.')
+                    print('succesfully loaded previously existing order')
+                except sqlalchemy.orm.exc.NoResultFound:
+                    print('no existing order found for this meal and attendee_id')
+                    pass
+            else:
+                try:
+                    thisorder = session.query(Order).filter_by(attendee_id=cherrypy.session['staffer_id'],
+                                                               meal_id=meal_id).one()
+                    raise HTTPRedirect('order_edit?order_id=' + str(thisorder.id) +
+                                       '&message=An order already exists for this Meal, previously created order selections '
+                                       'loaded.')
+                except sqlalchemy.orm.exc.NoResultFound:
+                    pass
+            print('starting attended badge_number check')
+            if dh_edit:
+                try:
+                    attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
+                except sqlalchemy.orm.exc.NoResultFound:
+                    response = shared_functions.lookup_attendee(params['badge_number'])
+                    attend = Attendee()
+                    attend.badge_num = response['result']['badge_num']
+                    attend.public_id = response['result']['public_id']
+                    attend.full_name = response['result']['full_name']
+                    session.add(attend)
+                    session.commit()
+                    
+            else:
+                attend = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
+
             thismeal = session.query(Meal).filter_by(id=meal_id).one()
-            attend = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
             session.close()
             
             thismeal.start_time = con_tz(thismeal.start_time)
@@ -321,6 +425,7 @@ class Root:
                                    toggles2=toggles2,
                                    departments=departments,
                                    messages=message,
+                                   dh_edit=dh_edit,
                                    c=c)
         # todo: add delete/cancel order function
         if delete_order:
@@ -383,7 +488,7 @@ class Root:
         """
         Display list of meals staffer is eligible for, unless requested to show all
         """
-        
+        # todo: display some information about order status for available meals
         # present if Create Order button clicked
         if id:
             raise HTTPRedirect('order_edit?meal_id='+id)
@@ -508,17 +613,69 @@ class Root:
                                c=c,
                                cfg=cfg)
     
-
-    #@cherrypy.expose
-    # todo: restricted to DH
-    def dept_order(self):
+    
+    def dept_order_selection(self):
         """
-        Dept Head sees list of Staffer orders for selected meal and department
+        Allows DH to select meal time and which department they wish to view the dept_order for.
+        Filters meal list to only show future meals by default (by end time, not start time)
+        Filters selectable departments to only include ones the DH is assigned to unless user is Admin
+        """
+        if not is_admin(cherrypy.session['staffer_id']) and not is_dh(cherrypy.session['staffer_id']):
+            raise HTTPRedirect('staffer_meal_list?message=You do not have access to this page.')
+    
+
+    @cherrypy.expose
+    def dept_order(self, meal_id, dept_id, order_id="", message="", **params):
+        """
+        Usable by Department Heads and admins
+        list of Staffer orders for selected meal and department
         Can override ones not already eligible
         Can edit existing ones if need be (usually shouldn't)
         Can create new orders for specified badge number
         Will disable all these features once the dept order is started
         """
+        # todo: needs to check if the dept_order for selected meal time and department is marked started
+        # todo: if started needs to put notice at top that it is started.  if completed, same.
+        if not is_admin(cherrypy.session['staffer_id']) and not is_dh(cherrypy.session['staffer_id']):
+            raise HTTPRedirect('staffer_meal_list?message=You do not have access to this page.')
+        
+        messages = []
+        if message:
+            text = message
+            messages.append(text)
+        
+        session = models.new_sesh()
+        
+        dept = session.query(Department).filter_by(id=dept_id).one()
+        dept_name = dept.name
+        
+        order_list = session.query(Order).filter_by(meal_id=meal_id, dept_id=dept_id).all()
+        # todo: check each order to see if the attendee is eligible for this meal, highlight in html if not
+        
+        # tries to load existing dept order, if none creates a new one.
+        try:
+            this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            this_dept_order = DeptOrder()
+            this_dept_order.dept_id = dept_id
+            this_dept_order.meal_id = meal_id
+            session.add(this_dept_order)
+            session.commit()
+        
+        if 'contact_info' in params:
+            this_dept_order.contact_info = params['contact_info']
+            session.commit()
+        
+        if order_id:
+            raise HTTPRedirect('order_edit_dh?order_id=' + str(order_id))
+        
+        session.close()
+        template = env.get_template('dept_order.html')
+        return template.render(dept=dept_name,
+                               orders=order_list,
+                               this_dept_order=this_dept_order,
+                               c=c)
+        
 
     @cherrypy.expose
     # @restricted
@@ -571,23 +728,26 @@ class Root:
         
         depts = session.query(models.department.Department).all()
         dept_list = list()
+        total_orders = 0
         
         for dept in depts:
             count = session.query(Order).filter_by(department_id=dept.id, meal_id=meal_id).count()
             dept_list.append((dept.name, count, dept.id))
+            total_orders += count
         
         # print(dept_list)
         session.close()
         template = env.get_template('ssf_dept_list.html')
         return template.render(depts=dept_list,
                                meal_id=meal_id,
+                               total=total_orders,
                                c=c)
         
         
     @cherrypy.expose
     # @restricted
     @ss_staffer
-    def ssf_orders(self, meal_id, dept_id):
+    def ssf_orders(self, meal_id, dept_id, message=[]):
         """
         Shows list of orders for selected meal and dept.
         Has buttons to lock order for fulfilment, or if already locked by mistake to unlock.
@@ -603,11 +763,15 @@ class Root:
             notes = ''
             
             badge_num = ''
-            badge_printed_name = ''
+            full_name = ''
             
             #meal_id = ''
-            
-            
+
+        messages = []
+        if message:
+            text = message
+            messages.append(text)
+
         session = models.new_sesh()
         
         order_list = session.query(Order).filter_by(department_id=dept_id, meal_id=meal_id)\
@@ -628,13 +792,16 @@ class Root:
             horder.toppings = return_selected_only(session, choices=thismeal.toppings, orders=order.toppings)
             horder.notes = order.notes
             horder.badge_num = order.attendee.badge_num
-            horder.badge_printed_name = order.attendee.badge_printed_name
+            horder.full_name = order.attendee.full_name
             orders.append(horder)
             
         session.close()
         template = env.get_template('ssf_orders.html')
         return template.render(dept=dept_name,
+                               dept_id=dept_id,
                                order_list=orders,
+                               meal=thismeal,
+                               messages=messages,
                                c=c)
 
 
@@ -647,3 +814,4 @@ class Root:
         """
         Prints order from popup screen then closes itself
         """
+        

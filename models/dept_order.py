@@ -10,7 +10,8 @@ class DeptOrder(dec_base):
     id = Column('id', Integer, primary_key=True)
     dept_id = Column(String, ForeignKey('department.id'))
     meal_id = Column(Integer, ForeignKey('meal.id'))
-    started = Column('started', Boolean)
+    started = Column('started', Boolean, default=False)
     start_time = Column('start_time', DateTime)
-    completed = Column('completed', Boolean)
+    completed = Column('completed', Boolean, default=False)
     completed_time = Column('completed_time', DateTime)
+    contact_info = Column('contact_info', String)  # requested contact info for this department for this meal completion

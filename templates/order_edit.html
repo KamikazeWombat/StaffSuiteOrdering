@@ -5,7 +5,13 @@
 
 <div class="container">
   <form role="form">
-    <h2 class="form-signin-heading">Create/Edit Order for: {{ attendee.badge_printed_name }}</h2>
+    <h2 class="form-signin-heading">Create/Edit Order for: {{ attendee.full_name }} {{ attendee.badge_num }}
+      {% if dh_edit %}<input type="text" class="form-control" placeholder="Attendee Badge Number" name="badge_number"
+                             value="{{ attendee.badge_num }}"/>
+        <input type="hidden" name="dh_edit" value="True"/>
+      {% endif %}
+    </h2>
+    {% if order.locked %}<h2>This order is locked for fulfilment, only Staff Suite admins can change it</h2>{% endif %}
     <table style="width:100%">
       <tr> <td> <input type="hidden" name="order_id" value="{{ order.id }}"/>
         <input type="hidden" name="save_order" value="{{ meal.id }}"/>
@@ -14,35 +20,36 @@
       </tr>
       <tr> <td>Start Time</td>
         <td> <input type="datetime-local" class="form-control" placeholder="Start Time" name="start_time"
-                    {% if meal.start_time %}value="{{ meal.start_time.isoformat() }}"{% endif %} disabled /> </td>
+                    {% if meal.start_time %}value="{{ meal.start_time.isoformat() }}"{% endif %} disabled/> </td>
       </tr>
       <tr><td>End Time</td>
       <td> <input type="datetime-local" class="form-control" placeholder="End Time" name="end_time"
-                  {% if meal.end_time %}value="{{ meal.end_time.isoformat() }}"{% endif %}} disabled /></td>
+                  {% if meal.end_time %}value="{{ meal.end_time.isoformat() }}"{% endif %}} disabled/></td>
       </tr>
       <tr><td>Order Cutoff Time</td>
       <td>
         <input type="datetime-local" class="form-control" placeholder="Cutoff time for ordering" name="cutoff"
-                 {% if meal.cutoff %} value="{{ meal.cutoff.isoformat() }}"{% endif %} disabled /></td>
+                 {% if meal.cutoff %} value="{{ meal.cutoff.isoformat() }}"{% endif %} disabled/></td>
+        <td>Staff Suite will begin making orders at this time.  You can still edit/submit orders up until they begin your departments order though.</td>
       </tr>
       <tr><td>Meal Description</td>
         <td><input type="text" class="form-control" placeholder="Description" name="description" value="{{ meal.description }}" disabled /></td>
       </tr>
       <tr><td>Department to deliver to</td>
         <td>
-          {{ macros.dropdown(field='department', options=departments, is_required=True) }}
+          {{ macros.dropdown(field='department', options=departments, is_required=True, is_readonly=order.locked) }}
       </td></tr>
       {% if not meal.toggle1_title == '' %}
         <tr><td><h3>{{ meal.toggle1_title }}</h3></td></tr>
-        {{ macros.button_radio_opts('toggle1', toggles1, is_required=True) }}
+        {{ macros.button_radio_opts('toggle1', toggles1, is_required=True, is_readonly=order.locked) }}
       {% endif %}
       {% if not meal.toggle2_title == '' %}
         <tr><td><h3>{{ meal.toggle2_title }}</h3></td></tr>
-        {{ macros.button_radio_opts('toggle2', toggles2, is_required=True) }}
+        {{ macros.button_radio_opts('toggle2', toggles2, is_required=True, is_readonly=order.locked) }}
       {% endif %}
       {% if not meal.toppings_title == '' %}
         <tr><td><h3>{{ meal.toppings_title }}</h3></td></tr>
-        {{ macros.checkgroup_opts('toppings', toppings) }}
+        {{ macros.checkgroup_opts('toppings', toppings, is_readonly=order.locked) }}
       {% endif %}
      <tr><td>Notes</td>
        <td>
@@ -52,7 +59,7 @@
        </td>
        
      </tr>
-      <tr><td><button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button>  </td>
+      <tr><td><button class="btn btn-lg btn-primary btn-block" type="submit"{% if order.locked %} disabled{% endif %}>Submit</button>  </td>
       <td><a class="btn btn-lg btn-primary btn-block" href="meal_setup_list">Cancel</a>  </td>
       <td><a class="btn btn-lg btn-primary btn-block" href="order_delete_confirm?order_id={{ order.id }}">Delete</a></td></tr>
     </table>

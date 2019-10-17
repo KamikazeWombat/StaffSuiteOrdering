@@ -16,7 +16,7 @@ class Meal(dec_base):
     cutoff = Column('cutoff', DateTime)
     locked = Column('locked', Boolean, default=False)  # marked locked when order fulfilment starts todo: probably remove
     description = Column('description', String)
-    # detail_link = Column('detail_link', String)
+    detail_link = Column('detail_link', String)
 
     toggle1 = Column('toggle1', String)
     toggle1_title = Column('toggle1_name', String)

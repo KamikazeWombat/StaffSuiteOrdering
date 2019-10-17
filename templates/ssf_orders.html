@@ -1,11 +1,18 @@
 {% extends "base.html" %}{% set admin_area=True %}
-{% block title %}{{ dept }} Order List{% endblock %}
+{% block title %}{{ dept }} Order List for {{ meal.meal_name }}{% endblock %}
 {% block backlink %}{% endblock %}
 {% block content %}
 
 <div class="container">
   <h2>{{ message }} <br/></h2>
-  <h2 class="form-signin-heading">{{ dept }} Order List</h2>
+  These links not yet functioning.
+  <a href="ssf_orders?meal_id={{ meal.id }}&dept_id={{ dept_id }}&lock_order=True">Lock orders for department</a> <br/>
+  print orders (placeholder) <br/>
+  <a href="ssf_orders?meal_id={{ meal.id }}&dept_id={{ dept_id }}&complete_order=True">Mark order Complete (Notifies Department (once coded))</a><br/>
+  <br/>
+  display when order started, when it was completed
+  <!-- todo: button to unlock in case lock clicked by mistake -->
+  <h2 class="form-signin-heading">{{ dept }} Order List for {{ meal.meal_name }}</h2>
   {% for order in order_list %}
     <form role="form">
       <table>
@@ -15,9 +22,9 @@
             <input type="hidden" name="order_id" value ="{{ order.id }}">
             <label class="form-control">{{ order.badge_printed_name }}</label>
           </td>
-          <td><label class="form-control">{{ order.toggle1[0] }}</label><br/></td>
-          <td><label class="form-control">{{ order.toggle2[0] }}</label><br/></td>
-          <!--todo: add rest of fields -->
+          <td><label class="form-control">{{ order.toggle1[0][1] }}</label><br/></td>
+          <td><label class="form-control">{{ order.toggle2[0][1] }}</label><br/></td>
+          todo: add rest of fields
         </tr>
         {% if not order.notes == "" %}
           <tr>

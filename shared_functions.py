@@ -7,7 +7,7 @@ import dateutil
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 import pytz
-from sqlalchemy.orm import Session
+import sqlalchemy.orm.exc
 
 from config import cfg, c
 import models
@@ -140,7 +140,7 @@ def api_login(first_name, last_name, email, zip_code):
     return response
 
 
-def load_departments(session):
+def load_departments():
     REQUEST_HEADERS = {'X-Auth-Token': cfg.apiauthkey}
     
     # data being sent to API
@@ -149,15 +149,22 @@ def load_departments(session):
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
     response = json.loads(request.text)
     response = response['result'].items()
-    session.query(Department).delete()
-    session.commit()
-    print('loading departments')
+
+    # print('loading departments')
+    session = models.new_sesh()
     for dept in response:
-        mydept = Department()
-        mydept.id = dept[0]
-        mydept.name = dept[1]
-        session.add(mydept)
+        try:
+            mydept = session.query(Department).filter_by(id=dept[0]).one()
+            if not mydept.name == dept[1]:
+                mydept.name = dept[1]
+        except sqlalchemy.orm.exc.NoResultFound:
+            mydept = Department()
+            mydept.id = dept[0]
+            mydept.name = dept[1]
+            session.add(mydept)
+            
     session.commit()
+    session.close()
     return
     
 
@@ -189,9 +196,7 @@ def lookup_attendee(badge_num, full=False):
     print(local_dt.strftime(fmt))
     """
     # end of testing stuff
-    # todo: need to convert pages to store times as UTC
-    # todo: need to convert stored times to Con_TZ for display purposes
-    #print(response['result']['shifts'][0]['job']['start_time'])
+
     return response
 
 
@@ -258,7 +263,10 @@ def order_selections(field, params, is_toggle=False):
     count = 1
     
     if is_toggle:
-        return params[field]
+        try:
+            return params[field]
+        except KeyError:
+            return ''
     
     for param in params:
         valuekey = field + str(count)
@@ -534,3 +542,14 @@ def is_ss_staffer(staff_id):
         return True
     else:
         return False
+
+def is_dh(staff_id):
+    # runs API request
+    REQUEST_HEADERS = {'X-Auth-Token': cfg.apiauthkey}
+    # data being sent to API
+    request_data = {'method': 'attendee.search',
+                    'params': [staff_id]}
+    request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
+    response = json.loads(request.text)
+    
+    return response['result'][0]['is_dept_head']
