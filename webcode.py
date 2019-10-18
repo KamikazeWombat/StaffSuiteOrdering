@@ -625,7 +625,7 @@ class Root:
     
 
     @cherrypy.expose
-    def dept_order(self, meal_id, dept_id, order_id="", message="", **params):
+    def dept_order(self, meal_id, dept_id, message="", **params):
         """
         Usable by Department Heads and admins
         list of Staffer orders for selected meal and department
@@ -649,9 +649,21 @@ class Root:
         dept = session.query(Department).filter_by(id=dept_id).one()
         dept_name = dept.name
         
-        order_list = session.query(Order).filter_by(meal_id=meal_id, dept_id=dept_id).all()
+        order_list = session.query(Order).filter_by(meal_id=meal_id, dept_id=dept_id).subqueryload(Order.attendee).all()
         # todo: check each order to see if the attendee is eligible for this meal, highlight in html if not
+        thismeal = session.query(Meal).filter_by(id=meal_id).one()
         
+        for order in order_list:
+            # print("checking meal")
+            sorted_shifts = combine_shifts()
+            order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
+            order.start_time = con_tz(order.start_time)
+            order.end_time = con_tz(order.end_time)
+            order.cutoff = con_tz(order.cutoff)
+           
+        if len(order_list) == 0:
+            messages.append('Your department does not have any orders for this meal.')
+
         # tries to load existing dept order, if none creates a new one.
         try:
             this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
@@ -663,22 +675,55 @@ class Root:
             session.commit()
         
         if 'contact_info' in params:
+            # save changes to dept_order
             this_dept_order.contact_info = params['contact_info']
             session.commit()
-        
-        if order_id:
-            raise HTTPRedirect('order_edit_dh?order_id=' + str(order_id))
-        
+            messages.append('Department order contact info successfully updated.')
+            # reload order since commit flushes it from cache (apparently)
+            # this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
+        # thismeal = session.query(Meal).filter_by(meal_id=meal_id).one()
         session.close()
+        
+        if this_dept_order.started:
+            this_dept_order.start_time = con_tz(this_dept_order.start_time)
+        if this_dept_order.completed:
+            this_dept_order.completed_time = con_tz(this_dept_order.completed_time)
+            
         template = env.get_template('dept_order.html')
         return template.render(dept=dept_name,
                                orders=order_list,
-                               this_dept_order=this_dept_order,
+                               dept_order=this_dept_order,
+                               meal=thismeal,
+                               messages=messages,
                                c=c)
         
-
     @cherrypy.expose
-    # @restricted
+    def order_override(self, order_id, meal_id, dept_id, remove_override=False):
+        """
+        Override or remove override on an order
+        :param order_id:
+        :param remove_override:
+        :return:
+        """
+        if not is_dh(cherrypy.session['staffer_id']) and not is_admin(cherrypy.session['staffer_id']):
+            raise HTTPRedirect('staffer_meal_list&message=You are not admin or DH')
+        
+        session = models.new_sesh()
+        dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
+        if dept_order.started:
+            raise HTTPRedirect('dept_order_selection?message=The order for your department for this meal has already been started.')
+        order = session.query(Order).filter_by(id=order_id).subqueryload(Order.attendee).one()
+        if remove_override:
+            order.overridden = False
+        else:
+            order.overriden = True
+        session.commit()
+        session.close()
+        raise HTTPRedirect('dept_order?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
+                           '&message=Override added for ' + str(order.attendee.badge_num))
+           
+    
+    @cherrypy.expose
     @ss_staffer
     def ssf_meal_list(self, display_all=False):
         """

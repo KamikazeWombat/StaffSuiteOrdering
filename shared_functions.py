@@ -435,8 +435,7 @@ class Shift:
 
 def ss_eligible(badge_num):
     """
-    Performs calculations to determine if eligible for StaffSuite and optionally returns a list of shift objects
-    for the requested badge number
+    Asks API for weighted hours, checks if they are more than configured minimum for eligibility
     :param badge_num: attendee's badge number for lookup
     :return: returns True or False, unless error performing the API Lookup in which case it returns the error
     """
@@ -509,9 +508,9 @@ def carryout_eligible(shifts, meal_start, meal_end):
     :param meal_end : date object for the meal end in python dateutil datetime format
     :return: returns True or False
     """
-    # need to check combined if shift starts within <<buffer>> after start of meal time
-    # AND ends within <<buffer>> before end of meal time
-    # todo: check if eligibility checking actually works
+    # need to check combined if shift starts within <<buffer>> after start of meal time or earlier
+    # AND ends within <<buffer>> before end of meal time or later
+    
     meal_buffer = relativedelta(minutes=cfg.schedule_tolerance)
     # print("Meal start: {} Meal End {}".format(str(meal_start),str(meal_end)))
     for shift in shifts:

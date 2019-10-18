@@ -1,0 +1,46 @@
+{% extends "base.html" %}{% set admin_area=True %}
+{% block title %}Staffer Meal List{% endblock %}
+{% block backlink %}{% endblock %}
+{% block content %}
+
+<div class="container">
+  <h2 class="form-signin-heading">View/Edit Department Order for {{ meal.name }} for {{ dept }}</h2>
+  <form role="form">
+    <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
+    <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
+    <textarea name="contact_info" cols="50" rows="4"
+                     placeholder="How you would like to be contacted for order pickup.  Slack channel or username, text, email, phone..."
+             >{{ order.notes }}</textarea>
+    <br/><button class="btn btn-lg btn-primary btn-block" type="submit">Update Contact Info</button>
+  </form>
+  {% if not dept_order.started %}
+  {% if dept_order.started %}<br/>Meal Prep Started: {{ dept_order.start_time }} {% endif %}
+  {% if dept_order.completed %}<br/>Meal Prep Completed: {{ dept_order.completed_time }}
+  <h3>list of orders for this department's order:</h3>
+  {% for order in orders %}
+    <form role="form">
+      <table>
+        <tr>
+          {% if order.eligible == False %}
+            <td><label>Not Eligible for Carryout</label></td>
+          {% endif %}
+          <td>
+            <input type="hidden" name="order_id" value ="{{ order.id }}">
+            <label class="form-control">{{ order.attendee.badge_num }} </label>
+          </td>
+          {% if order.eligible == False and dept_order.started == False %}
+            <td><button class="btn btn-lg btn-primary btn-block" href="order_override?dept_id={{ dept_order.dept_id }}&meal_id={{ dept_order.meal_id }}&order_id={{ order.id }}">Override</button></td>
+          {% endif %}
+          {% if order.overridden and dept_order.started == False %}
+            <td><button class="btn btn-lg btn-primary btn-block" href="order_override?dept_id={{ dept_order.dept_id }}&meal_id={{ dept_order.meal_id }}&order_id={{ order.id }}&remove_override=True">Remove Override</button></td>
+          {% endif %}
+          {% if dept_order.started == False %}
+            <td><button class="btn btn-lg btn-primary btn-block" href="order_edit?dh_edit=True&order_id={{ order.id }}">Edit Order</button></td>
+          {% endif %}
+        </tr>
+      </table>
+    </form>
+  {% endfor %}
+
+</div>
+{% endblock content %}
