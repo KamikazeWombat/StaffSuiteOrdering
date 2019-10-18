@@ -10,7 +10,7 @@ from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzlocal
 import pytz
 import sqlalchemy.orm.exc
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, subqueryload
 
 from config import env, cfg, c
 from decorators import restricted, admin_req, ss_staffer
@@ -612,8 +612,9 @@ class Root:
                                cherrypy_cfg=cherrypy_cfg,
                                c=c,
                                cfg=cfg)
-    
-    
+
+    @cherrypy.expose
+    @restricted
     def dept_order_selection(self):
         """
         Allows DH to select meal time and which department they wish to view the dept_order for.
@@ -625,6 +626,7 @@ class Root:
     
 
     @cherrypy.expose
+    @restricted
     def dept_order(self, meal_id, dept_id, message="", **params):
         """
         Usable by Department Heads and admins
@@ -649,17 +651,18 @@ class Root:
         dept = session.query(Department).filter_by(id=dept_id).one()
         dept_name = dept.name
         
-        order_list = session.query(Order).filter_by(meal_id=meal_id, dept_id=dept_id).subqueryload(Order.attendee).all()
+        order_list = session.query(Order).filter_by(meal_id=meal_id, department_id=dept_id).options(subqueryload(Order.attendee)).all()
         # todo: check each order to see if the attendee is eligible for this meal, highlight in html if not
         thismeal = session.query(Meal).filter_by(id=meal_id).one()
         
         for order in order_list:
             # print("checking meal")
-            sorted_shifts = combine_shifts()
+            sorted_shifts = combine_shifts(order.attendee.badge_num)
             order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
-            order.start_time = con_tz(order.start_time)
-            order.end_time = con_tz(order.end_time)
-            order.cutoff = con_tz(order.cutoff)
+
+        thismeal.start_time = con_tz(thismeal.start_time)
+        thismeal.end_time = con_tz(thismeal.end_time)
+        thismeal.cutoff = con_tz(thismeal.cutoff)
            
         if len(order_list) == 0:
             messages.append('Your department does not have any orders for this meal.')
@@ -679,9 +682,10 @@ class Root:
             this_dept_order.contact_info = params['contact_info']
             session.commit()
             messages.append('Department order contact info successfully updated.')
-            # reload order since commit flushes it from cache (apparently)
-            # this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
-        # thismeal = session.query(Meal).filter_by(meal_id=meal_id).one()
+        
+        # reload order since commit flushes it from cache (apparently)
+        this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
+        thismeal = session.query(Meal).filter_by(id=meal_id).one()
         session.close()
         
         if this_dept_order.started:
@@ -698,6 +702,7 @@ class Root:
                                c=c)
         
     @cherrypy.expose
+    @restricted
     def order_override(self, order_id, meal_id, dept_id, remove_override=False):
         """
         Override or remove override on an order
@@ -712,7 +717,7 @@ class Root:
         dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
         if dept_order.started:
             raise HTTPRedirect('dept_order_selection?message=The order for your department for this meal has already been started.')
-        order = session.query(Order).filter_by(id=order_id).subqueryload(Order.attendee).one()
+        order = session.query(Order).filter_by(id=order_id).options(subqueryload(Order.attendee)).one()
         if remove_override:
             order.overridden = False
         else:
@@ -762,7 +767,6 @@ class Root:
                                c=c)
 
     @cherrypy.expose
-    # @restricted
     @ss_staffer
     def ssf_dept_list(self, meal_id):
         """

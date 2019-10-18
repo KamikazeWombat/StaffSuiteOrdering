@@ -14,4 +14,4 @@ class DeptOrder(dec_base):
     start_time = Column('start_time', DateTime)
     completed = Column('completed', Boolean, default=False)
     completed_time = Column('completed_time', DateTime)
-    contact_info = Column('contact_info', String)  # requested contact info for this department for this meal completion
+    contact_info = Column('contact_info', String, default='')  # requested contact info for this department for this meal completion

@@ -4,18 +4,20 @@
 {% block content %}
 
 <div class="container">
-  <h2 class="form-signin-heading">View/Edit Department Order for {{ meal.name }} for {{ dept }}</h2>
+  <h2 class="form-signin-heading">View/Edit Department Order for {{ meal.meal_name }} for {{ dept }}</h2>
   <form role="form">
     <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
     <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
-    <textarea name="contact_info" cols="50" rows="4"
+    <textarea name="contact_info" cols="50" rows="6"
                      placeholder="How you would like to be contacted for order pickup.  Slack channel or username, text, email, phone..."
-             >{{ order.notes }}</textarea>
+             >{{ dept_order.contact_info }}</textarea>
     <br/><button class="btn btn-lg btn-primary btn-block" type="submit">Update Contact Info</button>
   </form>
   {% if not dept_order.started %}
+  stuff to create new order
+  {% endif %}
   {% if dept_order.started %}<br/>Meal Prep Started: {{ dept_order.start_time }} {% endif %}
-  {% if dept_order.completed %}<br/>Meal Prep Completed: {{ dept_order.completed_time }}
+  {% if dept_order.completed %}<br/>Meal Prep Completed: {{ dept_order.completed_time }} {% endif %}
   <h3>list of orders for this department's order:</h3>
   {% for order in orders %}
     <form role="form">
