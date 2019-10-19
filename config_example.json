@@ -3,14 +3,15 @@
   "order_message": "test order completion message",
   "api_endpoint": "https://staging-west.reggie.magfest.org/jsonrpc/",
   "database_location": "sqlite:///testdb.db",
-  "multi_select_count": 5,
+  "multi_select_count": 8,
   "radio_select_count": 3,
   "schedule_tolerance": 45,
   "ss_hours": 12,
   "date_format": "%d-%m-%Y %H:%M",
   "cherrypy": {
     "global": {
-                "server.socket_host": "157.245.3.204"
+      "server.socket_host": "157.245.3.204",
+      "server.socket_port": 80
     },
     "/": {
       "tools.sessions.on": true
