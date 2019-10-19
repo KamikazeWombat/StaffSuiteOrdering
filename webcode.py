@@ -604,11 +604,9 @@ class Root:
             print('saving config')
             # todo: save to config file
             
-        print('---------------------')
-        print('config loading')
+        
         cherrypy_cfg = json.dumps(cfg.cherrypy, indent=4)
-        print(cherrypy_cfg)
-        print(type(cherrypy_cfg))
+        
         
         template = env.get_template('config.html')
         return template.render(messages=messages,
@@ -665,22 +663,9 @@ class Root:
         dept = session.query(Department).filter_by(id=dept_id).one()
         dept_name = dept.name
         
-        order_list = session.query(Order).filter_by(meal_id=meal_id, department_id=dept_id).options(subqueryload(Order.attendee)).all()
-        # todo: check each order to see if the attendee is eligible for this meal, highlight in html if not
-        thismeal = session.query(Meal).filter_by(id=meal_id).one()
         
-        for order in order_list:
-            # print("checking meal")
-            sorted_shifts = combine_shifts(order.attendee.badge_num)
-            order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
-
-        thismeal.start_time = con_tz(thismeal.start_time)
-        thismeal.end_time = con_tz(thismeal.end_time)
-        thismeal.cutoff = con_tz(thismeal.cutoff)
-           
-        if len(order_list) == 0:
-            messages.append('Your department does not have any orders for this meal.')
-
+        thismeal = session.query(Meal).filter_by(id=meal_id).one()
+  
         # tries to load existing dept order, if none creates a new one.
         try:
             this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
@@ -696,6 +681,21 @@ class Root:
             this_dept_order.contact_info = params['contact_info']
             session.commit()
             messages.append('Department order contact info successfully updated.')
+
+        order_list = session.query(Order).filter_by(meal_id=meal_id, department_id=dept_id).options(
+            subqueryload(Order.attendee)).all()
+        # todo: check each order to see if the attendee is eligible for this meal, highlight in html if not
+        for order in order_list:
+            # print("checking meal")
+            sorted_shifts = combine_shifts(order.attendee.badge_num)
+            order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
+            
+        if len(order_list) == 0:
+            messages.append('Your department does not have any orders for this meal.')
+
+        thismeal.start_time = con_tz(thismeal.start_time)
+        thismeal.end_time = con_tz(thismeal.end_time)
+        thismeal.cutoff = con_tz(thismeal.cutoff)
         
         # reload order since commit flushes it from cache (apparently)
         this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
@@ -720,9 +720,6 @@ class Root:
     def order_override(self, order_id, meal_id, dept_id, remove_override=False):
         """
         Override or remove override on an order
-        :param order_id:
-        :param remove_override:
-        :return:
         """
         session = models.new_sesh()
         dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
@@ -731,12 +728,14 @@ class Root:
         order = session.query(Order).filter_by(id=order_id).options(subqueryload(Order.attendee)).one()
         if remove_override:
             order.overridden = False
+            message = 'Override removed for '
         else:
-            order.overriden = True
+            order.overridden = True
+            message = 'Override added for '
         session.commit()
         session.close()
         raise HTTPRedirect('dept_order?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                           '&message=Override added for ' + str(order.attendee.badge_num))
+                           '&message=' + message + str(cherrypy.session['badge_num']))
            
     
     @cherrypy.expose
