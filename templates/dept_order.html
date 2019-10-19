@@ -30,14 +30,14 @@
             <input type="hidden" name="order_id" value ="{{ order.id }}">
             <label class="form-control">{{ order.attendee.badge_num }} </label>
           </td>
-          {% if order.eligible == False and dept_order.started == False %}
-            <td><button class="btn btn-lg btn-primary btn-block" href="order_override?dept_id={{ dept_order.dept_id }}&meal_id={{ dept_order.meal_id }}&order_id={{ order.id }}">Override</button></td>
+          {% if order.eligible == False and dept_order.started == False and order.overridden == False%}
+            <td><a class="btn btn-lg btn-primary btn-block" href="order_override?dept_id={{ dept_order.dept_id }}&meal_id={{ dept_order.meal_id }}&order_id={{ order.id }}">Override</a></td>
           {% endif %}
           {% if order.overridden and dept_order.started == False %}
-            <td><button class="btn btn-lg btn-primary btn-block" href="order_override?dept_id={{ dept_order.dept_id }}&meal_id={{ dept_order.meal_id }}&order_id={{ order.id }}&remove_override=True">Remove Override</button></td>
+            <td><a class="btn btn-lg btn-primary btn-block" href="order_override?dept_id={{ dept_order.dept_id }}&meal_id={{ dept_order.meal_id }}&order_id={{ order.id }}&remove_override=True">Remove Override</a></td>
           {% endif %}
           {% if dept_order.started == False %}
-            <td><button class="btn btn-lg btn-primary btn-block" href="order_edit?dh_edit=True&order_id={{ order.id }}">Edit Order</button></td>
+            <td><a class="btn btn-lg btn-primary btn-block" href="order_edit?dh_edit=True&order_id={{ order.id }}&badge_number={{ order.attendee.badge_num }}">Edit Order</a></td>
           {% endif %}
         </tr>
       </table>

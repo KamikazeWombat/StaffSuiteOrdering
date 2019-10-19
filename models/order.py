@@ -18,6 +18,7 @@ class Order(dec_base):
     locked = Column('locked', Boolean, default=False)  # marked locked when order fulfilment begins
     toggle1 = Column('toggle1', String)
     toggle2 = Column('toggle2', String)
+    toggle3 = Column('toggle3', String)
     toppings = Column('toppings', String)
     notes = Column('notes', String(100))  # todo: figure out how long the limit should be
 
