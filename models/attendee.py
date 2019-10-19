@@ -9,5 +9,5 @@ class Attendee(dec_base):
     __tablename__ = "attendee"
     badge_num = Column('badge_num', Integer)
     public_id = Column('public_id', String, primary_key=True)
-    badge_printed_name = Column('badge_printed_name', String)
+    full_name = Column('full_name', String)
     orders = relationship('Order')

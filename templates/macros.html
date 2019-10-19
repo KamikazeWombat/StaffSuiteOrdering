@@ -122,8 +122,8 @@
 {% endmacro %}
 
 
-{% macro dropdown(field, options, is_required=False) %}
-  <select name="{{ field }}"{% if is_required %} required{% endif %}>
+{% macro dropdown(field, options, is_required=False, is_readonly=False) %}
+  <select name="{{ field }}"{% if is_required %} required{% endif %}{% if is_readonly %} disabled{% endif %}>
     {% for option in options %}
       {% set value = option.1 %}
       {% set label = option.0 %}

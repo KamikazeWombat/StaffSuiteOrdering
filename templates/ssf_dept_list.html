@@ -5,7 +5,7 @@
 
 <div class="container">
   <h2 class="form-signin-heading">Department Order List</h2>
-  
+  Total orders for all departments for this meal: {{ total }}
   {% for dept in depts %}
     {% set name = dept[0] %}
     {% set count = dept[1] %}

@@ -7,7 +7,6 @@ import pytz
 from sqlalchemy.ext.declarative import declarative_base
 
 
-# todo: add configs for settings related to min time for eligibility
 class Config:
     """
     Class to make config data easily accessible
@@ -109,5 +108,3 @@ env = Environment(
     )
 
 dec_base = declarative_base()
-
-

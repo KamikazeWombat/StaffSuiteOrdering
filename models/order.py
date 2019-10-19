@@ -19,8 +19,8 @@ class Order(dec_base):
     toggle1 = Column('toggle1', String)
     toggle2 = Column('toggle2', String)
     toppings = Column('toppings', String)
-
-
     notes = Column('notes', String(100))  # todo: figure out how long the limit should be
+
+    eligible = False
 
     # todo: possibly add info on when order was created, for reporting interest?

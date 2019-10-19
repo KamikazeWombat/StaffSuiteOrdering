@@ -3,7 +3,7 @@ from functools import wraps
 
 import cherrypy
 
-from shared_functions import HTTPRedirect, is_admin, is_ss_staffer
+from shared_functions import HTTPRedirect, is_admin, is_ss_staffer, is_dh
 
 
 def restricted(func):
@@ -57,3 +57,29 @@ def ss_staffer(func):
 
     return is_StaffSuite_staffer
 
+
+def dh_or_admin(func):
+    @wraps(func)
+    def with_admin(*args, **kwargs):
+        # check if logged in
+        try:
+            staff_id = cherrypy.session['staffer_id']
+        except KeyError:
+            raise HTTPRedirect('login?message=You+are+not+logged+in - admin page', save_location=True)
+        
+        if is_admin(staff_id):
+            allowed = True
+            cherrypy.session['is_admin'] = True
+        else:
+            cherrypy.session['is_admin'] = False
+            
+        if is_dh(staff_id):
+            cherrypy.session['is_dh'] = True
+        else:
+            cherrypy.session['is_dh'] = False
+        if not allowed:
+            raise HTTPRedirect('staffer_order_list?message=You are not DH or admin, your id: ' + staff_id)
+        
+        return func(*args, **kwargs)
+    
+    return with_admin
