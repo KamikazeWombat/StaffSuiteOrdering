@@ -47,6 +47,10 @@
         <tr><td><h3>{{ meal.toggle2_title }}</h3></td></tr>
         {{ macros.button_radio_opts('toggle2', toggles2, is_required=True, is_readonly=order.locked) }}
       {% endif %}
+      {% if not meal.toggle3_title == '' %}
+        <tr><td><h3>{{ meal.toggle3_title }}</h3></td></tr>
+        {{ macros.button_radio_opts('toggle3', toggles3, is_required=True, is_readonly=order.locked) }}
+      {% endif %}
       {% if not meal.toppings_title == '' %}
         <tr><td><h3>{{ meal.toppings_title }}</h3></td></tr>
         {{ macros.checkgroup_opts('toppings', toppings, is_readonly=order.locked) }}
