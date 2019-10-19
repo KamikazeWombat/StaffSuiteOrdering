@@ -9,6 +9,9 @@
   "ss_hours": 12,
   "date_format": "%d-%m-%Y %H:%M",
   "cherrypy": {
+    "global": {
+      "server.socket_port": 80
+    },
     "/": {
       "tools.sessions.on": true
     },
