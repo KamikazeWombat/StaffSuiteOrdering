@@ -177,6 +177,8 @@ class Root:
             thismeal.toggle1 = meal_join(session, params, field='toggle1')
             thismeal.toggle2_title = params['toggle2_title']
             thismeal.toggle2 = meal_join(session, params, field='toggle2')
+            thismeal.toggle3_title = params['toggle3_title']
+            thismeal.toggle3 = meal_join(session, params, field='toggle3')
             # thismeal.detail_link = params['detail_link']
 
             session.add(thismeal)
@@ -196,6 +198,7 @@ class Root:
                 toppings = meal_blank_toppings(meal_split(session, thismeal.toppings), cfg.multi_select_count)
                 toggles1 = meal_blank_toppings(meal_split(session, thismeal.toggle1), cfg.radio_select_count)
                 toggles2 = meal_blank_toppings(meal_split(session, thismeal.toggle2), cfg.radio_select_count)
+                toggles3 = meal_blank_toppings(meal_split(session, thismeal.toggle3), cfg.radio_select_count)
             except sqlalchemy.orm.exc.NoResultFound:
                 message = 'Requested Meal ID '+meal_id+' not found'
                 raise HTTPRedirect('meal_setup_list?message='+message)
@@ -209,16 +212,19 @@ class Root:
             thismeal.toppings_title = ''
             thismeal.toggle1_title = ''
             thismeal.toggle2_title = ''
+            thismeal.toggle3_title = ''
             # make blank boxes for new meal.
             toppings = meal_blank_toppings([], cfg.multi_select_count)
             toggles1 = meal_blank_toppings([], cfg.radio_select_count)
             toggles2 = meal_blank_toppings([], cfg.radio_select_count)
+            toggles3 = meal_blank_toppings([], cfg.radio_select_count)
 
         template = env.get_template("meal_edit.html")
         return template.render(meal=thismeal,
                                toppings=toppings,
                                toggles1=toggles1,
                                toggles2=toggles2,
+                               toggles3=toggles3,
                                messages=messages,
                                c=c)
 
@@ -292,6 +298,7 @@ class Root:
             # todo: do something with overridden field
             thisorder.toggle1 = order_selections(field='toggle1', params=params, is_toggle=True)
             thisorder.toggle2 = order_selections(field='toggle2', params=params, is_toggle=True)
+            thisorder.toggle3 = order_selections(field='toggle3', params=params, is_toggle=True)
             thisorder.toppings = order_selections(field='toppings', params=params)
             thisorder.notes = notes
             
@@ -332,6 +339,7 @@ class Root:
             toppings = order_split(session, choices=thismeal.toppings, orders=thisorder.toppings)
             toggles1 = order_split(session, choices=thismeal.toggle1, orders=thisorder.toggle1)
             toggles2 = order_split(session, choices=thismeal.toggle2, orders=thisorder.toggle2)
+            toggles3 = order_split(session, choices=thismeal.toggle3, orders=thisorder.toggle3)
             departments = department_split(session, thisorder.department_id)
             messages.append('Order ID ' + str(order_id) + ' loaded')
             
@@ -342,6 +350,7 @@ class Root:
                                    toppings=toppings,
                                    toggles1=toggles1,
                                    toggles2=toggles2,
+                                   toggles3=toggles3,
                                    departments=departments,
                                    messages=messages,
                                    dh_edit=dh_edit,
@@ -405,6 +414,7 @@ class Root:
             toppings = order_split(session, thismeal.toppings)
             toggles1 = order_split(session, thismeal.toggle1)
             toggles2 = order_split(session, thismeal.toggle2)
+            toggles3 = order_split(session, thismeal.toggle3)
             departments = department_split(session)
             thisorder.notes = ''
             
@@ -415,6 +425,7 @@ class Root:
                                    toppings=toppings,
                                    toggles1=toggles1,
                                    toggles2=toggles2,
+                                   toggles3=toggles3,
                                    departments=departments,
                                    messages=message,
                                    dh_edit=dh_edit,

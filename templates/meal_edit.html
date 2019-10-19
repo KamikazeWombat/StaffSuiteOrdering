@@ -27,14 +27,22 @@
         <td><input type="text" class="form-control" placeholder="Description" name="description" value="{{ meal.description }}" required /></td>
       </tr>
       <tr><td>
+        <p>------------</p>
         <input type="text" class="form-control" placeholder="First Toggle Select Title" name="toggle1_title" value="{{ meal.toggle1_title }}"/>
         {{ macros.textbox_list('toggle1', toggles1, 'First Toggle Option') }}
       </td></tr>
       <tr><td>
+        <p>------------</p>
         <input type="text" class="form-control" placeholder="Second Toggle Select Title" name="toggle2_title" value="{{ meal.toggle2_title }}"/>
         {{ macros.textbox_list('toggle2', toggles2, 'Second Toggle Option') }}
       </td></tr>
       <tr><td>
+        <p>------------</p>
+        <input type="text" class="form-control" placeholder="Third Toggle Select Title" name="toggle3_title" value="{{ meal.toggle3_title }}"/>
+        {{ macros.textbox_list('toggle3', toggles3, 'Third Toggle Option') }}
+      </td></tr>
+      <tr><td>
+        <p>------------</p>
         <input type="text" class="form-control" placeholder="Multi-Select Title" name="toppings_title" value="{{ meal.toppings_title }}"/>
       </td></tr>
         {{ macros.textbox_list('toppings', toppings, 'Multiple Select Option') }}
