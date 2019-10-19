@@ -66,7 +66,7 @@ def dh_or_admin(func):
             staff_id = cherrypy.session['staffer_id']
         except KeyError:
             raise HTTPRedirect('login?message=You+are+not+logged+in - admin page', save_location=True)
-        
+        allowed = False
         if is_admin(staff_id):
             allowed = True
             cherrypy.session['is_admin'] = True
