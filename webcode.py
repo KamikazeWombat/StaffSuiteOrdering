@@ -13,7 +13,7 @@ import sqlalchemy.orm.exc
 from sqlalchemy.orm import joinedload, subqueryload
 
 from config import env, cfg, c
-from decorators import restricted, admin_req, ss_staffer
+from decorators import *
 import models
 from models.attendee import Attendee
 from models.meal import Meal
@@ -348,14 +348,11 @@ class Root:
                                    c=c)
             
         if meal_id:
-            print('------------------------')
             print('start meal_id')
             # attempt new order from meal_id
             if dh_edit and (is_dh(cherrypy.session['staffer_id']) or is_admin(cherrypy.session['staffer_id'])):
-                print('attempting dh_edit start')
                 try:
                     attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
-                    print('loaded attendee')
                 except sqlalchemy.orm.exc.NoResultFound:
                     response = shared_functions.lookup_attendee(params['badge_number'])
                     attend = Attendee()
@@ -364,18 +361,14 @@ class Root:
                     attend.full_name = response['result']['full_name']
                     session.add(attend)
                     session.commit()
-                print('starting load order')
                 try:
-                    print('test 1')
                     thisorder = session.query(Order).filter_by(attendee_id=attend.public_id, meal_id=meal_id).one()
-                    print('test 2')
+
                     raise HTTPRedirect('order_edit?dh_edit=True&badge_number=' + str(params['badge_number']) +
                                        '&order_id=' + str(thisorder.id) +
                                        '&message=An order already exists for this Meal, previously created '
                                        'order selections loaded.')
-                    print('succesfully loaded previously existing order')
                 except sqlalchemy.orm.exc.NoResultFound:
-                    print('no existing order found for this meal and attendee_id')
                     pass
             else:
                 try:
@@ -386,7 +379,6 @@ class Root:
                                        'loaded.')
                 except sqlalchemy.orm.exc.NoResultFound:
                     pass
-            print('starting attended badge_number check')
             if dh_edit:
                 try:
                     attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
@@ -614,19 +606,32 @@ class Root:
                                cfg=cfg)
 
     @cherrypy.expose
-    @restricted
-    def dept_order_selection(self):
+    @dh_or_admin
+    def dept_order_selection(self, **params):
         """
         Allows DH to select meal time and which department they wish to view the dept_order for.
         Filters meal list to only show future meals by default (by end time, not start time)
         Filters selectable departments to only include ones the DH is assigned to unless user is Admin
         """
-        if not is_admin(cherrypy.session['staffer_id']) and not is_dh(cherrypy.session['staffer_id']):
-            raise HTTPRedirect('staffer_meal_list?message=You do not have access to this page.')
-    
+        # meal_id would be present if Select button is clicked, sends to selected dept_order
+        if 'meal_id' in params:
+            raise HTTPRedirect('dept_order?meal_id=' + str(params['meal_id']) + '&dept_id=' + str(params['dept_id']))
+        
+        session = models.new_sesh()
+        departments = department_split(session)
+        
+        # todo: filter by future meals, by end time of meal
+        meal_list = session.query(Meal).all()
+        
+        session.close()
+        template = env.get_template("dept_order_selection.html")
+        return template.render(depts=departments,
+                               meals=meal_list,
+                               c=c)
+        
 
     @cherrypy.expose
-    @restricted
+    @dh_or_admin
     def dept_order(self, meal_id, dept_id, message="", **params):
         """
         Usable by Department Heads and admins
@@ -638,8 +643,6 @@ class Root:
         """
         # todo: needs to check if the dept_order for selected meal time and department is marked started
         # todo: if started needs to put notice at top that it is started.  if completed, same.
-        if not is_admin(cherrypy.session['staffer_id']) and not is_dh(cherrypy.session['staffer_id']):
-            raise HTTPRedirect('staffer_meal_list?message=You do not have access to this page.')
         
         messages = []
         if message:
@@ -702,7 +705,7 @@ class Root:
                                c=c)
         
     @cherrypy.expose
-    @restricted
+    @dh_or_admin
     def order_override(self, order_id, meal_id, dept_id, remove_override=False):
         """
         Override or remove override on an order
@@ -710,9 +713,6 @@ class Root:
         :param remove_override:
         :return:
         """
-        if not is_dh(cherrypy.session['staffer_id']) and not is_admin(cherrypy.session['staffer_id']):
-            raise HTTPRedirect('staffer_meal_list&message=You are not admin or DH')
-        
         session = models.new_sesh()
         dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
         if dept_order.started:
