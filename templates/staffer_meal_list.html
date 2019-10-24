@@ -14,11 +14,15 @@
             <td><label>Not Eligible for Carryout</label></td>
           {% endif %}
           <td>
-            <input type="hidden" name="id" value ="{{ meal.id }}">
+            <input type="hidden" name="meal_id" value ="{{ meal.id }}">
             <label class="form-control">{{ meal.meal_name }} </label>
           </td>
             <td><label class="form-control">{{ meal.start_time }}</label></td>
+          {% if meal.order_exists %}
+            <td><button class="btn btn-lg btn-primary btn-block" href="order_edit?meal_id={{ meal.id }}">Edit Existing Order</button></td>
+          {% else %}
             <td><button class="btn btn-lg btn-primary btn-block" href="order_edit?meal_id={{ meal.id }}">Create Order</button></td>
+          {% endif %}
         </tr>
       </table>
     </form>

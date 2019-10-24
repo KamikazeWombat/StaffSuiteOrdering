@@ -5,7 +5,7 @@
 
 <div class="container">
   <form role="form">
-    <h2 class="form-signin-heading">Edit Meal</h2>
+    <h2 class="form-signin-heading">{% if meal.id %}Edit Meal{% else %}Create Meal{% endif %}</h2>
     <table style="width:100%">
       <tr> <td> <input type="hidden" name="id" value ="{{ meal.id }}">Meal Name</td>
         <td> <input type="text" class="form-control" placeholder="Meal Name" name="meal_name" value="{{ meal.meal_name }}" required autofocus /> </td>

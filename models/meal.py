@@ -28,4 +28,5 @@ class Meal(dec_base):
     toppings = Column('toppings', String)
     toppings_title = Column('toppings_title', String)
     orders = relationship('Order')
-    eligible = False
+    eligible = False  # used for page display purposes
+    order_exists = False  # also used for page display purposes
