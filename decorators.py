@@ -30,32 +30,30 @@ def admin_req(func):
         except KeyError:
             raise HTTPRedirect('login?message=You+are+not+logged+in - admin page', save_location=True)
         
-        if is_admin(staff_id):
-            cherrypy.session['is_admin'] = True
+        if cherrypy.session['is_admin']:
+            pass
         else:
-            cherrypy.session['is_admin'] = False
-            raise HTTPRedirect('staffer_order_list?message=You are not admin, your id: ' + staff_id)
+            raise HTTPRedirect('staffer_meal_list?message=You are not admin, your id: ' + staff_id)
 
         return func(*args, **kwargs)
     return with_admin
 
 def ss_staffer(func):
     @wraps(func)
-    def is_StaffSuite_staffer(*args, **kwargs):
+    def is_staffsuite_staffer(*args, **kwargs):
         try:
             staff_id = cherrypy.session['staffer_id']
         except KeyError:
             raise HTTPRedirect('login?message=You+are+not+logged+in - ss_staffer page', save_location=True)
     
-        if is_ss_staffer(staff_id):
-            cherrypy.session['is_ss_staffer'] = True
+        if cherrypy.session['is_ss_staffer']:
+            pass
         else:
-            cherrypy.session['is_ss_staffer'] = False
-            raise HTTPRedirect('staffer_order_list?message=You are not SS Staffer, your id: ' + staff_id)
+            raise HTTPRedirect('staffer_meal_list?message=You are not SS Staffer, your id: ' + staff_id)
     
         return func(*args, **kwargs)
 
-    return is_StaffSuite_staffer
+    return is_staffsuite_staffer
 
 
 def dh_or_admin(func):
@@ -67,19 +65,14 @@ def dh_or_admin(func):
         except KeyError:
             raise HTTPRedirect('login?message=You+are+not+logged+in - DH or admin page', save_location=True)
         allowed = False
-        if is_admin(staff_id):
+        if cherrypy.session['is_dh']:
             allowed = True
-            cherrypy.session['is_admin'] = True
-        else:
-            cherrypy.session['is_admin'] = False
-            
-        if is_dh(staff_id):
+        
+        if cherrypy.session['is_admin']:
             allowed = True
-            cherrypy.session['is_dh'] = True
-        else:
-            cherrypy.session['is_dh'] = False
+        
         if not allowed:
-            raise HTTPRedirect('staffer_order_list?message=You are not DH or admin, your id: ' + staff_id)
+            raise HTTPRedirect('staffer_meal_list?message=You are not DH or admin, your id: ' + staff_id)
         
         return func(*args, **kwargs)
     

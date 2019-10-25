@@ -390,17 +390,18 @@ def meal_blank_toppings(toppings, count):
     return toppings
 
 
-def department_split(session, department=""):
+def department_split(session, default=""):
     """
     Creates list of tuples of all departments
     :param session: SQLAlchemy session
+    :param default: Optional, which department should be selected by default
     :return: sorted list of tuples of departments
     """
     result = [('', '', '')]
     departments = session.query(Department).all()
     
     for dept in departments:
-        if dept.id == department:
+        if dept.id == default:
             result.append((dept.name, dept.id, True))
         else:
             result.append((dept.name, dept.id, False))
