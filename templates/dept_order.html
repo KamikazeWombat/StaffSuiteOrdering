@@ -14,7 +14,18 @@
     <br/><button class="btn btn-lg btn-primary btn-block" type="submit">Update Contact Info</button>
   </form>
   {% if not dept_order.started %}
-  stuff to create new order
+    <br/>
+    <form>
+      <table><tr>
+        <td>
+          <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}">
+          <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}">
+          {{ macros.dropdown(field='order_department', options=departments, is_required=True) }}
+        </td>
+        <td>Badge Number: <input type="number" name="order_badge"/></td>
+        <td><button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button></td>
+      </tr></table>
+    </form>
   {% endif %}
   {% if dept_order.started %}<br/>Meal Prep Started: {{ dept_order.start_time }} {% endif %}
   {% if dept_order.completed %}<br/>Meal Prep Completed: {{ dept_order.completed_time }} {% endif %}
@@ -27,7 +38,7 @@
             <td><label>Not Eligible for Carryout</label></td>
           {% endif %}
           <td>
-            <input type="hidden" name="order_id" value ="{{ order.id }}">
+            <input type="hidden" name="order_id" value ="{{ order.id }}"/>
             <label class="form-control">{{ order.attendee.badge_num }} </label>
           </td>
           {% if order.eligible == False and dept_order.started == False and order.overridden == False%}

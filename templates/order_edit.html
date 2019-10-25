@@ -5,7 +5,7 @@
 
 <div class="container">
   <form role="form">
-    <h2 class="form-signin-heading">Create/Edit Order for: {{ attendee.full_name }} {{ attendee.badge_num }}
+    <h2 class="form-signin-heading">Create/Edit Order for: {{ attendee.badge_num }} {{ attendee.full_name }}
       {% if dh_edit %}<input type="text" class="form-control" placeholder="Attendee Badge Number" name="badge_number"
                              value="{{ attendee.badge_num }}"/>
         <input type="hidden" name="dh_edit" value="True"/>

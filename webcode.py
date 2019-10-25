@@ -308,9 +308,9 @@ class Root:
                 
             if dh_edit:
                 # actually verifies you are admin and not just you edited URL
-                print('starting dh_edit')
+                # print('starting dh_edit')
                 if is_dh(cherrypy.session['staffer_id']) or is_admin(cherrypy.session['staffer_id']):
-                    print('is actualy dh or admin')
+                    # print('is actualy dh or admin')
                     try:
                         attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
                     except sqlalchemy.orm.exc.NoResultFound:
@@ -327,7 +327,7 @@ class Root:
                 else:
                     raise HTTPRedirect('staffer_meal_list?message=You must be DH or admin to use this feature')
             else:
-                print('not dh_edit')
+                # print('not dh_edit')
                 thisorder.attendee_id = cherrypy.session['staffer_id']
              
             thisorder.department_id = params['department']
@@ -402,6 +402,8 @@ class Root:
                     attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
                 except sqlalchemy.orm.exc.NoResultFound:
                     response = shared_functions.lookup_attendee(params['badge_number'])
+                    print('----------------------')
+                    print(response)
                     attend = Attendee()
                     attend.badge_num = response['result']['badge_num']
                     attend.public_id = response['result']['public_id']
@@ -453,7 +455,10 @@ class Root:
             toggles1 = order_split(session, thismeal.toggle1)
             toggles2 = order_split(session, thismeal.toggle2)
             toggles3 = order_split(session, thismeal.toggle3)
-            departments = department_split(session)
+            if 'department' in params:
+                departments = department_split(session, params['department'])
+            else:
+                departments = department_split(session)
             thisorder.notes = ''
             
             template = env.get_template('order_edit.html')
@@ -704,6 +709,10 @@ class Root:
             'is_ss_staffer': cherrypy.session['is_ss_staffer']
         }
         
+        if 'order_badge' in params:
+            raise HTTPRedirect('order_edit?dh_edit=True&meal_id=' + str(meal_id) + '&badge_number=' +
+                               str(params['order_badge']) + '&department=' + str(params['order_department']))
+        
         session = models.new_sesh()
         
         dept = session.query(Department).filter_by(id=dept_id).one()
@@ -751,12 +760,15 @@ class Root:
             this_dept_order.start_time = con_tz(this_dept_order.start_time)
         if this_dept_order.completed:
             this_dept_order.completed_time = con_tz(this_dept_order.completed_time)
+
+        departments = department_split(session, dept_id)
             
         template = env.get_template('dept_order.html')
         return template.render(dept=dept_name,
                                orders=order_list,
                                dept_order=this_dept_order,
                                meal=thismeal,
+                               departments=departments,
                                messages=messages,
                                session=session_info,
                                c=c)
