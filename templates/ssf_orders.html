@@ -5,31 +5,54 @@
 
 <div class="container">
   <h2>{{ message }} <br/></h2>
-  These links not yet functioning.
-  <a href="ssf_orders?meal_id={{ meal.id }}&dept_id={{ dept_id }}&lock_order=True">Lock orders for department</a> <br/>
+  {% if dept_order.started %}
+  <h3>Orders locked!</h3><a href="ssf_lock_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}&unlock_order=True">Un-Lock orders for department</a> <br/>
+  {% else %}
+  <a href="ssf_lock_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}">Lock orders for department</a> <br/>
+  {% endif %}
   print orders (placeholder) <br/>
-  <a href="ssf_orders?meal_id={{ meal.id }}&dept_id={{ dept_id }}&complete_order=True">Mark order Complete (Notifies Department (once coded))</a><br/>
+  {% if dept_order.completed %}
+  <a href="ssf_complete_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}&uncomplete_order=True">Un-Mark order Complete</a><br/>
+  {% else %}
+  <a href="ssf_complete_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}">Mark order Complete</a><br/>
+  {% endif %}
   <br/>
-  display when order started, when it was completed
+  {% if dept_order.started %}<br/>Meal Prep Started: {{ dept_order.start_time }} {% endif %}
+  {% if dept_order.completed %}<br/>Meal Prep Completed: {{ dept_order.completed_time }} {% endif %}
   <!-- todo: button to unlock in case lock clicked by mistake -->
-  <h2 class="form-signin-heading">{{ dept }} Order List for {{ meal.meal_name }}</h2>
+  <h2 class="form-signin-heading">{{ dept_name }} Order List for {{ meal.meal_name }}</h2>
   {% for order in order_list %}
+  ---------------------------------------------------
     <form role="form">
       <table>
         <tr>
-          <td><label>{{ order.badge_num }}</label></td>
           <td>
+            <label>{{ order.attendee.badge_num }}</label>
+         
             <input type="hidden" name="order_id" value ="{{ order.id }}">
-            <label class="form-control">{{ order.badge_printed_name }}</label>
+            
+            {% if not meal.toggle1_title == "" %}
+              <label>{{ order.toggle1[0][1] }}</label><br/>
+            {% endif %}
+            {% if not meal.toggle2_title == "" %}
+              <label>{{ order.toggle2[0][1] }}</label><br/>
+            {% endif %}
+            {% if not meal.toggle3_title == "" %}
+              <label>{{ order.toggle3[0][1] }}</label><br/>
+            {% endif %}
           </td>
-          <td><label class="form-control">{{ order.toggle1[0][1] }}</label><br/></td>
-          <td><label class="form-control">{{ order.toggle2[0][1] }}</label><br/></td>
-          todo: add rest of fields
+          
+        </tr>
+        <tr>
+          
+          {% if not meal.toppings_title == "" %}
+            {{ macros.toppings_list(order.toppings) }}
+          {% endif %}
         </tr>
         {% if not order.notes == "" %}
-          <tr>
-            <td>{{ order.notes }}</td>
-          </tr>
+        <tr>
+          <td>{{ order.notes }}</td>
+        </tr>
         {% endif %}
       </table>
     </form>

@@ -97,7 +97,7 @@
     {% block top_of_body_additional %}
             <div id="floating_logo">
                 <img src={{ c.EVENT_URL_ROOT }}/static/theme/bg-logo.png/>
-                <div style="text-align:center;"><h1>{{ c.EVENT_NAME }} Staff Suite v 0.5.5</h1></div>
+                <div style="text-align:center;"><h1>{{ c.EVENT_NAME }} Staff Suite v 0.6.0</h1></div>
             </div>
     {% endblock %}
     <div id="mainContainer" class="container-fluid">
@@ -107,18 +107,20 @@
         {% block header %}
         <nav>
             <tr>
-                <td><a href="staffer_meal_list">Staffer Meal List</a> |</td>
-                {% if session.is_admin %}
-                <td><a href="meal_setup_list">Admin Meal List</a> |</td>
-                <td><a href="meal_edit">Create Meal</a> |</td>
-                <td><a href="config">Config</a> |</td>
-                {% endif %}
-                {% if session.is_dh or session.is_admin %}
-                <td><a href="dept_order_selection">Dept Orders |</a></td>
-                {% endif %}
-                {% if session.is_ss_staffer or session.is_admin %}
-                <td><a href="ssf_meal_list">Fulfilment</a> |</td>
-                {% endif %}
+              <td><a href="staffer_meal_list">Staffer Meal List</a> |</td>
+              {% if session.is_ss_staffer or session.is_admin %}
+              <td><a href="ssf_meal_list">Fulfilment</a> |</td>
+              {% endif %}
+              {% if session.is_dh or session.is_admin %}
+              <td><a href="dept_order_selection">Dept Orders |</a></td>
+              {% endif %}
+              {% if session.is_admin %}
+              <td><a href="meal_setup_list">Admin Meal List</a> |</td>
+              <td><a href="meal_edit">Create Meal</a> |</td>
+              <td><a href="config">Config</a> |</td>
+              {% endif %}
+              
+                
                 <td><a href="login?logout=True">Logout</a></td>
             </tr>
         </nav>

@@ -3,15 +3,15 @@ import requests
 from urllib.parse import quote, urlparse
 
 import cherrypy
-import dateutil
+from datetime import datetime
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
+from dateutil.tz import tzlocal
 import pytz
 import sqlalchemy.orm.exc
 
 from config import cfg, c
 import models
-from models.attendee import Attendee
 from models.ingredient import Ingredient
 from models.department import Department
 
@@ -121,6 +121,14 @@ def con_tz(date):
     date = date.astimezone(c.EVENT_TIMEZONE)
     date = date.replace(tzinfo=None)
     return date
+
+
+def now_utc():
+    """returns the current datetime now, converted to UTC beforehand, without TZ info"""
+    now = datetime.now()
+    now = now.replace(tzinfo=tzlocal())  # sets timezone info to server local TZ
+    now = now.astimezone(pytz.utc)  # converts time from local TZ to UTC
+    now = now.replace(tzinfo=None)  # removes tzinfo to avoid confusing other systems
 
 
 def api_login(first_name, last_name, email, zip_code):
@@ -245,8 +253,23 @@ def return_selected_only(session, choices, orders):
         if item[0] == 1:
             #print('selecting', item)
             selected.append(item)
-    print('-----------------')
-    print(selected)
+    
+    return selected
+
+
+def return_not_selected(session, choices, orders):
+    """
+    Runs order_split and only returns the items that were not selected
+    Used for label printing of toppings, where it was decided that showing what people don't want is easier
+    """
+    mylist = order_split(session, choices, orders)
+    selected = list()
+    for item in mylist:
+
+        if not item[0] == 1:
+
+            selected.append(item)
+
     return selected
 
 

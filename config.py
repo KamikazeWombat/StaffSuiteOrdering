@@ -6,7 +6,6 @@ from jinja2 import Environment, FileSystemLoader
 import pytz
 from sqlalchemy.ext.declarative import declarative_base
 
-
 class Config:
     """
     Class to make config data easily accessible
@@ -80,7 +79,7 @@ class Uberconfig:
     request_data = {'method': 'config.info'}
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
     # print("------printing request before json load")
-    # print(request.text)
+    #print(request.text)
     response = json.loads(request.text)
     
     try:
@@ -97,6 +96,7 @@ class Uberconfig:
     #EVENT_TIMEZONE = pytz.timezone(response['EVENT_TIMEZONE'])
     EVENT_TIMEZONE = pytz.timezone('US/Pacific')
     EVENT_TZ = EVENT_TIMEZONE
+
 
 c = Uberconfig()
 
