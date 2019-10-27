@@ -266,9 +266,6 @@ class Root:
         # todo: do something with Uber allergies info
         # todo: link to allergies SOP somewhere
         
-        # todo: needs to check if the dept_order for selected meal time and department is marked started,
-        # todo: if dept_order is started do not allow saving new order
-        
         # todo: html needs to do extra stuff if is DH
         # todo: department select dropdown needs to restrict based upon if a department's order is already being processed or has been.
         messages = []
@@ -287,6 +284,9 @@ class Root:
         thisorder = ''
         thismeal = ''
         
+        if delete_order:
+            raise HTTPRedirect('order_delete_comfirm?order_id=' + str(delete_order))
+        
         # parameter save_order should only be present if submit clicked
         if save_order:
             print('start save_order')
@@ -294,15 +294,17 @@ class Root:
             
             try:
                 thisorder = session.query(Order).filter_by(id=order_id).one()
-                #does not update if not belong to user or user is DH/Admin
+                # does not update if not belong to user or user is DH/Admin
                 if not thisorder.attendee.public_id == cherrypy.session['staffer_id']:
                     if not shared_functions.is_dh(cherrypy.session['staffer_id']):
                         if not shared_functions.is_admin(cherrypy.session['staffer_id']):
                             raise HTTPRedirect("staffer_meal_list?message=This isn't your order.")
-                        
-                if thisorder.locked and not cherrypy.session['is_admin']:
-                    raise HTTPRedirect("staffer_meal_list?message=This order has already been started by Staff Suite"
+                dept_order = session.query(DeptOrder).filter_by(meal_id=params['save_order'], dept_id=params['department'])
+                if thisorder.locked or dept_order.locked:
+                    if not cherrypy.session['is_admin']:
+                        raise HTTPRedirect("staffer_meal_list?message=This order has already been started by Staff Suite"
                                        " and cannot be changed except by Staff Suite Admins")
+                    
             except sqlalchemy.orm.exc.NoResultFound:
                 thisorder = Order()
                 
@@ -474,9 +476,6 @@ class Root:
                                    dh_edit=dh_edit,
                                    session=session_info,
                                    c=c)
-        # todo: add delete/cancel order function
-        if delete_order:
-            raise HTTPRedirect('order_delete_comfirm?order_id=' + str(delete_order))
         
         # if nothing else matched, not creating, loading, saving, or deleting.  therefore, error.
         raise HTTPRedirect('staffer_meal_list?message=You must specify a meal or order ID to create/edit an order.')
@@ -781,15 +780,16 @@ class Root:
         """
         session = models.new_sesh()
         dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
-        if dept_order.started:
+        # todo: check for if order started or completed for admin user and do extra warnings?
+        if dept_order.started and not cherrypy.session['is_admin']:
             raise HTTPRedirect('dept_order_selection?message=The order for your department for this meal has already been started.')
         order = session.query(Order).filter_by(id=order_id).options(subqueryload(Order.attendee)).one()
         if remove_override:
             order.overridden = False
-            message = 'Override removed for '
+            message = 'Override removed for ' + str(order.attendee.badge_num)
         else:
             order.overridden = True
-            message = 'Override added for '
+            message = 'Override added for ' + str(order.attendee.badge_num)
         session.commit()
         session.close()
         raise HTTPRedirect('dept_order?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
