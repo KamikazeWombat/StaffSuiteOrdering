@@ -122,6 +122,16 @@
 {% endmacro %}
 
 
+{% macro toppings_list(textboxes) %}
+  <td>
+    {% for box in textboxes %}
+      {% set name = box.1 %}
+      <label>no {{ name }}{% if not loop.last %}, {% endif %}</label>
+    {% endfor %}
+  </td>
+{% endmacro %}
+
+
 {% macro dropdown(field, options, is_required=False, is_readonly=False) %}
   <select name="{{ field }}"{% if is_required %} required{% endif %}{% if is_readonly %} disabled{% endif %}>
     {% for option in options %}

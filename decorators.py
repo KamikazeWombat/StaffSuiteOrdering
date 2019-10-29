@@ -7,15 +7,18 @@ from shared_functions import HTTPRedirect, is_admin, is_ss_staffer, is_dh
 
 
 def restricted(func):
+    """
+    Requires user to be logged in to a valid account
+    """
     @wraps(func)
     def logged_in(*args, **kwargs):
-        #print('beginning restricted')
+        # print('beginning restricted')
         try:
-         #   print('checking if staffer id is already assigned')
+            # print('checking if staffer id is already assigned')
             staff_id = cherrypy.session['staffer_id']
-          #  print('staffer id already assigned')
+            # print('staffer id already assigned')
         except KeyError:
-           # print('Redirect to login page')
+            # print('Redirect to login page')
             raise HTTPRedirect('login?message=You+are+not+logged+in', save_location=True)
 
         return func(*args, **kwargs)
@@ -23,6 +26,11 @@ def restricted(func):
 
 
 def admin_req(func):
+    """
+    Require user to be logged in and an admin; this is controlled currently by admin_list.cfg
+    admin_list.cfg is a comma separated list of user's public ID from Uber/Reggie
+    System clears whitespace so each ID can be on it's own line for simplicity
+    """
     @wraps(func)
     def with_admin(*args, **kwargs):
         try:
@@ -38,7 +46,14 @@ def admin_req(func):
         return func(*args, **kwargs)
     return with_admin
 
+
 def ss_staffer(func):
+    """
+    Require user to be logged in and a Staff Suite Staffer;
+    This is controlled currently by ss_staffer_list.cfg.  Admin users are also automatically ss_staffer
+    ss_staffer_list.cfg is a comma separated list of user's public ID from Uber/Reggie
+    System clears whitespace so each ID can be on it's own line for simplicity
+    """
     @wraps(func)
     def is_staffsuite_staffer(*args, **kwargs):
         try:
@@ -46,7 +61,8 @@ def ss_staffer(func):
         except KeyError:
             raise HTTPRedirect('login?message=You+are+not+logged+in - ss_staffer page', save_location=True)
     
-        if cherrypy.session['is_ss_staffer']:
+        # admin are by default also ss_staffer
+        if cherrypy.session['is_ss_staffer'] or cherrypy.session['is_admin']:
             pass
         else:
             raise HTTPRedirect('staffer_meal_list?message=You are not SS Staffer, your id: ' + staff_id)
@@ -57,18 +73,19 @@ def ss_staffer(func):
 
 
 def dh_or_admin(func):
+    """
+    Requires user to be logged in and either a Department Head or an Admin.
+    Department Head status is determined at login by checking their account in Uber/Reggie
+    """
     @wraps(func)
-    def with_admin(*args, **kwargs):
+    def with_dh_admin(*args, **kwargs):
         # check if logged in
         try:
             staff_id = cherrypy.session['staffer_id']
         except KeyError:
             raise HTTPRedirect('login?message=You+are+not+logged+in - DH or admin page', save_location=True)
         allowed = False
-        if cherrypy.session['is_dh']:
-            allowed = True
-        
-        if cherrypy.session['is_admin']:
+        if cherrypy.session['is_dh'] or cherrypy.session['is_admin']:
             allowed = True
         
         if not allowed:
@@ -76,4 +93,4 @@ def dh_or_admin(func):
         
         return func(*args, **kwargs)
     
-    return with_admin
+    return with_dh_admin
