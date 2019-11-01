@@ -10,5 +10,7 @@ class Department(dec_base):
     id = Column('id', String, primary_key=True)
     name = Column('name', String)
     orders = relationship('Order')
-    contact_info = Column('contact_info', String)  # requested contact info for this department for all meals completion
+    slack_channel = Column('slack_channel', String, default='')  # what channel bot should message
+    slack_contact = Column('slack_contact', String, default='')  # who to ping
+    other_contact = Column('other_contact', String, default='')  # requested contact info for this department for this meal bundle
     # todo: contact info here?  or separately for each department order?  both?!

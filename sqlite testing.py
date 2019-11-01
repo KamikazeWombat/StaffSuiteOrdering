@@ -9,7 +9,7 @@ API_ENDPOINT = "https://staging-reggie.magfest.org/jsonrpc/"
 # https://staging-reggie.magfest.org/api/reference
 
 #read in authentication toke from file instead of hardcoded.  security yall!
-authfile = open('authtoken.cfg', 'r')
+authfile = open('uber_auth.cfg', 'r')
 REQUEST_HEADERS = {'X-Auth-Token':authfile.read()}
 #data being sent to API
 request_data = {'method':'attendee.search',

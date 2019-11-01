@@ -23,5 +23,6 @@ class Order(dec_base):
     notes = Column('notes', String(120))  # todo: figure out how long the limit should be
 
     eligible = False
+    allergies = ''
 
     # todo: possibly add info on when order was created, for reporting interest?

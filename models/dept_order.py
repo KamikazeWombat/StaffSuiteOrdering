@@ -14,4 +14,6 @@ class DeptOrder(dec_base):
     start_time = Column('start_time', DateTime)
     completed = Column('completed', Boolean, default=False)
     completed_time = Column('completed_time', DateTime)
-    contact_info = Column('contact_info', String, default='')  # requested contact info for this department for this meal completion
+    slack_channel = Column('slack_channel', String, default='')  # what channel bot should message
+    slack_contact = Column('slack_contact', String, default='')  # who to ping
+    other_contact = Column('other_contact', String, default='')  # requested contact info for this department for this meal bundle

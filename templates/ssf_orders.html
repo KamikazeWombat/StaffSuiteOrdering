@@ -28,7 +28,9 @@
         <tr>
           <td>
             <label>{{ order.attendee.badge_num }}</label>
-         
+            {% if order.allergies %}
+              {{ macros.display_allergies(order.allergies, view_only=True) }}
+            {% endif %}
             <input type="hidden" name="order_id" value ="{{ order.id }}">
             
             {% if not meal.toggle1_title == "" %}
@@ -41,10 +43,8 @@
               <label>{{ order.toggle3[0][1] }}</label><br/>
             {% endif %}
           </td>
-          
         </tr>
         <tr>
-          
           {% if not meal.toppings_title == "" %}
             {{ macros.toppings_list(order.toppings) }}
           {% endif %}

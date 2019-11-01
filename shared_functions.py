@@ -129,6 +129,7 @@ def now_utc():
     now = now.replace(tzinfo=tzlocal())  # sets timezone info to server local TZ
     now = now.astimezone(pytz.utc)  # converts time from local TZ to UTC
     now = now.replace(tzinfo=None)  # removes tzinfo to avoid confusing other systems
+    return now
 
 
 def api_login(first_name, last_name, email, zip_code):
@@ -137,7 +138,7 @@ def api_login(first_name, last_name, email, zip_code):
     """
 
     #runs API request
-    REQUEST_HEADERS = {'X-Auth-Token': cfg.apiauthkey}
+    REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
     # data being sent to API
     request_data = {'method': 'attendee.login',
                     'params': [first_name, last_name, email, zip_code]}
@@ -149,7 +150,7 @@ def api_login(first_name, last_name, email, zip_code):
 
 
 def load_departments():
-    REQUEST_HEADERS = {'X-Auth-Token': cfg.apiauthkey}
+    REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
     
     # data being sent to API
     request_data = {'method': 'dept.list'}
@@ -180,7 +181,7 @@ def lookup_attendee(badge_num, full=False):
     """
     Looks up an existing attendee by badge_num and returns the resulting json data
     """
-    REQUEST_HEADERS = {'X-Auth-Token': cfg.apiauthkey}
+    REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
     
     # data being sent to API
     if full:
@@ -477,11 +478,12 @@ def ss_eligible(badge_num):
         return message
 
 
-def combine_shifts(badge_num):
+def combine_shifts(badge_num, full=False):
     """
     Takes badge number and performs lookup against Uber API
     Gets list of shifts, sorts it, then combines any that are close together based on settings for allowable gaps
     :param badge_num: Staffer's badge number
+    :param full: whether or not to also return entire response
     :return: returns sorted and merged list of shifts
     """
     
@@ -492,6 +494,8 @@ def combine_shifts(badge_num):
         message = response['error']['message']
         print(message)
     else:
+        # print('-------------------------------')
+        # print(response)
         shifts = response['result']['shifts']
         for shift in shifts:
             item = Shift(parse(shift['job']['start_time']),
@@ -501,6 +505,14 @@ def combine_shifts(badge_num):
             shift_list.append(item)
         
     shifts = sorted(shift_list)
+    
+    # combining loop doesn't like if there are no shifts for the selected attendee
+    if len(shifts) == 0:
+        if full:
+            return [], response
+        else:
+            return []
+        
     combined = []
     i = 0
     shift_buffer = relativedelta(minutes=cfg.schedule_tolerance)
@@ -519,8 +531,10 @@ def combine_shifts(badge_num):
             i += 1
             if i == (len(shifts)-1):
                 combined.append(shifts[i])  # adds last shift if last pair not being merged
-        
-    return combined
+    if full:
+        return combined, response
+    else:
+        return combined
 
 
 def carryout_eligible(shifts, meal_start, meal_end):
@@ -535,8 +549,14 @@ def carryout_eligible(shifts, meal_start, meal_end):
     # need to check combined if shift starts within <<buffer>> after start of meal time or earlier
     # AND ends within <<buffer>> before end of meal time or later
     
+    # if there are no shifts, skip processing
+    
+    if len(shifts) == 0:
+        return False
+    
     meal_buffer = relativedelta(minutes=cfg.schedule_tolerance)
     # print("Meal start: {} Meal End {}".format(str(meal_start),str(meal_end)))
+    
     for shift in shifts:
         # print("shift start : {} Shift end: {}".format(str(shift.start),str(shift.end)))
         sdelta = relativedelta((meal_start + meal_buffer), shift.start)
@@ -566,13 +586,32 @@ def is_ss_staffer(staff_id):
     else:
         return False
 
+
 def is_dh(staff_id):
     # runs API request
-    REQUEST_HEADERS = {'X-Auth-Token': cfg.apiauthkey}
+    REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
     # data being sent to API
     request_data = {'method': 'attendee.search',
                     'params': [staff_id]}
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
     response = json.loads(request.text)
-    
+    print('----------------------------------------')
+    print(response)
     return response['result'][0]['is_dept_head']
+
+
+def allergy_info(badge_num):
+    """
+    Performs API request to Uber/Reggie and returns allergy info
+    :param badge_num:
+    :return:
+    """
+    response = lookup_attendee(badge_num, full=True)
+    print(response['result']['food_restrictions'])
+    if response['result']['food_restrictions']:
+        allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
+                     'freeform': response['result']['food_restrictions']['freeform']}
+    else:
+        allergies = {'standard_labels': '', 'freeform': ''}
+
+    return allergies

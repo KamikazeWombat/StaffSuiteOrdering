@@ -6,6 +6,7 @@ from jinja2 import Environment, FileSystemLoader
 import pytz
 from sqlalchemy.ext.declarative import declarative_base
 
+
 class Config:
     """
     Class to make config data easily accessible
@@ -25,9 +26,13 @@ class Config:
     
     def __init__(self):
         # read in config from files.  todo: option to load other config files than default
-        authfile = open('authtoken.cfg', 'r')
-        self.apiauthkey = authfile.read()
-        authfile.close()
+        uber_authfile = open('uber_auth.cfg', 'r')
+        self.uber_authkey = uber_authfile.read()
+        uber_authfile.close()
+
+        slack_authfile = open('slack_auth.cfg', 'r')
+        self.slack_authkey = slack_authfile.read()
+        slack_authfile.close()
         
         configfile = open('config.json', 'r')
         cdata = json.load(configfile)
@@ -74,12 +79,12 @@ class Uberconfig:
     """
 
     # runs API request
-    REQUEST_HEADERS = {'X-Auth-Token': cfg.apiauthkey}
+    REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
     # data being sent to API
     request_data = {'method': 'config.info'}
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
     # print("------printing request before json load")
-    #print(request.text)
+    # print(request.text)
     response = json.loads(request.text)
     
     try:
@@ -93,8 +98,7 @@ class Uberconfig:
         
     EVENT_NAME = response['EVENT_NAME']
     EVENT_URL_ROOT = response['URL_ROOT']
-    #EVENT_TIMEZONE = pytz.timezone(response['EVENT_TIMEZONE'])
-    EVENT_TIMEZONE = pytz.timezone('US/Pacific')
+    EVENT_TIMEZONE = pytz.timezone(response['EVENT_TIMEZONE'])
     EVENT_TZ = EVENT_TIMEZONE
 
 
