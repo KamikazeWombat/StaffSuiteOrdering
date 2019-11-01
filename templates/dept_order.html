@@ -8,10 +8,18 @@
   <form role="form">
     <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
     <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
-    <textarea name="contact_info" cols="50" rows="6"
+    <p>Slack Channel: <input type="text" name="slack_channel" placeholder="What channel to ping"
+                             value="{{ dept_order.slack_channel }}"
+    {% if dept_order.completed %} disabled {% endif %}/></p>
+    <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"
+              placeholder="Who to ping in Slack?  Can include @here or @channel if desired"
+    {% if dept_order.completed %} disabled {% endif %}
+    >{{ dept_order.slack_contact }}</textarea></p>
+    <p>Other Contact: <textarea name="other_contact" cols="50" rows="6"
                      placeholder="How you would like to be contacted for order pickup.  Slack channel or username, text, email, phone..."
-             >{{ dept_order.contact_info }}</textarea>
-    <br/><button class="btn btn-lg btn-primary btn-block" type="submit">Update Contact Info</button>
+    {% if dept_order.completed %} disabled {% endif %}
+    >{{ dept_order.other_contact }}</textarea></p>
+    <button class="btn btn-lg btn-primary btn-block" type="submit">Update Contact Info</button>
   </form>
   {% if not dept_order.started %}
     <br/>
@@ -30,7 +38,7 @@
   {% endif %}
   {% if dept_order.started %}<br/>Meal Prep Started: {{ dept_order.start_time }} {% endif %}
   {% if dept_order.completed %}<br/>Meal Prep Completed: {{ dept_order.completed_time }} {% endif %}
-  -----------------------------
+  <br/>-----------------------------
   <h3>list of orders for this department's order:</h3>
   {% for order in orders %}
     <form role="form">

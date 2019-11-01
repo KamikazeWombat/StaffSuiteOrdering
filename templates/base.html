@@ -97,7 +97,7 @@
     {% block top_of_body_additional %}
             <div id="floating_logo">
                 <img src={{ c.EVENT_URL_ROOT }}/static/theme/bg-logo.png/>
-                <div style="text-align:center;"><h1>{{ c.EVENT_NAME }} Staff Suite v 0.6.0</h1></div>
+                <div style="text-align:center;"><h1>{{ c.EVENT_NAME }} Staff Suite v 0.7.0</h1></div>
             </div>
     {% endblock %}
     <div id="mainContainer" class="container-fluid">
@@ -116,7 +116,6 @@
               {% endif %}
               {% if session.is_admin %}
               <td><a href="meal_setup_list">Admin Meal List</a> |</td>
-              <td><a href="meal_edit">Create Meal</a> |</td>
               <td><a href="config">Config</a> |</td>
               {% endif %}
               

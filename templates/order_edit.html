@@ -13,6 +13,7 @@
     </h2>
     {% if order.locked %}<h2>This order is locked for fulfilment, only Staff Suite admins can change it</h2>{% endif %}
     <table style="width:100%">
+      <tr>{{ macros.display_allergies(allergies) }}</tr>
       <tr> <td> <input type="hidden" name="order_id" value="{{ order.id }}"/>
         <input type="hidden" name="save_order" value="{{ meal.id }}"/>
       </td>

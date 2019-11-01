@@ -5,6 +5,8 @@
 
 <div class="container">
   <h2 class="form-signin-heading">Meal List</h2>
+  {{ macros.display_allergies(allergies) }}
+  <br/>
   <a href="?display_all=True">Display all Meals</a>
   {% for meal in meallist %}
     <form role="form">
