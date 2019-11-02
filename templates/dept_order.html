@@ -8,7 +8,7 @@
   <form role="form">
     <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
     <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
-    <p>Slack Channel: <input type="text" name="slack_channel" placeholder="What channel to ping"
+    <p>Slack Channel: <input type="text" name="slack_channel" placeholder="What channel to post in"
                              value="{{ dept_order.slack_channel }}"
     {% if dept_order.completed %} disabled {% endif %}/></p>
     <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"
@@ -36,8 +36,8 @@
       </tr></table>
     </form>
   {% endif %}
-  {% if dept_order.started %}<br/>Meal Prep Started: {{ dept_order.start_time }} {% endif %}
-  {% if dept_order.completed %}<br/>Meal Prep Completed: {{ dept_order.completed_time }} {% endif %}
+  {% if dept_order.started %}<br/><h3>Meal Prep Started: {{ dept_order.start_time }} </h3>{% endif %}
+  {% if dept_order.completed %}<br/><h3>Meal Prep Completed: {{ dept_order.completed_time }} </h3>{% endif %}
   <br/>-----------------------------
   <h3>list of orders for this department's order:</h3>
   {% for order in orders %}

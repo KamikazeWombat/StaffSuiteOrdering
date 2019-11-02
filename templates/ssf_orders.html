@@ -12,13 +12,13 @@
   {% endif %}
   print orders (placeholder) <br/>
   {% if dept_order.completed %}
-  <a href="ssf_complete_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}&uncomplete_order=True">Un-Mark order Complete</a><br/>
+  <a href="ssf_complete_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}&uncomplete_order=True">Un-Mark Bundle Complete</a><br/>
   {% else %}
-  <a href="ssf_complete_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}">Mark order Complete</a><br/>
+  <a href="ssf_complete_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}">Mark Bundle Complete</a><br/>
   {% endif %}
   <br/>
-  {% if dept_order.started %}<br/>Meal Prep Started: {{ dept_order.start_time }} {% endif %}
-  {% if dept_order.completed %}<br/>Meal Prep Completed: {{ dept_order.completed_time }} {% endif %}
+  {% if dept_order.started %}<br/>Bundle Prep Started: {{ dept_order.start_time }} {% endif %}
+  {% if dept_order.completed %}<br/>Bundle Prep Completed: {{ dept_order.completed_time }} {% endif %}
   <!-- todo: button to unlock in case lock clicked by mistake -->
   <h2 class="form-signin-heading">{{ dept_name }} Order List for {{ meal.meal_name }}</h2>
   {% for order in order_list %}

@@ -131,7 +131,6 @@ class Root:
                                c=c)
 
     @cherrypy.expose
-    # @restricted
     @admin_req
     def meal_setup_list(self, message=[], id=''):
     
@@ -166,7 +165,6 @@ class Root:
 
     @cherrypy.expose
     @admin_req
-    # @restricted
     def meal_edit(self, meal_id='', message=[], **params):
     
         messages = []
@@ -519,7 +517,6 @@ class Root:
         )
 
     @cherrypy.expose
-    # @restricted
     @admin_req
     def meal_delete_confirm(self, meal_id='', confirm=False):
         session = models.new_sesh()
@@ -580,7 +577,7 @@ class Root:
         
         if not eligible:
             # print("appending not enough hours")
-            messages.append('You are not scheduled for enough volunteer hours to be eligible for Staff Suite.\n'
+            messages.append('You are not scheduled for enough volunteer hours to be eligible for Staff Suite.  '
                             'You will need to get a Department Head to authorize any orders you place.')
         
         meals = session.query(Meal).all()
@@ -603,18 +600,16 @@ class Root:
                 delta = relativedelta(meal.end_time, now)
                 # rd is negative if first item is before second
                 rd = 0
-                # todo: section removed for testing since West is currently in the past.
-                """"
                 rd += delta.minutes
                 rd += delta.hours * 60
                 rd += delta.days * 1440
-                """
+                # hides meals in the past by default
                 if rd >= 0 or display_all:
                     meal_display.append(meal)
         
         if len(meal_display) == 0:
-            messages.append('You do not have any shifts that are eligible for Carryout.'
-                            'For eligibility rules see: add link')  # todo: add link or change text
+            messages.append('You do not have any shifts that are eligible for Carryout.  '
+                            'You will need to get a Department Head to authorize any orders you place.')
         
         for thismeal in meal_display:
             thismeal.start_time = con_tz(thismeal.start_time)
@@ -637,9 +632,8 @@ class Root:
             
 
     @cherrypy.expose
-    # @restricted
     @admin_req
-    def config(self, message=[], database_url=''):
+    def config(self, message=[]):
         messages = []
 
         if message:
@@ -652,16 +646,10 @@ class Root:
             'is_ss_staffer': cherrypy.session['is_ss_staffer']
         }
         
-        if database_url:
-            print('-----------------------')
-            print('saving config')
-            # todo: save to config file
-            
-        cherrypy_cfg = json.dumps(cfg.cherrypy, indent=4)
+        # todo: save to config file
         
         template = env.get_template('config.html')
         return template.render(messages=messages,
-                               cherrypy_cfg=cherrypy_cfg,
                                session=session_info,
                                c=c,
                                cfg=cfg)
@@ -898,7 +886,6 @@ class Root:
         
         
     @cherrypy.expose
-    # @restricted
     @ss_staffer
     def ssf_orders(self, meal_id, dept_id, message=[]):
         """
@@ -1021,9 +1008,10 @@ class Root:
             dept_order.completed = True
             dept_order.completed_time = now_utc()
             dept = session.query(Department).filter_by(id=dept_id).one()
-            message = dept_order.slack_contact + ' Your food order bundle for ' + dept.name + ' ' \
-                      'is ready, please pickup from Staff Suite.'
-            slack_bot.send_message(dept_order.slack_channel, message)
+            if dept_order.slack_channel:
+                message = dept_order.slack_contact + ' Your food order bundle for ' + dept.name + ' ' \
+                          'is ready, please pickup from Staff Suite.'
+                slack_bot.send_message(dept_order.slack_channel, message)
             session.commit()
             session.close()
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
