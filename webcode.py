@@ -24,7 +24,7 @@ import shared_functions
 from shared_functions import api_login, HTTPRedirect, order_split, order_selections, allergy_info, \
                      meal_join, meal_split, meal_blank_toppings, department_split, \
                      ss_eligible, carryout_eligible, combine_shifts, return_selected_only, \
-                     con_tz, utc_tz, now_utc, is_admin, is_ss_staffer, is_dh, return_not_selected
+                     con_tz, utc_tz, now_utc, now_contz, is_admin, is_ss_staffer, is_dh, return_not_selected
 import slack_bot
 
 
@@ -92,8 +92,16 @@ class Root:
                 else:
                     cherrypy.session['is_dh'] = False
                     
+                # check if orders open
+                if not cfg.orders_open():
+                    if not cherrypy.session['is_ss_staffer']:
+                        if not cherrypy.session['is_admin']:
+                            cherrypy.lib.sessions.expire()
+                            raise HTTPRedirect('login?message=Orders are not yet open.  You can login beginning at '
+                                               + con_tz(c.EPOCH).strftime(cfg.date_format))
+                    
                 session = models.new_sesh()
-                print('succesful login, updating record')
+                # print('succesful login, updating record')
                 # add or update attendee record in DB
                 try:
                     attendee = session.query(Attendee).filter_by(public_id=response['result']['public_id']).one()
@@ -633,7 +641,7 @@ class Root:
 
     @cherrypy.expose
     @admin_req
-    def config(self, message=[]):
+    def config(self, message=[], **params):
         messages = []
 
         if message:
@@ -646,11 +654,26 @@ class Root:
             'is_ss_staffer': cherrypy.session['is_ss_staffer']
         }
         
+        if 'radio_select_count' in params:
+            # save config
+            #cfg.sticker_count = params['sticker_count']  # todo: add this after printing is setup
+            cfg.multi_select_count = params['multi_select_count']
+            cfg.radio_select_count = params['radio_select_count']
+            cfg.schedule_tolerance = params['schedule_tolerance']
+            cfg.date_format = params['date_format']
+            cfg.ss_hours = params['ss_hours']
+            cfg.save()
+            raise HTTPRedirect('config?message=Successfully saved config settings')
+        
+        admin_list = ',\n'.join(cfg.admin_list)
+        staffer_list = ',\n'.join(cfg.staffer_list)
         # todo: save to config file
         
         template = env.get_template('config.html')
         return template.render(messages=messages,
                                session=session_info,
+                               admin_list=admin_list,
+                               staffer_list=staffer_list,
                                c=c,
                                cfg=cfg)
 
@@ -1010,7 +1033,7 @@ class Root:
             dept = session.query(Department).filter_by(id=dept_id).one()
             if dept_order.slack_channel:
                 message = dept_order.slack_contact + ' Your food order bundle for ' + dept.name + ' ' \
-                          'is ready, please pickup from Staff Suite.'
+                          'is ready, please pickup from Staff Suite.  ' + now_contz().strftime(cfg.date_format)
                 slack_bot.send_message(dept_order.slack_channel, message)
             session.commit()
             session.close()

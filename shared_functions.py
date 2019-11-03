@@ -132,6 +132,14 @@ def now_utc():
     return now
 
 
+def now_contz():
+    """returns the current datetime now, converted to Con local TZ beforehand, without TZ info"""
+    now = datetime.now()
+    now = now.replace(tzinfo=tzlocal())  # sets timezone info to server local TZ
+    now = now.astimezone(c.EVENT_TIMEZONE)  # converts time from local TZ to UTC
+    now = now.replace(tzinfo=None)  # removes tzinfo to avoid confusing other systems
+    return now
+
 def api_login(first_name, last_name, email, zip_code):
     """
     Performs login request against Uber API and returns resulting json data

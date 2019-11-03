@@ -2,6 +2,10 @@ import json
 import os
 import requests
 
+from datetime import datetime
+from dateutil.parser import parse
+from dateutil.relativedelta import relativedelta
+from dateutil.tz import tzlocal
 from jinja2 import Environment, FileSystemLoader
 import pytz
 from sqlalchemy.ext.declarative import declarative_base
@@ -10,18 +14,6 @@ from sqlalchemy.ext.declarative import declarative_base
 class Config:
     """
     Class to make config data easily accessible
-    """
-    """apiauthkey = ''  # api key for Uber
-    api_endpoint = ''  # location for Uber APi
-    database_location = ''
-    order_message = ''
-    orders_open = ''  # todo: probably needs to be function rather than simple attribute
-    sticker_count = ''  # how many stickers will print from each time pressing 'print' button
-    multi_select_count = ''  # how many lines to do in the multi select section when editing a Meal
-    radio_select_count = ''  # how many options in single option selects when editing
-    schedule_tolerance = ''  # Tolerance in minutes for shift calculations for start/end of things not lining up exactly
-    # todo: system may need separate tolerance for connecting shifts together?
-    cherrypy = ''  # cherrypy config dict
     """
     
     def __init__(self):
@@ -58,8 +50,6 @@ class Config:
         
         self.api_endpoint = cdata['api_endpoint']
         self.database_location = cdata['database_location']
-        self.order_message = cdata['order_message']
-        self.orders_open = cdata['orders_open']
         self.sticker_count = cdata['sticker_count']
         self.multi_select_count = cdata['multi_select_count']
         self.radio_select_count = cdata['radio_select_count']
@@ -69,6 +59,33 @@ class Config:
         self.cherrypy = cdata['cherrypy']
         self.cherrypy['/']['tools.staticdir.root'] = os.path.abspath(os.getcwd())
 
+    def orders_open(self):
+        now = datetime.now()
+        now = now.replace(tzinfo=tzlocal())  # sets timezone info to server local TZ
+        now = now.astimezone(pytz.utc)  # converts time from local TZ to UTC
+    
+        rd = relativedelta(now, c.EPOCH)
+        if rd.minutes >= 0 or rd.hours >= 0 or rd.days >= 0:
+            return True
+        else:
+            return False
+        
+    def save(self):
+        cdata = {
+            'api_endpoint': self.api_endpoint,
+            'database_location': self.database_location,
+            'sticker_count': self.sticker_count,
+            'multi_select_count': self.multi_select_count,
+            'radio_select_count': self.radio_select_count,
+            'schedule_tolerance': self.schedule_tolerance,
+            'date_format': self.date_format,
+            'ss_hours': self.ss_hours,
+            'cherrypy': self.cherrypy
+        }
+        
+        configfile = open('config.json', 'w')
+        json.dump(cdata, configfile, indent=2)
+        return
 
 cfg = Config()
 
@@ -77,30 +94,37 @@ class Uberconfig:
     """
     Class to make relevant config data from Uber easily accessible
     """
-
-    # runs API request
-    REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
-    # data being sent to API
-    request_data = {'method': 'config.info'}
-    request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
-    # print("------printing request before json load")
-    # print(request.text)
-    response = json.loads(request.text)
-    
-    try:
-        response = response['error']
-        print("error in response")
-        print(response)
-    except KeyError:
-        response = response['result']
-        # print("no error in response")
-        # print(response)
+    def __init__(self):
+        # runs API request
+        REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
+        # data being sent to API
+        request_data = {'method': 'config.info'}
+        request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
+        # print("------printing request before json load")
+        # print(request.text)
+        response = json.loads(request.text)
         
-    EVENT_NAME = response['EVENT_NAME']
-    EVENT_URL_ROOT = response['URL_ROOT']
-    EVENT_TIMEZONE = pytz.timezone(response['EVENT_TIMEZONE'])
-    EVENT_TZ = EVENT_TIMEZONE
-
+        try:
+            response = response['error']
+            print("error in response")
+            print(response)
+        except KeyError:
+            response = response['result']
+            # print("no error in response")
+            # print(response)
+        
+        self.EVENT_NAME = response['EVENT_NAME']
+        self.EVENT_URL_ROOT = response['URL_ROOT']
+        self.EVENT_TIMEZONE = pytz.timezone(response['EVENT_TIMEZONE'])
+        self.EVENT_TZ = self.EVENT_TIMEZONE
+        EPOCH = response['EPOCH']
+        EPOCH = parse(EPOCH)
+        EPOCH = self.EVENT_TIMEZONE.localize(EPOCH)
+        self.EPOCH = EPOCH.astimezone(pytz.utc)
+    
+    
+        
+    
 
 c = Uberconfig()
 
