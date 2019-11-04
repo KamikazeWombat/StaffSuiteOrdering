@@ -16,6 +16,25 @@ class Config:
     Class to make config data easily accessible
     """
     
+    def load_user_lists(self):
+        adminfile = open('admin_list.cfg', 'r')
+        admins = adminfile.read()
+        adminfile.close()
+        admin_list = admins.split(',')
+        self.admin_list = list()
+        for admin in admin_list:
+            admin = admin.strip()
+            self.admin_list.append(admin)
+    
+        ssfile = open('ss_staffer_list.cfg', 'r')
+        staffers = ssfile.read()
+        ssfile.close()
+        staffer_list = staffers.split(',')
+        self.staffer_list = list()
+        for staffer in staffer_list:
+            staffer = staffer.strip()
+            self.staffer_list.append(staffer)
+    
     def __init__(self):
         # read in config from files.  todo: option to load other config files than default
         uber_authfile = open('uber_auth.cfg', 'r')
@@ -30,23 +49,9 @@ class Config:
         cdata = json.load(configfile)
         configfile.close()
         
-        adminfile = open('admin_list.cfg', 'r')
-        admins = adminfile.read()
-        adminfile.close()
-        admin_list = admins.split(',')
-        self.admin_list = list()
-        for admin in admin_list:
-            admin = admin.strip()
-            self.admin_list.append(admin)
-            
-        ssfile = open('ss_staffer_list.cfg', 'r')
-        staffers = ssfile.read()
-        ssfile.close()
-        staffer_list = staffers.split(',')
-        self.staffer_list = list()
-        for staffer in staffer_list:
-            staffer = staffer.strip()
-            self.staffer_list.append(staffer)
+        self.admin_list = ''
+        self.staffer_list = ''
+        self.load_user_lists()
         
         self.api_endpoint = cdata['api_endpoint']
         self.database_location = cdata['database_location']
@@ -70,7 +75,7 @@ class Config:
         else:
             return False
         
-    def save(self):
+    def save(self, admin_list, staffer_list):
         cdata = {
             'api_endpoint': self.api_endpoint,
             'database_location': self.database_location,
@@ -85,6 +90,17 @@ class Config:
         
         configfile = open('config.json', 'w')
         json.dump(cdata, configfile, indent=2)
+        configfile.close()
+        
+        adminfile = open('admin_list.cfg', 'w')
+        adminfile.write(admin_list)
+        adminfile.close()
+        
+        stafferfile = open('staffer_list.cfg', 'w')
+        stafferfile.write(staffer_list)
+        stafferfile.close()
+        
+        self.load_user_lists()
         return
 
 cfg = Config()

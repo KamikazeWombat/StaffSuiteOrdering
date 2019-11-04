@@ -98,7 +98,8 @@ class Root:
                         if not cherrypy.session['is_admin']:
                             cherrypy.lib.sessions.expire()
                             raise HTTPRedirect('login?message=Orders are not yet open.  You can login beginning at '
-                                               + con_tz(c.EPOCH).strftime(cfg.date_format))
+                                               + con_tz(c.EPOCH).strftime(cfg.date_format) + ' ID: ' +
+                                               str(cherrypy.session['staffer_id']))
                     
                 session = models.new_sesh()
                 # print('succesful login, updating record')
@@ -653,6 +654,9 @@ class Root:
             'is_admin': cherrypy.session['is_admin'],
             'is_ss_staffer': cherrypy.session['is_ss_staffer']
         }
+
+        admin_list = ',\n'.join(cfg.admin_list)
+        staffer_list = ',\n'.join(cfg.staffer_list)
         
         if 'radio_select_count' in params:
             # save config
@@ -662,11 +666,10 @@ class Root:
             cfg.schedule_tolerance = params['schedule_tolerance']
             cfg.date_format = params['date_format']
             cfg.ss_hours = params['ss_hours']
-            cfg.save()
+            cfg.save(params['admin_list'], params['staffer_list'])
             raise HTTPRedirect('config?message=Successfully saved config settings')
         
-        admin_list = ',\n'.join(cfg.admin_list)
-        staffer_list = ',\n'.join(cfg.staffer_list)
+        
         # todo: save to config file
         
         template = env.get_template('config.html')
