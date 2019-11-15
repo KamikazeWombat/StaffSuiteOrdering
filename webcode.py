@@ -844,7 +844,7 @@ class Root:
         session = models.new_sesh()
         
         meals = session.query(Meal).all()
-        shift_buffer = relativedelta(minutes=cfg.schedule_tolerance)
+        shift_buffer = relativedelta(minutes=int(cfg.schedule_tolerance))
         meal_list = []
         now = datetime.now()
         now = now.replace(tzinfo=tzlocal())

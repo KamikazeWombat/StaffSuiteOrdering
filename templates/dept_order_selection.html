@@ -27,7 +27,7 @@
                    {% if meal.cutoff %} value="{{ meal.cutoff.isoformat() }}"{% endif %} disabled/></td>
           <td>Staff Suite will begin making orders at this time.  You can still edit/submit orders up until they begin your department's order Bundle though.</td>
         </tr>
-        <tr><td>Department to deliver to</td>
+        <tr><td>Department who will be picking up</td>
           <td>
             {{ macros.dropdown(field='dept_id', options=depts, is_required=True) }}
         </td></tr>

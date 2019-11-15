@@ -55,12 +55,12 @@ class Config:
         
         self.api_endpoint = cdata['api_endpoint']
         self.database_location = cdata['database_location']
-        self.sticker_count = cdata['sticker_count']
-        self.multi_select_count = cdata['multi_select_count']
-        self.radio_select_count = cdata['radio_select_count']
-        self.schedule_tolerance = cdata['schedule_tolerance']
+        self.sticker_count = int(cdata['sticker_count'])
+        self.multi_select_count = int(cdata['multi_select_count'])
+        self.radio_select_count = int(cdata['radio_select_count'])
+        self.schedule_tolerance = int(cdata['schedule_tolerance'])
         self.date_format = cdata['date_format']
-        self.ss_hours = cdata['ss_hours']
+        self.ss_hours = int(cdata['ss_hours'])
         self.cherrypy = cdata['cherrypy']
         self.cherrypy['/']['tools.staticdir.root'] = os.path.abspath(os.getcwd())
 
