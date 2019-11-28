@@ -669,10 +669,8 @@ class Root:
             cfg.date_format = params['date_format']
             cfg.ss_hours = params['ss_hours']
             cfg.save(params['admin_list'], params['staffer_list'])
+            cfg.load_user_lists()
             raise HTTPRedirect('config?message=Successfully saved config settings')
-        
-        
-        # todo: save to config file
         
         template = env.get_template('config.html')
         return template.render(messages=messages,
