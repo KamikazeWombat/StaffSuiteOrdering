@@ -951,8 +951,8 @@ class Root:
         dept = session.query(Department).filter_by(id=dept_id).one()
         dept_name = dept.name
         
-        session.close()
-        
+        session.close()  # this has to be before the order loop below.  don't know why, seems like it should be after.
+
         for order in orders:
             sorted_shifts, response = combine_shifts(order.attendee.badge_num, full=True)
             order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
@@ -972,26 +972,26 @@ class Root:
         
         if dept_order.started:
             dept_order.start_time = con_tz(dept_order.start_time).strftime(cfg.date_format)
+            # generate labels
+            if cfg.local_print:
+                labels = env.get_template('print_labels.html')
+                options = {
+                    'page-height': '2.0in',
+                    'page-width': '4.0in',
+                    'margin-top': '0.1in',
+                    'margin-right': '0.1in',
+                    'margin-bottom': '0.1in',
+                    'margin-left': '0.1in',
+                    'encoding': "UTF-8",
+                    'print-media-type': None
+                }
+                pdfkit.from_string(labels.render(orders=orders,
+                                                 meal=thismeal),
+                                   'pdfs\\' + dept_name + '.pdf',
+                                   options=options)
         if dept_order.completed:
             dept_order.completed_time = con_tz(dept_order.completed_time).strftime(cfg.date_format)
         
-        template2 = env.get_template('order_detail.html')
-        options = {
-            'page-height': '2.0in',
-            'page-width': '4.0in',
-            'margin-top': '0.1in',
-            'margin-right': '0.1in',
-            'margin-bottom': '0.1in',
-            'margin-left': '0.1in',
-            'encoding': "UTF-8",
-            'print-media-type': None
-        }
-
-        pdfkit.from_string(template2.render(orders=orders,
-                                            meal=thismeal),
-                           'out.pdf',
-                           options=options)
-            
         template = env.get_template('ssf_orders.html')
         return template.render(dept_order=dept_order,
                                dept_name=dept_name,

@@ -1,0 +1,10 @@
+div {
+    font-size: 10px;
+    font-family: Tahoma, Verdona;
+}
+.new-page {page-break-after: always;}
+
+.border {
+    border-style: solid;
+    border-radius: 5px;
+}

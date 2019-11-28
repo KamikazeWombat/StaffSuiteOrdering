@@ -1,0 +1,47 @@
+{% import 'macros.html' as macros with context %}
+
+<!DOCTYPE HTML>
+<html xmlns:style="http://www.w3.org/1999/xhtml">
+<head>
+  <link rel="stylesheet" href="../static/styles/local_print.css">
+</head>
+  <body>
+  {% for order in orders %}
+  <div style="position:relative;"class="{% if not loop.last %}new-page{% endif %}{% if order.allergies %} border{% endif %}">
+    <div style="position:absolute;top:0;left:0;">
+      # {{ order.attendee.badge_num }}
+    </div>
+    <div style="position:relative;left:75px;">
+      date
+    </div>
+    <div style="position:relative;top:10px;">
+      {% if order.allergies %}
+        {{ macros.display_allergies(order.allergies, view_only=True, color=False) }}
+      {% endif %}
+    </div>
+      {% if not meal.toggle1_title == "" %}
+        <label>{{ order.toggle1[0][1] }}</label><br/>
+      {% endif %}
+      {% if not meal.toggle2_title == "" %}
+        <label>{{ order.toggle2[0][1] }}</label><br/>
+      {% endif %}
+      {% if not meal.toggle3_title == "" %}
+        <label>{{ order.toggle3[0][1] }}</label><br/>
+      {% endif %}
+      </td>
+    </tr>
+    <tr>
+      {% if not meal.toppings_title == "" %}
+        {{ macros.toppings_list(order.toppings) }}
+      {% endif %}
+    </tr>
+    {% if not order.notes == "" %}
+    <tr>
+      <td>{{ order.notes }}</td>
+    </tr>
+    {% endif %}
+    
+  </div>
+  {% endfor %}
+  </body>
+</html>
