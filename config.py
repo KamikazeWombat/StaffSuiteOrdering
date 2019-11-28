@@ -36,7 +36,7 @@ class Config:
             self.staffer_list.append(staffer)
     
     def __init__(self):
-        # read in config from files.  todo: option to load other config files than default
+        # read in config from files.  todo: have system skip things that are not yet defined.  in particular, API key
         uber_authfile = open('uber_auth.cfg', 'r')
         self.uber_authkey = uber_authfile.read()
         uber_authfile.close()
@@ -55,7 +55,8 @@ class Config:
         
         self.api_endpoint = cdata['api_endpoint']
         self.database_location = cdata['database_location']
-        self.sticker_count = int(cdata['sticker_count'])
+        self.local_print = int(cdata['local_print'])
+        self.remote_print = int(cdata['remote_print'])
         self.multi_select_count = int(cdata['multi_select_count'])
         self.radio_select_count = int(cdata['radio_select_count'])
         self.schedule_tolerance = int(cdata['schedule_tolerance'])
@@ -79,7 +80,8 @@ class Config:
         cdata = {
             'api_endpoint': self.api_endpoint,
             'database_location': self.database_location,
-            'sticker_count': self.sticker_count,
+            'local_print': self.local_print,
+            'remote_print': self.remote_print,
             'multi_select_count': self.multi_select_count,
             'radio_select_count': self.radio_select_count,
             'schedule_tolerance': self.schedule_tolerance,

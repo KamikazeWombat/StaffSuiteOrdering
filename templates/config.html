@@ -9,14 +9,18 @@
       <table>
         <tr><td>Admin Users list</td>
           <td><textarea name="admin_list" cols="50" rows="4"
-                        placeholder="API auth key from Uber instance you are connecting to"
+                        placeholder="Public IDs from Uber, comma separated list.  Whitespace will be cleared."
           >{{ admin_list }}</textarea>
         </td></tr>
         <tr><td>Staff Suite Staffers list</td>
           <td><textarea name="staffer_list" cols="50" rows="4"
-          placeholder="API endpoint for Uber instance, like 'https://staging-west.reggie.magfest.org/jsonrpc/'"
+          placeholder="Public IDs from Uber, comma separated list.  Whitespace will be cleared."
           >{{ staffer_list }}</textarea>
         </td></tr>
+        <tr><td>Printing Setup - select one :</td>
+          <td><label class="checkbox-label">Local Printer </label><input type="checkbox" name="local_print"{% if cfg.local_print %} checked{% endif %}>
+          <label class="checkbox-label">Remote Printer </label><input type="checkbox" name="remote_print"{% if cfg.remote_print %} checked{% endif %}></td>
+        </tr>
         <tr><td>Toggle Select row count</td>
           <td><input type="number" name="radio_select_count" value="{{ cfg.radio_select_count }}"
           placeholder="How many rows to make available when creating meal"/>

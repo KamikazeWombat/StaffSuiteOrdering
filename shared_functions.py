@@ -481,7 +481,7 @@ def ss_eligible(badge_num):
         print(message)
         
     if not message:
-        return int(response['result']['weighted_hours']) > int(cfg.ss_hours)
+        return response['result']['weighted_hours'] > cfg.ss_hours
     else:
         return message
 

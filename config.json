@@ -1,7 +1,8 @@
 {
   "api_endpoint": "https://staging-super.reggie.magfest.org/jsonrpc/",
   "database_location": "sqlite:///testdb.db",
-  "sticker_count": 10,
+  "local_print": true,
+  "remote_print": false,
   "multi_select_count": "5",
   "radio_select_count": "3",
   "schedule_tolerance": "45",

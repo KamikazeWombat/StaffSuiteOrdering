@@ -8,6 +8,7 @@ from datetime import datetime
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzlocal
+import pdfkit
 import pytz
 import sqlalchemy.orm.exc
 from sqlalchemy.orm import joinedload, subqueryload
@@ -660,7 +661,8 @@ class Root:
         
         if 'radio_select_count' in params:
             # save config
-            #cfg.sticker_count = params['sticker_count']  # todo: add this after printing is setup
+            cfg.local_print = params['local_print']
+            cfg.remote_print = params['remote_print']
             cfg.multi_select_count = params['multi_select_count']
             cfg.radio_select_count = params['radio_select_count']
             cfg.schedule_tolerance = params['schedule_tolerance']
@@ -844,7 +846,7 @@ class Root:
         session = models.new_sesh()
         
         meals = session.query(Meal).all()
-        shift_buffer = relativedelta(minutes=int(cfg.schedule_tolerance))
+        shift_buffer = relativedelta(minutes=cfg.schedule_tolerance)
         meal_list = []
         now = datetime.now()
         now = now.replace(tzinfo=tzlocal())
@@ -974,6 +976,23 @@ class Root:
             dept_order.start_time = con_tz(dept_order.start_time).strftime(cfg.date_format)
         if dept_order.completed:
             dept_order.completed_time = con_tz(dept_order.completed_time).strftime(cfg.date_format)
+        
+        template2 = env.get_template('order_detail.html')
+        options = {
+            'page-height': '2.0in',
+            'page-width': '4.0in',
+            'margin-top': '0.1in',
+            'margin-right': '0.1in',
+            'margin-bottom': '0.1in',
+            'margin-left': '0.1in',
+            'encoding': "UTF-8",
+            'print-media-type': None
+        }
+
+        pdfkit.from_string(template2.render(orders=orders,
+                                            meal=thismeal),
+                           'out.pdf',
+                           options=options)
             
         template = env.get_template('ssf_orders.html')
         return template.render(dept_order=dept_order,
@@ -1055,6 +1074,7 @@ class Root:
         """
         Displays details of an order in a popup for fulfilment purposes
         """
+        
         
     def print_order(self):
         """
