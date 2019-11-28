@@ -114,9 +114,9 @@ class Root:
                         attendee.full_name = response['result']['full_name']
                         attendee.badge_num = response['result']['badge_num']
                         session.commit()
-                    print('record update complete')
+                    # print('record update complete')
                 except sqlalchemy.orm.exc.NoResultFound:
-                    print('new attendee login, creating record')
+                    # print('new attendee login, creating record')
                     attendee = Attendee()
                     attendee.badge_num = response['result']['badge_num']
                     attendee.public_id = response['result']['public_id']
@@ -272,7 +272,7 @@ class Root:
     @cherrypy.expose
     def order_edit(self, meal_id='', save_order='', order_id='', message=[], notes='', delete_order=False,
                    dh_edit=False, **params):
-        # todo: do something with Uber allergies info
+        
         # todo: link to allergies SOP somewhere
         
         # todo: department select dropdown needs to restrict based upon if a department's order is already being processed or has been.
