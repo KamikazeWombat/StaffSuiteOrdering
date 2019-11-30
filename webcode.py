@@ -672,13 +672,13 @@ class Root:
                 cfg.remote_print = True
             else:
                 cfg.remote_print = False
-            cfg.multi_select_count = params['multi_select_count']
-            cfg.radio_select_count = params['radio_select_count']
-            cfg.schedule_tolerance = params['schedule_tolerance']
+            cfg.multi_select_count = int(params['multi_select_count'])
+            cfg.radio_select_count = int(params['radio_select_count'])
+            cfg.schedule_tolerance = int(params['schedule_tolerance'])
             cfg.date_format = params['date_format']
-            cfg.ss_hours = params['ss_hours']
+            cfg.ss_hours = int(params['ss_hours'])
             cfg.save(params['admin_list'], params['staffer_list'])
-            cfg.load_user_lists()
+            
             raise HTTPRedirect('config?message=Successfully saved config settings')
         
         template = env.get_template('config.html')
