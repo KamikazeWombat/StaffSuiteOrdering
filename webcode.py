@@ -306,8 +306,10 @@ class Root:
                     if not shared_functions.is_dh(cherrypy.session['staffer_id']):
                         if not shared_functions.is_admin(cherrypy.session['staffer_id']):
                             raise HTTPRedirect("staffer_meal_list?message=This isn't your order.")
-                dept_order = session.query(DeptOrder).filter_by(meal_id=params['save_order'], dept_id=params['department'])
-                if thisorder.locked or dept_order.locked:
+                        
+                dept_order = session.query(DeptOrder).filter_by(meal_id=save_order, dept_id=params['department']).one()
+                
+                if thisorder.locked or dept_order.started:
                     if not cherrypy.session['is_admin']:
                         raise HTTPRedirect("staffer_meal_list?message=This order has already been started by Staff Suite"
                                            " and cannot be changed except by Staff Suite Admins")
@@ -978,15 +980,16 @@ class Root:
                 options = {
                     'page-height': '2.0in',
                     'page-width': '4.0in',
-                    'margin-top': '0.1in',
-                    'margin-right': '0.1in',
-                    'margin-bottom': '0.1in',
-                    'margin-left': '0.1in',
+                    'margin-top': '0.0in',
+                    'margin-right': '0.0in',
+                    'margin-bottom': '0.0in',
+                    'margin-left': '0.0in',
                     'encoding': "UTF-8",
                     'print-media-type': None
                 }
                 pdfkit.from_string(labels.render(orders=orders,
-                                                 meal=thismeal),
+                                                 meal=thismeal,
+                                                 dept_name=dept_name),
                                    'pdfs\\' + dept_name + '.pdf',
                                    options=options)
         if dept_order.completed:
@@ -1020,11 +1023,11 @@ class Root:
             session.commit()
             session.close()
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                               '&message=This order is now locked.')
+                               '&message=This Bundle is now locked.')
         else:
             if dept_order.completed:
                 raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                                   '&message=You cannot un-lock an order that is marked Completed.')
+                                   '&message=You cannot un-lock an Bundle that is marked Completed.')
             
             dept_order.started = False
             dept_order.start_time = None
@@ -1033,7 +1036,7 @@ class Root:
             session.commit()
             session.close()
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                               '&message=This order is now un-locked.')
+                               '&message=This Bundle is now un-locked.')
         
     @cherrypy.expose
     @ss_staffer
@@ -1047,7 +1050,7 @@ class Root:
         if not uncomplete_order:
             if not dept_order.started:
                 raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                                   '&message=The order must be Locked before it can be marked Complete.')
+                                   '&message=The Bundle must be Locked before it can be marked Complete.')
             dept_order.completed = True
             dept_order.completed_time = now_utc()
             dept = session.query(Department).filter_by(id=dept_id).one()
@@ -1058,14 +1061,14 @@ class Root:
             session.commit()
             session.close()
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                               '&message=This order is now marked Complete.')
+                               '&message=This Bundle is now marked Complete.')
         else:
             dept_order.completed = False
             dept_order.completed_time = None
             session.commit()
             session.close()
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                               '&message=This order is now un-marked Complete.')
+                               '&message=This Bundle is now un-marked Complete.')
 
       
     def order_detail(self):

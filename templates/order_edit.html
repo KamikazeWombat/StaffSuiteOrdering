@@ -58,7 +58,7 @@
       {% endif %}
      <tr><td>Notes</td>
        <td>
-         <textarea name="notes" cols="50" rows="4"
+         <textarea name="notes" cols="50" rows="4" {% if order.locked %} disabled{% endif %}
                    placeholder="Notes/requests. No guarantees that requests will be honored, please be aware of your own allergies."
            >{{ order.notes }}</textarea>
        </td>
