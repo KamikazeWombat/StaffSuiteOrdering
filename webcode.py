@@ -664,7 +664,14 @@ class Root:
         if 'radio_select_count' in params:
             # save config
             cfg.local_print = params['local_print']
-            cfg.remote_print = params['remote_print']
+            if 'local_print' in params:
+                cfg.local_print = True
+            else:
+                cfg.local_print = False
+            if 'remote_print' in params:
+                cfg.remote_print = True
+            else:
+                cfg.remote_print = False
             cfg.multi_select_count = params['multi_select_count']
             cfg.radio_select_count = params['radio_select_count']
             cfg.schedule_tolerance = params['schedule_tolerance']
