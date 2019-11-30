@@ -1,0 +1,48 @@
+{% import 'macros.html' as macros with context %}
+
+<!DOCTYPE HTML>
+<html xmlns:style="http://www.w3.org/1999/xhtml">
+<head>
+  
+  <style>
+      .new-page {page-break-after: always;}
+  </style>
+</head>
+  <body>
+  {% for order in orders %}
+  <div class="new-page">
+    <table>
+      <tr>
+        <td>
+          <label>{{ order.attendee.badge_num }}</label>
+          {% if order.allergies %}
+            {{ macros.display_allergies(order.allergies, view_only=True, color=False) }}
+          {% endif %}
+          <input type="hidden" name="order_id" value ="{{ order.id }}">
+          
+          {% if not meal.toggle1_title == "" %}
+            <label>{{ order.toggle1[0][1] }}</label><br/>
+          {% endif %}
+          {% if not meal.toggle2_title == "" %}
+            <label>{{ order.toggle2[0][1] }}</label><br/>
+          {% endif %}
+          {% if not meal.toggle3_title == "" %}
+            <label>{{ order.toggle3[0][1] }}</label><br/>
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        {% if not meal.toppings_title == "" %}
+          {{ macros.toppings_list(order.toppings) }}
+        {% endif %}
+      </tr>
+      {% if not order.notes == "" %}
+      <tr>
+        <td>{{ order.notes }}</td>
+      </tr>
+      {% endif %}
+    </table>
+  </div>
+  {% endfor %}
+  </body>
+</html>

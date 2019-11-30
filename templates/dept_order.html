@@ -8,16 +8,17 @@
   <form role="form">
     <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
     <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
-    <p>Slack Channel: <input type="text" name="slack_channel" placeholder="What channel to ping"
-                             value="{{ dept_order.slack_channel }}"
-    {% if dept_order.completed %} disabled {% endif %}/></p>
+    <p>Slack Channel: <textarea name="slack_channel" cols="50" rows="1"
+              placeholder="What channel to post in, multiple channels can be comma separated"
+      {% if dept_order.completed %} disabled {% endif %}
+    >{{ dept_order.slack_channel }}</textarea>What channel to post in, multiple channels can be comma separated</p>
     <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"
               placeholder="Who to ping in Slack?  Can include @here or @channel if desired"
-    {% if dept_order.completed %} disabled {% endif %}
-    >{{ dept_order.slack_contact }}</textarea></p>
+      {% if dept_order.completed %} disabled {% endif %}
+    >{{ dept_order.slack_contact }}</textarea>Who to ping in Slack?  Can include @here or @channel if desired</p>
     <p>Other Contact: <textarea name="other_contact" cols="50" rows="6"
                      placeholder="How you would like to be contacted for order pickup.  Slack channel or username, text, email, phone..."
-    {% if dept_order.completed %} disabled {% endif %}
+      {% if dept_order.completed %} disabled {% endif %}
     >{{ dept_order.other_contact }}</textarea></p>
     <button class="btn btn-lg btn-primary btn-block" type="submit">Update Contact Info</button>
   </form>
@@ -31,15 +32,15 @@
           <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}">
           {{ macros.dropdown(field='order_department', options=departments, is_required=True) }}
         </td>
-        <td>Badge Number: <input type="number" name="order_badge"/></td>
+        <td>Badge Number: <input type="text" name="order_badge"/></td>
         <td><button class="btn btn-lg btn-primary btn-block" type="submit">Create Order</button></td>
       </tr></table>
     </form>
   {% endif %}
-  {% if dept_order.started %}<br/>Meal Prep Started: {{ dept_order.start_time }} {% endif %}
-  {% if dept_order.completed %}<br/>Meal Prep Completed: {{ dept_order.completed_time }} {% endif %}
+  {% if dept_order.started %}<br/><h3>Meal Prep Started: {{ dept_order.start_time }} </h3>{% endif %}
+  {% if dept_order.completed %}<br/><h3>Meal Prep Completed: {{ dept_order.completed_time }} </h3>{% endif %}
   <br/>-----------------------------
-  <h3>list of orders for this department's order:</h3>
+  <h3>list of orders for this department's Bundle:</h3>
   {% for order in orders %}
     <form role="form">
       <table>

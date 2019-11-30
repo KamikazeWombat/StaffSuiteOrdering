@@ -1,23 +1,28 @@
-{"orders_open": true,
-  "sticker_count": 10,
-  "order_message": "test order completion message",
+{
   "api_endpoint": "https://staging-super.reggie.magfest.org/jsonrpc/",
   "database_location": "sqlite:///testdb.db",
-  "multi_select_count": 5,
-  "radio_select_count": 3,
-  "schedule_tolerance": 45,
-  "ss_hours": 12,
+  "local_print": true,
+  "remote_print": false,
+  "multi_select_count": "5",
+  "radio_select_count": "3",
+  "schedule_tolerance": "45",
   "date_format": "%d-%m-%Y %H:%M",
+  "ss_hours": "12",
   "cherrypy": {
     "global": {
       "server.socket_port": 80
     },
     "/": {
-      "tools.sessions.on": true
+      "tools.sessions.on": true,
+      "tools.staticdir.root": "C:\\Users\\Wombat3\\PycharmProjects\\StaffSuiteOrdering"
+    },
+    "/pdfs": {
+      "tools.staticdir.on": true,
+      "tools.staticdir.dir": "./pdfs"
     },
     "/static": {
-            "tools.staticdir.on": true,
-            "tools.staticdir.dir": "./static"
+      "tools.staticdir.on": true,
+      "tools.staticdir.dir": "./static"
     }
   }
 }

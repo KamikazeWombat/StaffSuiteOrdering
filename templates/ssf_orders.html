@@ -6,19 +6,23 @@
 <div class="container">
   <h2>{{ message }} <br/></h2>
   {% if dept_order.started %}
-  <h3>Orders locked!</h3><a href="ssf_lock_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}&unlock_order=True">Un-Lock orders for department</a> <br/>
+  <h3>Orders locked!</h3><a class="btn btn-lg btn-primary btn-block" href="ssf_lock_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}&unlock_order=True">Un-Lock orders for department</a> <br/>
   {% else %}
-  <a href="ssf_lock_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}">Lock orders for department</a> <br/>
+  <a class="btn btn-lg btn-primary btn-block" href="ssf_lock_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}">Lock orders for department</a> <br/>
   {% endif %}
-  print orders (placeholder) <br/>
-  {% if dept_order.completed %}
-  <a href="ssf_complete_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}&uncomplete_order=True">Un-Mark order Complete</a><br/>
+  {% if dept_order.started %}
+  <a class="btn btn-lg btn-primary btn-block" href="pdfs/{{ dept_name }}.pdf" target="_blank">Print Labels</a> <br/>
   {% else %}
-  <a href="ssf_complete_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}">Mark order Complete</a><br/>
+  You must start this bundle before you can print labels!
+  {% endif %}
+  {% if dept_order.completed %}
+  <a class="btn btn-lg btn-primary btn-block" href="ssf_complete_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}&uncomplete_order=True">Un-Mark Bundle Complete</a><br/>
+  {% else %}
+  <a class="btn btn-lg btn-primary btn-block" href="ssf_complete_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}">Mark Bundle Complete</a><br/>
   {% endif %}
   <br/>
-  {% if dept_order.started %}<br/>Meal Prep Started: {{ dept_order.start_time }} {% endif %}
-  {% if dept_order.completed %}<br/>Meal Prep Completed: {{ dept_order.completed_time }} {% endif %}
+  {% if dept_order.started %}<br/>Bundle Prep Started: {{ dept_order.start_time }} {% endif %}
+  {% if dept_order.completed %}<br/>Bundle Prep Completed: {{ dept_order.completed_time }} {% endif %}
   <!-- todo: button to unlock in case lock clicked by mistake -->
   <h2 class="form-signin-heading">{{ dept_name }} Order List for {{ meal.meal_name }}</h2>
   {% for order in order_list %}

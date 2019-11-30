@@ -132,6 +132,14 @@ def now_utc():
     return now
 
 
+def now_contz():
+    """returns the current datetime now, converted to Con local TZ beforehand, without TZ info"""
+    now = datetime.now()
+    now = now.replace(tzinfo=tzlocal())  # sets timezone info to server local TZ
+    now = now.astimezone(c.EVENT_TIMEZONE)  # converts time from local TZ to UTC
+    now = now.replace(tzinfo=None)  # removes tzinfo to avoid confusing other systems
+    return now
+
 def api_login(first_name, last_name, email, zip_code):
     """
     Performs login request against Uber API and returns resulting json data
@@ -324,7 +332,7 @@ def meal_join(session, params, field):
     """
     result = []
     count = 1
-    id=''
+    fieldid = ''
 
     for param in params:
         labelkey = field + str(count)
@@ -332,10 +340,12 @@ def meal_join(session, params, field):
         # checks for relevant parameters and does stuff if found
         try:
             label = params[labelkey]
-            if not label == '' and not label == 'None':
+            if not label == '':
+                if field == 'toggle2':
+                    print('--------------starting field check----------------')
                 try:
                     idkey = field + 'id' + str(count)
-                    id = params[idkey]
+                    fieldid = params[idkey]
                 except KeyError:
                     # marks this as a new ingredient if ID field is missing for this field number
                     new_ing = True
@@ -347,14 +357,14 @@ def meal_join(session, params, field):
                 except KeyError:
                     desc = ''
     
-                if new_ing or id == '':
+                if new_ing or fieldid == '':
                     ing = Ingredient()
                     ing.label = label
                     ing.description = desc
                     session.add(ing)
                     session.commit()
                     # saves ing to DB so it gets an id, then puts result where it can be returned
-                    id = ing.id
+                    fieldid = ing.id
                 else:
                     # if not a new ingredient, but the label and description are both blank
                     # then it is one that was deleted from the meal.  do not load from DB, do not add to result.
@@ -362,14 +372,14 @@ def meal_join(session, params, field):
                         count += 1
                         break
                         
-                    ing = session.query(Ingredient).filter_by(id=id).one()
+                    ing = session.query(Ingredient).filter_by(id=fieldid).one()
                     # reduce unnecessary calls to DB
                     if not (ing.label == label and ing.description == desc):
                         ing.label = label
                         ing.description = desc
                         session.commit()
                 
-                result.append(str(id))
+                result.append(str(fieldid))
             count += 1
         except KeyError:
             count += 1

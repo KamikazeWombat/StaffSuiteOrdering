@@ -8,6 +8,7 @@ from datetime import datetime
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzlocal
+import pdfkit
 import pytz
 import sqlalchemy.orm.exc
 from sqlalchemy.orm import joinedload, subqueryload
@@ -24,7 +25,7 @@ import shared_functions
 from shared_functions import api_login, HTTPRedirect, order_split, order_selections, allergy_info, \
                      meal_join, meal_split, meal_blank_toppings, department_split, \
                      ss_eligible, carryout_eligible, combine_shifts, return_selected_only, \
-                     con_tz, utc_tz, now_utc, is_admin, is_ss_staffer, is_dh, return_not_selected
+                     con_tz, utc_tz, now_utc, now_contz, is_admin, is_ss_staffer, is_dh, return_not_selected
 import slack_bot
 
 
@@ -92,8 +93,17 @@ class Root:
                 else:
                     cherrypy.session['is_dh'] = False
                     
+                # check if orders open
+                if not cfg.orders_open():
+                    if not cherrypy.session['is_ss_staffer']:
+                        if not cherrypy.session['is_admin']:
+                            cherrypy.lib.sessions.expire()
+                            raise HTTPRedirect('login?message=Orders are not yet open.  You can login beginning at '
+                                               + con_tz(c.EPOCH).strftime(cfg.date_format) + ' ID: ' +
+                                               str(cherrypy.session['staffer_id']))
+                    
                 session = models.new_sesh()
-                print('succesful login, updating record')
+                # print('succesful login, updating record')
                 # add or update attendee record in DB
                 try:
                     attendee = session.query(Attendee).filter_by(public_id=response['result']['public_id']).one()
@@ -104,9 +114,9 @@ class Root:
                         attendee.full_name = response['result']['full_name']
                         attendee.badge_num = response['result']['badge_num']
                         session.commit()
-                    print('record update complete')
+                    # print('record update complete')
                 except sqlalchemy.orm.exc.NoResultFound:
-                    print('new attendee login, creating record')
+                    # print('new attendee login, creating record')
                     attendee = Attendee()
                     attendee.badge_num = response['result']['badge_num']
                     attendee.public_id = response['result']['public_id']
@@ -131,7 +141,6 @@ class Root:
                                c=c)
 
     @cherrypy.expose
-    # @restricted
     @admin_req
     def meal_setup_list(self, message=[], id=''):
     
@@ -166,7 +175,6 @@ class Root:
 
     @cherrypy.expose
     @admin_req
-    # @restricted
     def meal_edit(self, meal_id='', message=[], **params):
     
         messages = []
@@ -264,7 +272,7 @@ class Root:
     @cherrypy.expose
     def order_edit(self, meal_id='', save_order='', order_id='', message=[], notes='', delete_order=False,
                    dh_edit=False, **params):
-        # todo: do something with Uber allergies info
+        
         # todo: link to allergies SOP somewhere
         
         # todo: department select dropdown needs to restrict based upon if a department's order is already being processed or has been.
@@ -298,8 +306,10 @@ class Root:
                     if not shared_functions.is_dh(cherrypy.session['staffer_id']):
                         if not shared_functions.is_admin(cherrypy.session['staffer_id']):
                             raise HTTPRedirect("staffer_meal_list?message=This isn't your order.")
-                dept_order = session.query(DeptOrder).filter_by(meal_id=params['save_order'], dept_id=params['department'])
-                if thisorder.locked or dept_order.locked:
+                        
+                dept_order = session.query(DeptOrder).filter_by(meal_id=save_order, dept_id=params['department']).one()
+                
+                if thisorder.locked or dept_order.started:
                     if not cherrypy.session['is_admin']:
                         raise HTTPRedirect("staffer_meal_list?message=This order has already been started by Staff Suite"
                                            " and cannot be changed except by Staff Suite Admins")
@@ -519,7 +529,6 @@ class Root:
         )
 
     @cherrypy.expose
-    # @restricted
     @admin_req
     def meal_delete_confirm(self, meal_id='', confirm=False):
         session = models.new_sesh()
@@ -580,7 +589,7 @@ class Root:
         
         if not eligible:
             # print("appending not enough hours")
-            messages.append('You are not scheduled for enough volunteer hours to be eligible for Staff Suite.\n'
+            messages.append('You are not scheduled for enough volunteer hours to be eligible for Staff Suite.  '
                             'You will need to get a Department Head to authorize any orders you place.')
         
         meals = session.query(Meal).all()
@@ -603,18 +612,16 @@ class Root:
                 delta = relativedelta(meal.end_time, now)
                 # rd is negative if first item is before second
                 rd = 0
-                # todo: section removed for testing since West is currently in the past.
-                """"
                 rd += delta.minutes
                 rd += delta.hours * 60
                 rd += delta.days * 1440
-                """
+                # hides meals in the past by default
                 if rd >= 0 or display_all:
                     meal_display.append(meal)
         
         if len(meal_display) == 0:
-            messages.append('You do not have any shifts that are eligible for Carryout.'
-                            'For eligibility rules see: add link')  # todo: add link or change text
+            messages.append('You do not have any shifts that are eligible for Carryout.  '
+                            'You will need to get a Department Head to authorize any orders you place.')
         
         for thismeal in meal_display:
             thismeal.start_time = con_tz(thismeal.start_time)
@@ -637,9 +644,8 @@ class Root:
             
 
     @cherrypy.expose
-    # @restricted
     @admin_req
-    def config(self, message=[], database_url=''):
+    def config(self, message=[], **params):
         messages = []
 
         if message:
@@ -651,18 +657,28 @@ class Root:
             'is_admin': cherrypy.session['is_admin'],
             'is_ss_staffer': cherrypy.session['is_ss_staffer']
         }
+
+        admin_list = ',\n'.join(cfg.admin_list)
+        staffer_list = ',\n'.join(cfg.staffer_list)
         
-        if database_url:
-            print('-----------------------')
-            print('saving config')
-            # todo: save to config file
-            
-        cherrypy_cfg = json.dumps(cfg.cherrypy, indent=4)
+        if 'radio_select_count' in params:
+            # save config
+            cfg.local_print = params['local_print']
+            cfg.remote_print = params['remote_print']
+            cfg.multi_select_count = params['multi_select_count']
+            cfg.radio_select_count = params['radio_select_count']
+            cfg.schedule_tolerance = params['schedule_tolerance']
+            cfg.date_format = params['date_format']
+            cfg.ss_hours = params['ss_hours']
+            cfg.save(params['admin_list'], params['staffer_list'])
+            cfg.load_user_lists()
+            raise HTTPRedirect('config?message=Successfully saved config settings')
         
         template = env.get_template('config.html')
         return template.render(messages=messages,
-                               cherrypy_cfg=cherrypy_cfg,
                                session=session_info,
+                               admin_list=admin_list,
+                               staffer_list=staffer_list,
                                c=c,
                                cfg=cfg)
 
@@ -898,7 +914,6 @@ class Root:
         
         
     @cherrypy.expose
-    # @restricted
     @ss_staffer
     def ssf_orders(self, meal_id, dept_id, message=[]):
         """
@@ -938,8 +953,8 @@ class Root:
         dept = session.query(Department).filter_by(id=dept_id).one()
         dept_name = dept.name
         
-        session.close()
-        
+        session.close()  # this has to be before the order loop below.  don't know why, seems like it should be after.
+
         for order in orders:
             sorted_shifts, response = combine_shifts(order.attendee.badge_num, full=True)
             order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
@@ -959,9 +974,27 @@ class Root:
         
         if dept_order.started:
             dept_order.start_time = con_tz(dept_order.start_time).strftime(cfg.date_format)
+            # generate labels
+            if cfg.local_print:
+                labels = env.get_template('print_labels.html')
+                options = {
+                    'page-height': '2.0in',
+                    'page-width': '4.0in',
+                    'margin-top': '0.0in',
+                    'margin-right': '0.0in',
+                    'margin-bottom': '0.0in',
+                    'margin-left': '0.0in',
+                    'encoding': "UTF-8",
+                    'print-media-type': None
+                }
+                pdfkit.from_string(labels.render(orders=orders,
+                                                 meal=thismeal,
+                                                 dept_name=dept_name),
+                                   'pdfs\\' + dept_name + '.pdf',
+                                   options=options)
         if dept_order.completed:
             dept_order.completed_time = con_tz(dept_order.completed_time).strftime(cfg.date_format)
-            
+        
         template = env.get_template('ssf_orders.html')
         return template.render(dept_order=dept_order,
                                dept_name=dept_name,
@@ -990,11 +1023,11 @@ class Root:
             session.commit()
             session.close()
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                               '&message=This order is now locked.')
+                               '&message=This Bundle is now locked.')
         else:
             if dept_order.completed:
                 raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                                   '&message=You cannot un-lock an order that is marked Completed.')
+                                   '&message=You cannot un-lock an Bundle that is marked Completed.')
             
             dept_order.started = False
             dept_order.start_time = None
@@ -1003,7 +1036,7 @@ class Root:
             session.commit()
             session.close()
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                               '&message=This order is now un-locked.')
+                               '&message=This Bundle is now un-locked.')
         
     @cherrypy.expose
     @ss_staffer
@@ -1017,30 +1050,32 @@ class Root:
         if not uncomplete_order:
             if not dept_order.started:
                 raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                                   '&message=The order must be Locked before it can be marked Complete.')
+                                   '&message=The Bundle must be Locked before it can be marked Complete.')
             dept_order.completed = True
             dept_order.completed_time = now_utc()
             dept = session.query(Department).filter_by(id=dept_id).one()
-            message = dept_order.slack_contact + ' Your food order bundle for ' + dept.name + ' ' \
-                      'is ready, please pickup from Staff Suite.'
-            slack_bot.send_message(dept_order.slack_channel, message)
+            if dept_order.slack_channel:
+                message = dept_order.slack_contact + ' Your food order bundle for ' + dept.name + ' ' \
+                          'is ready, please pickup from Staff Suite.  ' + now_contz().strftime(cfg.date_format)
+                slack_bot.send_message(dept_order.slack_channel, message)
             session.commit()
             session.close()
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                               '&message=This order is now marked Complete.')
+                               '&message=This Bundle is now marked Complete.')
         else:
             dept_order.completed = False
             dept_order.completed_time = None
             session.commit()
             session.close()
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                               '&message=This order is now un-marked Complete.')
+                               '&message=This Bundle is now un-marked Complete.')
 
       
     def order_detail(self):
         """
         Displays details of an order in a popup for fulfilment purposes
         """
+        
         
     def print_order(self):
         """
