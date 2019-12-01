@@ -5,9 +5,9 @@
 
 <div class="container">
   <form role="form">
-    <h2 class="form-signin-heading">Deleting Meal</h2>
+    <h2 class="form-signin-heading">Deleting Meal: {{ meal.meal_name }} {{ meal.start_time }}</h2>
     <p>Are you absolutely sure you want to delete this meal?</p>
-    <p>Any existing orders cannot be attached to a new meal!!!!!!</p>
+    <p>Any existing orders for this meal cannot be re-attached to a new meal!!!!!!</p>
     <table>
      <tr> <td>
        <input type="hidden" name="meal_id" value="{{ meal.id }}"/>
