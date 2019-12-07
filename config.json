@@ -3,7 +3,7 @@
   "database_location": "sqlite:///testdb.db",
   "local_print": true,
   "remote_print": false,
-  "multi_select_count": "5",
+  "multi_select_count": "6",
   "radio_select_count": "3",
   "schedule_tolerance": "45",
   "date_format": "%d-%m-%Y %H:%M",
