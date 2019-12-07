@@ -98,7 +98,7 @@
             <div id="floating_logo">
                 <img src={{ c.EVENT_URL_ROOT }}/static/theme/bg-logo.png/>
                 <a href="https://bit.ly/StaffSuite2020" target="_blank">Staff Suite Info & Allergies</a>
-                <div style="text-align:center;"><h1>{{ c.EVENT_NAME }} Staff Suite v 0.8.0 - now with more printing!</h1></div>
+                <div style="text-align:center;"><h1>{{ c.EVENT_NAME }} Staff Suite v 0.8.1 - now with more printing!</h1></div>
             </div>
     {% endblock %}
     <div id="mainContainer" class="container-fluid">
@@ -108,7 +108,7 @@
         {% block header %}
         <nav>
             <tr>
-              <td><a href="staffer_meal_list">My Meal List</a> |</td>
+              <td><a href="staffer_meal_list">My Order List</a> |</td>
               {% if session.is_ss_staffer or session.is_admin %}
               <td><a href="ssf_meal_list">Fulfilment</a> |</td>
               {% endif %}

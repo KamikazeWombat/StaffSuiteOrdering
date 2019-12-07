@@ -12,7 +12,7 @@
     <form role="form">
       <table>
         <tr>
-          {% if meal.eligible == False %}
+          {% if meal.eligible == False and meal.overridden == False %}
             <td><label>Not Eligible for Carryout</label></td>
           {% endif %}
           <td>

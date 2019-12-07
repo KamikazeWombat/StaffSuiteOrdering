@@ -35,13 +35,7 @@ class Root:
     @cherrypy.expose
     def index(self, load_depts=False):
         raise HTTPRedirect('staffer_meal_list')
-        template = env.get_template('index.html')
-        if load_depts:
-            session = models.new_sesh()
-            shared_functions.load_departments(session)
-            session.close()
-            
-        return template.render(c=c)
+        
 
     @cherrypy.expose
     def login(self, message=[], first_name='', last_name='',
@@ -273,8 +267,6 @@ class Root:
     def order_edit(self, meal_id='', save_order='', order_id='', message=[], notes='', delete_order=False,
                    dh_edit=False, **params):
         
-        # todo: link to allergies SOP somewhere
-        
         # todo: department select dropdown needs to restrict based upon if a department's order is already being processed or has been.
         messages = []
         if message:
@@ -324,6 +316,7 @@ class Root:
                     # print('is actualy dh or admin')
                     try:
                         attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
+                        thisorder.attendee_id = attend.public_id
                     except sqlalchemy.orm.exc.NoResultFound:
                         response = shared_functions.lookup_attendee(params['badge_number'])
                         attend = Attendee()
@@ -331,10 +324,8 @@ class Root:
                         attend.public_id = response['result']['public_id']
                         attend.full_name = response['result']['full_name']
                         session.add(attend)
+                        thisorder.attendee_id = attend.public_id
                         session.commit()
-                        
-                    thisorder.attendee_id = attend.public_id
-                    
                 else:
                     raise HTTPRedirect('staffer_meal_list?message=You must be DH or admin to use this feature')
             else:
@@ -343,12 +334,13 @@ class Root:
              
             thisorder.department_id = params['department']
             thisorder.meal_id = save_order  # save order kinda wonky, data will be meal id if 'Submit' is clicked
-            # todo: do something with overridden field
             thisorder.toggle1 = order_selections(field='toggle1', params=params, is_toggle=True)
             thisorder.toggle2 = order_selections(field='toggle2', params=params, is_toggle=True)
             thisorder.toggle3 = order_selections(field='toggle3', params=params, is_toggle=True)
             thisorder.toppings = order_selections(field='toppings', params=params)
             thisorder.notes = notes
+            if dh_edit:  # if the order is being created by the DH Edit method, mark overridden so it will be made.
+                thisorder.overridden = True
             
             session.add(thisorder)
             session.commit()
@@ -531,12 +523,10 @@ class Root:
     @cherrypy.expose
     @admin_req
     def meal_delete_confirm(self, meal_id='', confirm=False):
-        session = models.new_sesh()
         # todo: something to block malicious users from doctoring links and tricking admins into deleting meals.
         #       perhaps check if meal_delete_confirm is in link at login page?
         
-        # todo: add meal name, time to html
-
+        session = models.new_sesh()
         session_info = {
             'is_dh': cherrypy.session['is_dh'],
             'is_admin': cherrypy.session['is_admin'],
@@ -546,11 +536,15 @@ class Root:
         thismeal = session.query(Meal).filter_by(id=meal_id).one()
     
         if confirm:
-            
+            redir = 'meal_setup_list?message=Meal ' + thismeal.meal_name + ' has been Deleted.'
             session.delete(thismeal)
             session.commit()
             session.close()
-            raise HTTPRedirect('meal_setup_list?message=Meal Deleted.')
+            raise HTTPRedirect(redir)
+        
+        session.close()
+        
+        thismeal.start_time = con_tz(thismeal.start_time)
             
         template = env.get_template('meal_delete_confirm.html')
         return template.render(
@@ -596,19 +590,30 @@ class Root:
         sorted_shifts = combine_shifts(cherrypy.session['badge_num'])
         allergies = allergy_info(cherrypy.session['badge_num'])
 
+        for thismeal in meals:
+            thismeal.start_time = con_tz(thismeal.start_time)
+            thismeal.end_time = con_tz(thismeal.end_time)
+            thismeal.cutoff = con_tz(thismeal.cutoff)
+            try:
+                # todo: more efficient code for this, I think there's a way to load orders for all meals in one query request
+                thisorder = session.query(Order).filter_by(meal_id=thismeal.id,
+                                                           attendee_id=cherrypy.session['staffer_id']).one()
+                thismeal.order_exists = True
+                if thisorder.overridden:
+                    thismeal.overridden = True
+            except sqlalchemy.orm.exc.NoResultFound:
+                pass
+
         meal_display = []
         
-        session.close()  # session close is here to make sure the eligible mark doesn't get put into the DB
-                         # yes I know it should not because not a column, but for my own paranoia
-        now = datetime.now()
-        now = now.replace(tzinfo=tzlocal())
-        now = now.astimezone(pytz.utc)
-        now = now.replace(tzinfo=None)
+        session.close()
+        
+        now = now_utc()
         for meal in meals:
             # print("checking meal")
             meal.eligible = carryout_eligible(sorted_shifts, meal.start_time, meal.end_time)
             
-            if meal.eligible or display_all:
+            if meal.eligible or display_all or meal.order_exists:
                 delta = relativedelta(meal.end_time, now)
                 # rd is negative if first item is before second
                 rd = 0
@@ -622,18 +627,6 @@ class Root:
         if len(meal_display) == 0:
             messages.append('You do not have any shifts that are eligible for Carryout.  '
                             'You will need to get a Department Head to authorize any orders you place.')
-        
-        for thismeal in meal_display:
-            thismeal.start_time = con_tz(thismeal.start_time)
-            thismeal.end_time = con_tz(thismeal.end_time)
-            thismeal.cutoff = con_tz(thismeal.cutoff)
-            try:
-                # todo: more efficient code for this, I think there's a way to load all meals in one query request
-                thisorder = session.query(Order).filter_by(meal_id=thismeal.id,
-                                                           attendee_id=cherrypy.session['staffer_id']).one()
-                thismeal.order_exists = True
-            except sqlalchemy.orm.exc.NoResultFound:
-                pass
             
         template = env.get_template('staffer_meal_list.html')
         return template.render(messages=messages,
