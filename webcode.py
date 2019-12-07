@@ -582,7 +582,7 @@ class Root:
         eligible = ss_eligible(cherrypy.session['badge_num'])
         
         if not eligible:
-            # print("appending not enough hours")
+            # print("appending not enough hours") # test change for git
             messages.append('You are not scheduled for enough volunteer hours to be eligible for Staff Suite.  '
                             'You will need to get a Department Head to authorize any orders you place.')
         
