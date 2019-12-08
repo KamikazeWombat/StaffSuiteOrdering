@@ -1,0 +1,33 @@
+{
+  "api_endpoint": "https://staging-super.reggie.magfest.org/jsonrpc/",
+  "database_location": "sqlite:///testdb.db",
+  "local_print": true,
+  "remote_print": false,
+  "multi_select_count": "5",
+  "radio_select_count": "3",
+  "schedule_tolerance": "45",
+  "date_format": "%d-%m-%Y %H:%M",
+  "ss_hours": "12",
+  "cherrypy": {
+    "global": {
+      "server.socket_port": 443,
+      "server.ssl_module": "builtin",
+      "server.ssl_certificate": "./secure/letsencrypt/live/staffsuite.codewombat.software/cert.pem",
+      "server.ssl_private_key": "./secure/letsencrypt/live/staffsuite.codewombat.software/privkey.pem",
+      "server.ssl_certificate_chain": "./secure/letsencrypt/live/staffsuite.codewombat.software/chain.pem",
+      "tools.force_tls.on": true
+    },
+    "/": {
+      "tools.sessions.on": true,
+      "tools.staticdir.root": "C:\\Users\\Wombat3\\PycharmProjects\\StaffSuiteOrdering"
+    },
+    "/pdfs": {
+      "tools.staticdir.on": true,
+      "tools.staticdir.dir": "./pdfs"
+    },
+    "/static": {
+      "tools.staticdir.on": true,
+      "tools.staticdir.dir": "./static"
+    }
+  }
+}
