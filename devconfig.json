@@ -10,6 +10,7 @@
   "ss_hours": "12",
   "cherrypy": {
     "global": {
+      "server.socket_host": "127.0.0.1",
       "server.socket_port": 443,
       "server.ssl_module": "builtin",
       "server.ssl_certificate": "./secure/letsencrypt/live/staffsuite.codewombat.software/cert.pem",
