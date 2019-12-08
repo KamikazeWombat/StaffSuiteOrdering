@@ -1,6 +1,7 @@
 import json
 import os
 import requests
+from sys import argv
 
 from datetime import datetime
 from dateutil.parser import parse
@@ -45,7 +46,14 @@ class Config:
         self.slack_authkey = slack_authfile.read()
         slack_authfile.close()
         
-        configfile = open('config.json', 'r')
+        for arg in argv:
+            if arg == '-dev':
+                filename = 'devconfig.json'
+                break
+            else:
+                filename = 'config.json'
+            
+        configfile = open(filename, 'r')
         cdata = json.load(configfile)
         configfile.close()
         
