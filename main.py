@@ -19,11 +19,12 @@ def force_tls():
     print('not http')
 
 
-cherrypy.tools.force_tls = cherrypy.Tool("before_handler", force_tls)
 
 
 def load_http_server():
     # extra server instance to redirect HTTP requests to HTTPS
+    cherrypy.tools.force_tls = cherrypy.Tool("before_handler", force_tls)
+
     server = cherrypy._cpserver.Server()
     server.socket_host = cfg.cherrypy['global']['server.socket_host']
     server.socket_port = 80

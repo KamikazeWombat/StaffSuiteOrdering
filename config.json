@@ -16,7 +16,7 @@
       "server.ssl_certificate": "/etc/letsencrypt/live/staffsuite.codewombat.software/cert.pem",
       "server.ssl_private_key": "/etc/letsencrypt/live/staffsuite.codewombat.software/privkey.pem",
       "server.ssl_certificate_chain": "/etc/letsencrypt/live/staffsuite.codewombat.software/fullchain.pem",
-      "server.environment": "production"
+      "tools.force_tls.on": true
     },
     "/": {
       "tools.sessions.on": true,
