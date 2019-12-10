@@ -10,10 +10,13 @@ import webcode
 
 
 def force_tls():
+    print('------------------starting force_tls------------------')
     if cherrypy.request.scheme == "http":
+        print('http request, not https')
         # see https://support.google.com/webmasters/answer/6073543?hl=en
         raise cherrypy.HTTPRedirect(cherrypy.url().replace("http:", "https:"),
                                     status=301)
+    print('not http')
 
 
 cherrypy.tools.force_tls = cherrypy.Tool("before_handler", force_tls)
