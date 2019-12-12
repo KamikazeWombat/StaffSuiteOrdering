@@ -59,14 +59,16 @@ class Root:
             if 'error' in response:
                 messages.append(response['error']['message'])
                 error = True
-                
+            """ decided it didn't make sense to keep out people not marked staff/volunteer in Uber
+            because then people who decide to volunteer after arriving won't be able to login.
+            Hours requirements will still require DH override for people who don't have enough hours marked down
             if not error:
                 # is staff?
                 if not response['result']['staffing']:
                     messages.append('You are not currently signed up as staff/volunteer.'
                               'See below for information on how to volunteer.')
                     not_volunteer = True
-            
+            """
             if not error:
                 # ensure_csrf_token_exists()
                 cherrypy.session['staffer_id'] = response['result']['public_id']
