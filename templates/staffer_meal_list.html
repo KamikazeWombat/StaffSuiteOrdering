@@ -15,6 +15,9 @@
           {% if meal.eligible == False and meal.overridden == False %}
             <td><label>Not Eligible for Carryout</label></td>
           {% endif %}
+          {% if meal.overriden %}
+            <td><label>Order Authorized by DH</label></td>
+          {% endif %}
           <td>
             <input type="hidden" name="meal_id" value ="{{ meal.id }}">
             <label class="form-control">{{ meal.meal_name }} </label>
