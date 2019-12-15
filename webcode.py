@@ -23,7 +23,7 @@ from models.department import Department
 from models.dept_order import DeptOrder
 import shared_functions
 from shared_functions import api_login, HTTPRedirect, order_split, order_selections, allergy_info, \
-                     meal_join, meal_split, meal_blank_toppings, department_split, \
+                     meal_join, meal_split, meal_blank_toppings, department_split, create_dept_order, \
                      ss_eligible, carryout_eligible, combine_shifts, return_selected_only, \
                      con_tz, utc_tz, now_utc, now_contz, is_admin, is_ss_staffer, is_dh, return_not_selected
 import slack_bot
@@ -33,10 +33,9 @@ class Root:
     
     @restricted
     @cherrypy.expose
-    def index(self, load_depts=False):
+    def index(self):
         raise HTTPRedirect('staffer_meal_list')
         
-
     @cherrypy.expose
     def login(self, message=[], first_name='', last_name='',
               email='', zip_code='', original_location=None, logout=False):
@@ -51,6 +50,18 @@ class Root:
         if logout:
             cherrypy.lib.sessions.expire()
             raise HTTPRedirect('login?message=Succesfully logged out')
+
+        # todo: un-comment this section
+        """
+        # check if orders open
+        if not cfg.orders_open():
+            if not cherrypy.session['is_ss_staffer']:
+                if not cherrypy.session['is_admin']:
+                    # cherrypy.lib.sessions.expire()  # probably not needed
+                    raise HTTPRedirect('login?message=Orders are not yet open.  You can login beginning at '
+                                       + con_tz(c.EPOCH).strftime(cfg.date_format) + ' ID: ' +
+                                       str(cherrypy.session['staffer_id']))
+            """
             
         if first_name and last_name and email and zip_code:
             response = api_login(first_name=first_name, last_name=last_name,
@@ -69,6 +80,7 @@ class Root:
                               'See below for information on how to volunteer.')
                     not_volunteer = True
             """
+            
             if not error:
                 # ensure_csrf_token_exists()
                 cherrypy.session['staffer_id'] = response['result']['public_id']
@@ -88,17 +100,7 @@ class Root:
                     cherrypy.session['is_dh'] = True
                 else:
                     cherrypy.session['is_dh'] = False
-                    # todo: un-comment this section
-                """
-                # check if orders open
-                if not cfg.orders_open():
-                    if not cherrypy.session['is_ss_staffer']:
-                        if not cherrypy.session['is_admin']:
-                            cherrypy.lib.sessions.expire()
-                            raise HTTPRedirect('login?message=Orders are not yet open.  You can login beginning at '
-                                               + con_tz(c.EPOCH).strftime(cfg.date_format) + ' ID: ' +
-                                               str(cherrypy.session['staffer_id']))
-                    """
+                    
                 session = models.new_sesh()
                 # print('succesful login, updating record')
                 # add or update attendee record in DB
@@ -758,11 +760,7 @@ class Root:
         try:
             this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
         except sqlalchemy.orm.exc.NoResultFound:
-            this_dept_order = DeptOrder()
-            this_dept_order.dept_id = dept_id
-            this_dept_order.meal_id = meal_id
-            session.add(this_dept_order)
-            session.commit()
+            this_dept_order = create_dept_order(dept_id, meal_id, session)
         
         if 'other_contact' in params:
             # save changes to dept_order
@@ -899,19 +897,34 @@ class Root:
         
         depts = session.query(models.department.Department).all()
         dept_list = list()
+        completed_depts = list()
         total_orders = 0
+        remaining_orders = 0
         
         for dept in depts:
             count = session.query(Order).filter_by(department_id=dept.id, meal_id=meal_id).count()
-            dept_list.append((dept.name, count, dept.id))
+            
+            try:
+                dept_order = session.query(DeptOrder).filter_by(dept_id=dept.id, meal_id=meal_id).one()
+            except sqlalchemy.orm.exc.NoResultFound:
+                dept_order = create_dept_order(dept.id, meal_id, session)
+                
+            if not dept_order.completed:
+                dept_list.append((dept.name, count, dept.id))
+                remaining_orders += count
+            else:
+                completed_depts.append((dept.name, count, dept.id))
+                
             total_orders += count
         
         # print(dept_list)
         session.close()
         template = env.get_template('ssf_dept_list.html')
         return template.render(depts=dept_list,
+                               completed_depts=completed_depts,
                                meal_id=meal_id,
                                total=total_orders,
+                               remaining=remaining_orders,
                                session=session_info,
                                c=c)
         
@@ -941,12 +954,7 @@ class Root:
         try:
             dept_order = session.query(DeptOrder).filter_by(dept_id=dept_id, meal_id=meal_id).one()
         except sqlalchemy.orm.exc.NoResultFound:
-            dept_order = DeptOrder()
-            dept_order.dept_id = dept_id
-            dept_order.meal_id = meal_id
-            session.add(dept_order)
-            session.commit()
-            dept_order = session.query(DeptOrder).filter_by(dept_id=dept_id, meal_id=meal_id).one()
+            dept_order = create_dept_order(dept_id, meal_id, session)
         
         orders = session.query(Order).filter_by(department_id=dept_id, meal_id=meal_id)\
             .options(joinedload(Order.attendee)).all()
@@ -1057,10 +1065,16 @@ class Root:
             dept_order.completed = True
             dept_order.completed_time = now_utc()
             dept = session.query(Department).filter_by(id=dept_id).one()
+            
             if dept_order.slack_channel:
                 message = dept_order.slack_contact + ' Your food order bundle for ' + dept.name + ' ' \
                           'is ready, please pickup from Staff Suite.  ' + now_contz().strftime(cfg.date_format)
                 slack_bot.send_message(dept_order.slack_channel, message)
+                
+            if dept_order.other_contact:
+                raise HTTPRedirect('dept_order_details?dept_order_id=' + str(dept_order.id) +
+                                   '&message=This department has requested manual contact.  '
+                                   'Please contact them as listed in the Other Contact Info box.')
             session.commit()
             session.close()
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
@@ -1074,12 +1088,18 @@ class Root:
                                '&message=This Bundle is now un-marked Complete.')
 
       
-    def order_detail(self):
+    def dept_order_details(self, dept_order_id):
         """
-        Displays details of an order in a popup for fulfilment purposes
+        Displays contact info details for a dept's order
+        :param dept_order_id:
+        :return:
         """
+        session = models.new_sesh()
+        dept_order = session.query(DeptOrder).filter_by(id=dept_order_id).one()
         
-        
+        template = env.get_template('dept_order_details.html')
+
+
     def print_order(self):
         """
         Prints order from popup screen then closes itself

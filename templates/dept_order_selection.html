@@ -34,6 +34,9 @@
       <tr><td><button class="btn btn-lg btn-primary btn-block" type="submit">Select</button></td></tr>
     </table>
   </form>
+  {% if not loop.last %}
+  ---------------------------------------------------------------
+  {% endif %}
   {% endfor %}
   
 

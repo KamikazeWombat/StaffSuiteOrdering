@@ -30,7 +30,7 @@
     </div>
     <div style="position:relative;top:12px;">
       {% if order.allergies %}
-        {{ macros.display_allergies(order.allergies, view_only=True, color=False) }}
+        Allergies: {{ macros.display_allergies(order.allergies, view_only=True, color=False) }}
       {% endif %}
     </div>
     <div style="position:relative;top:26px;">

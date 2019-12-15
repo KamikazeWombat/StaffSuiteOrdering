@@ -9,22 +9,24 @@
     <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
     <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
     <p>Slack Channel: <textarea name="slack_channel" cols="50" rows="1"
-              placeholder="What channel to post in, multiple channels can be comma separated"
+              placeholder="What channel to post in, eg 'staffsuiteordering, #bottesting'"
       {% if dept_order.completed %} disabled {% endif %}
-    >{{ dept_order.slack_channel }}</textarea>What channel to post in, multiple channels can be comma separated</p>
+    >{{ dept_order.slack_channel }}</textarea><br/>What channel to post in, eg 'staffsuiteordering, #bottesting'</p>
     <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"
               placeholder="Who to ping in Slack?  Can include @here or @channel if desired"
       {% if dept_order.completed %} disabled {% endif %}
-    >{{ dept_order.slack_contact }}</textarea>Who to ping in Slack?  Can include @here or @channel if desired</p>
+    >{{ dept_order.slack_contact }}</textarea><br/>Who to ping in Slack?  Can include @here or @channel if desired</p>
     <p>Other Contact: <textarea name="other_contact" cols="50" rows="6"
-                     placeholder="How you would like to be contacted for order pickup.  Slack channel or username, text, email, phone..."
+                     placeholder="How you else would like to be contacted for order pickup.  Text, email, phone call..."
       {% if dept_order.completed %} disabled {% endif %}
     >{{ dept_order.other_contact }}</textarea></p>
-    <button class="btn btn-lg btn-primary btn-block" type="submit">Update Contact Info</button>
+    <p>The above contact info is for meal order bundle completion for this department, for only this meal!</p>
+    <button class="btn btn-lg btn-primary btn-block" type="submit">Update Department's Contact Info</button>
   </form>
   {% if not dept_order.started %}
     <br/>
-    -----------------------------
+    -----------------------------<br/>
+    Create Meal Order for other attendee:
     <form>
       <table><tr>
         <td>
@@ -37,10 +39,12 @@
       </tr></table>
     </form>
   {% endif %}
-  {% if dept_order.started %}<br/><h3>Meal Prep Started: {{ dept_order.start_time }} </h3>{% endif %}
-  {% if dept_order.completed %}<br/><h3>Meal Prep Completed: {{ dept_order.completed_time }} </h3>{% endif %}
-  <br/>-----------------------------
-  <h3>list of orders for this department's Bundle:</h3>
+  -----------------------------
+  
+  {% if dept_order.started %}<br/><h3 style="color:darkgreen;">Meal Prep Started: {{ dept_order.start_time }} </h3>{% endif %}
+  {% if dept_order.completed %}<br/><h3 style="color:darkgreen;">Meal Prep Completed: {{ dept_order.completed_time }} </h3>{% endif %}
+  
+  <h3>Orders for this department's Bundle:</h3>
   {% for order in orders %}
     <form role="form">
       <table>
@@ -52,7 +56,8 @@
             <input type="hidden" name="order_id" value ="{{ order.id }}"/>
             <label class="form-control">{{ order.attendee.badge_num }} </label>
           </td>
-          {% if order.eligible == False and dept_order.started == False and order.overridden == False%}
+          <td><label class="form-control">{{ order.attendee.full_name }} </label></td>
+          {% if order.eligible == False and dept_order.started == False and order.overridden == False %}
             <td><a class="btn btn-lg btn-primary btn-block" href="order_override?dept_id={{ dept_order.dept_id }}&meal_id={{ dept_order.meal_id }}&order_id={{ order.id }}">Override</a></td>
           {% endif %}
           {% if order.overridden and dept_order.started == False %}
