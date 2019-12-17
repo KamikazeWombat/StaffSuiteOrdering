@@ -633,3 +633,8 @@ def create_dept_order(dept_id, meal_id, session):
     session.commit()
     dept_order = session.query(models.dept_order.DeptOrder).filter_by(dept_id=dept_id, meal_id=meal_id).one()
     return dept_order
+
+
+def send_webhook(url, data):
+    request = requests.post(url=url, json=data)
+    return

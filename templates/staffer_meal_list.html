@@ -4,8 +4,16 @@
 {% block content %}
 
 <div class="container">
-  <h2 class="form-signin-heading">Meal List</h2>
+  <h2 class="form-signin-heading">Meal and Order list for {{ attendee.full_name }}</h2>
   {{ macros.display_allergies(allergies) }}
+  {% if session.is_dh or session.is_admin %}
+  <h3>Webhook for your orders</h3>
+    <form role="form">
+      <input style="width:80%;" name="webhook_url" type="text" value="{{ attendee.webhook_url }}" placeholder="URL for your webhook"/> <br/>
+      <textarea name="webhook_data" cols="50" style="width:80%;" placeholder="JSON data for your webhook">{{ attendee.webhook_data }}</textarea>
+      <button class="btn btn-lg btn-primary btn-block" type="submit">Update Webhook</button>
+    </form>
+  {% endif %}
   <br/>
   <a href="?display_all=True">Display all Meals</a>
   {% for meal in meallist %}
@@ -24,9 +32,9 @@
           </td>
             <td><label class="form-control">{{ meal.start_time }}</label></td>
           {% if meal.order_exists %}
-            <td><button class="btn btn-lg btn-primary btn-block" href="order_edit?meal_id={{ meal.id }}">Edit Existing Order</button></td>
+            <td><a class="btn btn-lg btn-primary btn-block" href="order_edit?meal_id={{ meal.id }}">Edit Existing Order</a></td>
           {% else %}
-            <td><button class="btn btn-lg btn-primary btn-block" href="order_edit?meal_id={{ meal.id }}">Create Order</button></td>
+            <td><a class="btn btn-lg btn-primary btn-block" href="order_edit?meal_id={{ meal.id }}">Create Order</a></td>
           {% endif %}
         </tr>
       </table>

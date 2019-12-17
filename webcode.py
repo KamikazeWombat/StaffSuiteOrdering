@@ -569,7 +569,7 @@ class Root:
         
     @cherrypy.expose
     @restricted
-    def staffer_meal_list(self, message=[], meal_id='', display_all=False):
+    def staffer_meal_list(self, message=[], meal_id='', display_all=False, **params):
         """
         Display list of meals staffer is eligible for, unless requested to show all
         """
@@ -581,10 +581,6 @@ class Root:
             'is_ss_staffer': cherrypy.session['is_ss_staffer']
         }
         
-        # present if Create Order button clicked
-        if meal_id:
-            raise HTTPRedirect('order_edit?meal_id='+meal_id)
-        
         messages = []
         if message:
             text = message
@@ -595,9 +591,16 @@ class Root:
         eligible = ss_eligible(cherrypy.session['badge_num'])
         
         if not eligible:
-            # print("appending not enough hours") # test change for git
             messages.append('You are not scheduled for enough volunteer hours to be eligible for Staff Suite.  '
                             'You will need to get a Department Head to authorize any orders you place.')
+
+        attendee = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
+        if 'webhook_url' in params:
+            # save webhook data
+            attendee.webhook_url = params['webhook_url']
+            attendee.webhook_data = params['webhook_data']
+            session.commit()
+            junk = attendee.badge_num  # gets SQLAlchemy to reload attendee from database since needed for page display
         
         meals = session.query(Meal).all()
         sorted_shifts = combine_shifts(cherrypy.session['badge_num'])
@@ -617,7 +620,7 @@ class Root:
             except sqlalchemy.orm.exc.NoResultFound:
                 pass
 
-        meal_display = []
+        meal_display = list()
         
         session.close()
         
@@ -645,6 +648,7 @@ class Root:
         return template.render(messages=messages,
                                meallist=meal_display,
                                allergies=allergies,
+                               attendee=attendee,
                                session=session_info,
                                c=c)
             
@@ -766,7 +770,7 @@ class Root:
         # hopefully this will result in people filling this out with useful info rather than putting trash.
         if 'skip' not in params:
             if not dept.slack_channel and not dept.slack_contact and not dept.other_contact and not dept.text_contact \
-            and not dept.email_contact:
+                    and not dept.email_contact:
                 session.close()
                 raise HTTPRedirect('dept_contact?dept_id=' + str(dept.id) +
                                    '&message=Please add default contact info for your department.  '
@@ -1086,11 +1090,20 @@ class Root:
             dept = session.query(Department).filter_by(id=dept_id).one()
             
             if dept_order.slack_channel:
-                message = dept_order.slack_contact + ' Your food order bundle for ' + dept.name + ' ' \
-                          'is ready, please pickup from Staff Suite.  ' + now_contz().strftime(cfg.date_format)
+                message = 'Your food order bundle for ' + dept.name + ' ' \
+                          'is ready, please pickup from Staff Suite.  ' + now_contz().strftime(cfg.date_format) + \
+                          '  ' + dept_order.slack_contact
                 slack_bot.send_message(dept_order.slack_channel, message)
                 
+            orders = session.query(Order).filter_by(dept_id=dept_order.dept_id, meal_id=dept_order.meal_id) \
+                .options(subqueryload(Order.attendee)).all()
+            for order in orders:
+                if order.attendee.webhook_url:
+                    shared_functions.send_webhook(order.attendee.webhook_url, order.attendee.webhook_data)
+                
             if dept_order.other_contact:
+                session.commit()
+                session.close()
                 raise HTTPRedirect('dept_order_details?dept_order_id=' + str(dept_order.id) +
                                    '&message=This department has requested manual contact.  '
                                    'Please contact them as listed in the Other Contact Info box.')
