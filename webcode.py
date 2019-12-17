@@ -39,6 +39,17 @@ class Root:
     @cherrypy.expose
     def login(self, message=[], first_name='', last_name='',
               email='', zip_code='', original_location=None, logout=False):
+        """
+        Login Screen.  Can redirect to original destination.
+        :param message:
+        :param first_name:
+        :param last_name:
+        :param email:
+        :param zip_code:
+        :param original_location:
+        :param logout:
+        :return:
+        """
         original_location = shared_functions.create_valid_user_supplied_redirect_url(original_location,
                                                                                      default_url='staffer_meal_list')
         error = False
@@ -125,10 +136,7 @@ class Root:
                     
                 session.close()
 
-                if not cfg.orders_open and not is_admin:
-                    messages.append('Orders are not yet open')
-                else:
-                    raise HTTPRedirect(original_location)
+                raise HTTPRedirect(original_location)
         
         template = env.get_template('login.html')
         return template.render(messages=messages,
@@ -725,7 +733,7 @@ class Root:
     def dept_order(self, meal_id, dept_id, message="", **params):
         """
         Usable by Department Heads and admins
-        list of Staffer orders for selected meal and department
+        list of orders for selected meal and department
         Can override ones not already eligible
         Can edit existing ones if need be (usually shouldn't)
         Can create new orders for specified badge number
@@ -1087,20 +1095,60 @@ class Root:
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                                '&message=This Bundle is now un-marked Complete.')
 
-      
-    def dept_order_details(self, dept_order_id):
+    def dept_order_details(self, dept_order_id, **params):
         """
         Displays contact info details for a dept's order
         :param dept_order_id:
+        :param original_location:
         :return:
         """
         session = models.new_sesh()
         dept_order = session.query(DeptOrder).filter_by(id=dept_order_id).one()
         
+        if 'slack_channel' in params:
+            # save record
+            dept_order.slack_contact = params['slack_contact']
+            dept_order.slack_channel = params['slack_channel']
+            #dept_order.text_contact = params['text_contact']
+            #dept_order.email_contact = params['email_contact']
+            dept_order.other_contact = params['other_contact']
+            session.commit()
+            session.close()
+            raise HTTPRedirect('dept_order_details?dept_order_id=' + str(dept_order_id))
+        
+        # load record
+        meal = session.query(Meal).filter_by(id=dept_order.meal_id).one()
+        dept = session.query(Department).filter_by(id=dept_order.dept_id)
+        session.close()
         template = env.get_template('dept_order_details.html')
+        return template.render(dept_order=dept_order,
+                               meal=meal,
+                               dept=dept.name)
 
-
-    def print_order(self):
+    def dept_contact(self, dept_id, original_location=None, **params):
         """
-        Prints order from popup screen then closes itself
+        Displays and allows updating of Department's default contact info
+        :param dept_order_id:
+        :param original_location:
+        :return:
         """
+        original_location = shared_functions.create_valid_user_supplied_redirect_url(original_location,
+                                                                                     default_url='staffer_meal_list')
+        session = models.new_sesh()
+        dept = session.query(Department).filter_by(id=dept_id).one()
+        
+        if 'slack_channel' in params:
+            # save record
+            dept.slack_contact = params['slack_contact']
+            dept.slack_channel = params['slack_channel']
+            #dept.text_contact = params['text_contact']
+            #dept.email_contact = params['email_contact']
+            dept.other_contact = params['other_contact']
+            session.commit()
+            session.close()
+            raise HTTPRedirect(original_location)
+            
+        session.close()
+        template = env.get_template('dept_contact.html')
+        return template.render(dept=dept.name,
+                               original_location=original_location)

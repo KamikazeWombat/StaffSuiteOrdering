@@ -158,11 +158,14 @@ def api_login(first_name, last_name, email, zip_code):
 
 
 def load_departments():
+    """
+    Loads departments from connected Uber instance
+    :return:
+    """
     REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
     
     # data being sent to API
     request_data = {'method': 'dept.list'}
-    
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
     response = json.loads(request.text)
     response = response['result'].items()

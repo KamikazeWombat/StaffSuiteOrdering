@@ -23,6 +23,7 @@
     <p>The above contact info is for meal order bundle completion for this department, for only this meal!</p>
     <button class="btn btn-lg btn-primary btn-block" type="submit">Update Department's Contact Info</button>
   </form>
+  <a href="dept_contact?dept_id={{ dept_order.dept_id }}">Edit default contact info for {{ dept }}</a>
   {% if not dept_order.started %}
     <br/>
     -----------------------------<br/>
