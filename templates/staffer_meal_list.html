@@ -11,7 +11,7 @@
     <form role="form">
       <input style="width:80%;" name="webhook_url" type="text" value="{{ attendee.webhook_url }}" placeholder="URL for your webhook"/> <br/>
       <textarea name="webhook_data" cols="50" style="width:80%;" placeholder="JSON data for your webhook">{{ attendee.webhook_data }}</textarea>
-      <button class="btn btn-lg btn-primary btn-block" type="submit">Update Webhook</button>
+      <button class="btn btn-lg btn-primary btn-block" type="submit">Update Webhook (sends test)</button>
     </form>
   {% endif %}
   <br/>
