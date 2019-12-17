@@ -760,7 +760,18 @@ class Root:
         session = models.new_sesh()
         
         dept = session.query(Department).filter_by(id=dept_id).one()
-        dept_name = dept.name
+        
+        # send DH to page for setting default contact info.
+        # DH will be able to skip, but every time the come back to the Dept Order page it will redirect again.
+        # hopefully this will result in people filling this out with useful info rather than putting trash.
+        if 'skip' not in params:
+            if not dept.slack_channel and not dept.slack_contact and not dept.other_contact and not dept.text_contact \
+            and not dept.email_contact:
+                session.close()
+                raise HTTPRedirect('dept_contact?dept_id=' + str(dept.id) +
+                                   '&message=Please add default contact info for your department.  '
+                                   'This will be used when beginning new meal bundles for your department '
+                                   'and for meals where no other contact info is specified.')
         
         thismeal = session.query(Meal).filter_by(id=meal_id).one()
   
@@ -806,7 +817,7 @@ class Root:
         departments = department_split(session, dept_id)
             
         template = env.get_template('dept_order.html')
-        return template.render(dept=dept_name,
+        return template.render(dept=dept,
                                orders=order_list,
                                dept_order=this_dept_order,
                                meal=thismeal,
