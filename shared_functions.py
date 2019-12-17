@@ -636,9 +636,12 @@ def create_dept_order(dept_id, meal_id, session):
 
 
 def send_webhook(url, data):
-    request = requests.post(url=url, json=data)
-    response = json.loads(request.text)
-    #if 'error' in response:
-    print('---------------------------------')
-    print(response)
-    return response
+    """
+    Sends webhook request
+    :param url:
+    :param data: JSON format data
+    :return:
+    """
+    request = requests.post(url=url, json=json.loads(data))
+    
+    return request.text

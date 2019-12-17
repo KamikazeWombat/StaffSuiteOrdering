@@ -595,13 +595,13 @@ class Root:
                             'You will need to get a Department Head to authorize any orders you place.')
 
         attendee = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
-        webhook_response = ''
+        
         if 'webhook_url' in params:
             # save webhook data
             attendee.webhook_url = params['webhook_url']
             attendee.webhook_data = params['webhook_data']
             session.commit()
-            webhook_response = shared_functions.send_webhook(params['webhook_url'], params['webhook_data'])
+            shared_functions.send_webhook(params['webhook_url'], params['webhook_data'])
             junk = attendee.badge_num  # gets SQLAlchemy to reload attendee from database since needed for page display
         
         meals = session.query(Meal).all()
@@ -652,7 +652,6 @@ class Root:
                                allergies=allergies,
                                attendee=attendee,
                                session=session_info,
-                               wresp=webhook_response,
                                c=c)
             
 
@@ -1122,6 +1121,7 @@ class Root:
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                                '&message=This Bundle is now un-marked Complete.')
 
+    @cherrypy.expose
     def dept_order_details(self, dept_order_id, **params):
         """
         Displays contact info details for a dept's order
@@ -1151,7 +1151,8 @@ class Root:
         return template.render(dept_order=dept_order,
                                meal=meal,
                                dept=dept.name)
-
+    
+    @cherrypy.expose
     def dept_contact(self, dept_id, original_location=None, **params):
         """
         Displays and allows updating of Department's default contact info
