@@ -600,6 +600,7 @@ class Root:
             attendee.webhook_url = params['webhook_url']
             attendee.webhook_data = params['webhook_data']
             session.commit()
+            shared_functions.send_webhook(params['webhook_url'], params['webhook_data'])
             junk = attendee.badge_num  # gets SQLAlchemy to reload attendee from database since needed for page display
         
         meals = session.query(Meal).all()
