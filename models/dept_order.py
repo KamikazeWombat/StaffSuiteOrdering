@@ -18,4 +18,4 @@ class DeptOrder(dec_base):
     slack_contact = Column('slack_contact', String, default='')  # who to ping
     text_contact = Column('text_contact', String, default='')  # who to text
     email_contact = Column('email_contact', String, default='')  # who to email
-    other_contact = Column('other_contact', String, default='')  # requested contact info for this department for this meal bundle
+    other_contact = Column('other_contact', String, default='')  # requested contact info for this department for this order bundle

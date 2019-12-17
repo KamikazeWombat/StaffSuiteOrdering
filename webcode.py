@@ -23,7 +23,7 @@ from models.department import Department
 from models.dept_order import DeptOrder
 import shared_functions
 from shared_functions import api_login, HTTPRedirect, order_split, order_selections, allergy_info, \
-                     meal_join, meal_split, meal_blank_toppings, department_split, \
+                     meal_join, meal_split, meal_blank_toppings, department_split, create_dept_order, \
                      ss_eligible, carryout_eligible, combine_shifts, return_selected_only, \
                      con_tz, utc_tz, now_utc, now_contz, is_admin, is_ss_staffer, is_dh, return_not_selected
 import slack_bot
@@ -33,13 +33,23 @@ class Root:
     
     @restricted
     @cherrypy.expose
-    def index(self, load_depts=False):
+    def index(self):
         raise HTTPRedirect('staffer_meal_list')
         
-
     @cherrypy.expose
     def login(self, message=[], first_name='', last_name='',
               email='', zip_code='', original_location=None, logout=False):
+        """
+        Login Screen.  Can redirect to original destination.
+        :param message:
+        :param first_name:
+        :param last_name:
+        :param email:
+        :param zip_code:
+        :param original_location:
+        :param logout:
+        :return:
+        """
         original_location = shared_functions.create_valid_user_supplied_redirect_url(original_location,
                                                                                      default_url='staffer_meal_list')
         error = False
@@ -51,6 +61,18 @@ class Root:
         if logout:
             cherrypy.lib.sessions.expire()
             raise HTTPRedirect('login?message=Succesfully logged out')
+
+        # todo: un-comment this section
+        """
+        # check if orders open
+        if not cfg.orders_open():
+            if not cherrypy.session['is_ss_staffer']:
+                if not cherrypy.session['is_admin']:
+                    # cherrypy.lib.sessions.expire()  # probably not needed
+                    raise HTTPRedirect('login?message=Orders are not yet open.  You can login beginning at '
+                                       + con_tz(c.EPOCH).strftime(cfg.date_format) + ' ID: ' +
+                                       str(cherrypy.session['staffer_id']))
+            """
             
         if first_name and last_name and email and zip_code:
             response = api_login(first_name=first_name, last_name=last_name,
@@ -59,13 +81,16 @@ class Root:
             if 'error' in response:
                 messages.append(response['error']['message'])
                 error = True
-                
+            """ decided it didn't make sense to keep out people not marked staff/volunteer in Uber
+            because then people who decide to volunteer after arriving won't be able to login.
+            Hours requirements will still require DH override for people who don't have enough hours marked down
             if not error:
                 # is staff?
                 if not response['result']['staffing']:
                     messages.append('You are not currently signed up as staff/volunteer.'
                               'See below for information on how to volunteer.')
                     not_volunteer = True
+            """
             
             if not error:
                 # ensure_csrf_token_exists()
@@ -86,15 +111,6 @@ class Root:
                     cherrypy.session['is_dh'] = True
                 else:
                     cherrypy.session['is_dh'] = False
-                    
-                # check if orders open
-                if not cfg.orders_open():
-                    if not cherrypy.session['is_ss_staffer']:
-                        if not cherrypy.session['is_admin']:
-                            cherrypy.lib.sessions.expire()
-                            raise HTTPRedirect('login?message=Orders are not yet open.  You can login beginning at '
-                                               + con_tz(c.EPOCH).strftime(cfg.date_format) + ' ID: ' +
-                                               str(cherrypy.session['staffer_id']))
                     
                 session = models.new_sesh()
                 # print('succesful login, updating record')
@@ -120,10 +136,7 @@ class Root:
                     
                 session.close()
 
-                if not cfg.orders_open and not is_admin:
-                    messages.append('Orders are not yet open')
-                else:
-                    raise HTTPRedirect(original_location)
+                raise HTTPRedirect(original_location)
         
         template = env.get_template('login.html')
         return template.render(messages=messages,
@@ -556,7 +569,7 @@ class Root:
         
     @cherrypy.expose
     @restricted
-    def staffer_meal_list(self, message=[], meal_id='', display_all=False):
+    def staffer_meal_list(self, message=[], meal_id='', display_all=False, **params):
         """
         Display list of meals staffer is eligible for, unless requested to show all
         """
@@ -568,10 +581,6 @@ class Root:
             'is_ss_staffer': cherrypy.session['is_ss_staffer']
         }
         
-        # present if Create Order button clicked
-        if meal_id:
-            raise HTTPRedirect('order_edit?meal_id='+meal_id)
-        
         messages = []
         if message:
             text = message
@@ -582,9 +591,16 @@ class Root:
         eligible = ss_eligible(cherrypy.session['badge_num'])
         
         if not eligible:
-            # print("appending not enough hours") # test change for git
             messages.append('You are not scheduled for enough volunteer hours to be eligible for Staff Suite.  '
                             'You will need to get a Department Head to authorize any orders you place.')
+
+        attendee = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
+        if 'webhook_url' in params:
+            # save webhook data
+            attendee.webhook_url = params['webhook_url']
+            attendee.webhook_data = params['webhook_data']
+            session.commit()
+            junk = attendee.badge_num  # gets SQLAlchemy to reload attendee from database since needed for page display
         
         meals = session.query(Meal).all()
         sorted_shifts = combine_shifts(cherrypy.session['badge_num'])
@@ -604,7 +620,7 @@ class Root:
             except sqlalchemy.orm.exc.NoResultFound:
                 pass
 
-        meal_display = []
+        meal_display = list()
         
         session.close()
         
@@ -632,6 +648,7 @@ class Root:
         return template.render(messages=messages,
                                meallist=meal_display,
                                allergies=allergies,
+                               attendee=attendee,
                                session=session_info,
                                c=c)
             
@@ -720,7 +737,7 @@ class Root:
     def dept_order(self, meal_id, dept_id, message="", **params):
         """
         Usable by Department Heads and admins
-        list of Staffer orders for selected meal and department
+        list of orders for selected meal and department
         Can override ones not already eligible
         Can edit existing ones if need be (usually shouldn't)
         Can create new orders for specified badge number
@@ -747,7 +764,18 @@ class Root:
         session = models.new_sesh()
         
         dept = session.query(Department).filter_by(id=dept_id).one()
-        dept_name = dept.name
+        
+        # send DH to page for setting default contact info.
+        # DH will be able to skip, but every time the come back to the Dept Order page it will redirect again.
+        # hopefully this will result in people filling this out with useful info rather than putting trash.
+        if 'skip' not in params:
+            if not dept.slack_channel and not dept.slack_contact and not dept.other_contact and not dept.text_contact \
+                    and not dept.email_contact:
+                session.close()
+                raise HTTPRedirect('dept_contact?dept_id=' + str(dept.id) +
+                                   '&message=Please add default contact info for your department.  '
+                                   'This will be used when beginning new meal bundles for your department '
+                                   'and for meals where no other contact info is specified.')
         
         thismeal = session.query(Meal).filter_by(id=meal_id).one()
   
@@ -755,11 +783,7 @@ class Root:
         try:
             this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
         except sqlalchemy.orm.exc.NoResultFound:
-            this_dept_order = DeptOrder()
-            this_dept_order.dept_id = dept_id
-            this_dept_order.meal_id = meal_id
-            session.add(this_dept_order)
-            session.commit()
+            this_dept_order = create_dept_order(dept_id, meal_id, session)
         
         if 'other_contact' in params:
             # save changes to dept_order
@@ -797,7 +821,7 @@ class Root:
         departments = department_split(session, dept_id)
             
         template = env.get_template('dept_order.html')
-        return template.render(dept=dept_name,
+        return template.render(dept=dept,
                                orders=order_list,
                                dept_order=this_dept_order,
                                meal=thismeal,
@@ -896,19 +920,34 @@ class Root:
         
         depts = session.query(models.department.Department).all()
         dept_list = list()
+        completed_depts = list()
         total_orders = 0
+        remaining_orders = 0
         
         for dept in depts:
             count = session.query(Order).filter_by(department_id=dept.id, meal_id=meal_id).count()
-            dept_list.append((dept.name, count, dept.id))
+            
+            try:
+                dept_order = session.query(DeptOrder).filter_by(dept_id=dept.id, meal_id=meal_id).one()
+            except sqlalchemy.orm.exc.NoResultFound:
+                dept_order = create_dept_order(dept.id, meal_id, session)
+                
+            if not dept_order.completed:
+                dept_list.append((dept.name, count, dept.id))
+                remaining_orders += count
+            else:
+                completed_depts.append((dept.name, count, dept.id))
+                
             total_orders += count
         
         # print(dept_list)
         session.close()
         template = env.get_template('ssf_dept_list.html')
         return template.render(depts=dept_list,
+                               completed_depts=completed_depts,
                                meal_id=meal_id,
                                total=total_orders,
+                               remaining=remaining_orders,
                                session=session_info,
                                c=c)
         
@@ -938,12 +977,7 @@ class Root:
         try:
             dept_order = session.query(DeptOrder).filter_by(dept_id=dept_id, meal_id=meal_id).one()
         except sqlalchemy.orm.exc.NoResultFound:
-            dept_order = DeptOrder()
-            dept_order.dept_id = dept_id
-            dept_order.meal_id = meal_id
-            session.add(dept_order)
-            session.commit()
-            dept_order = session.query(DeptOrder).filter_by(dept_id=dept_id, meal_id=meal_id).one()
+            dept_order = create_dept_order(dept_id, meal_id, session)
         
         orders = session.query(Order).filter_by(department_id=dept_id, meal_id=meal_id)\
             .options(joinedload(Order.attendee)).all()
@@ -1054,10 +1088,25 @@ class Root:
             dept_order.completed = True
             dept_order.completed_time = now_utc()
             dept = session.query(Department).filter_by(id=dept_id).one()
+            
             if dept_order.slack_channel:
-                message = dept_order.slack_contact + ' Your food order bundle for ' + dept.name + ' ' \
-                          'is ready, please pickup from Staff Suite.  ' + now_contz().strftime(cfg.date_format)
+                message = 'Your food order bundle for ' + dept.name + ' ' \
+                          'is ready, please pickup from Staff Suite.  ' + now_contz().strftime(cfg.date_format) + \
+                          '  ' + dept_order.slack_contact
                 slack_bot.send_message(dept_order.slack_channel, message)
+                
+            orders = session.query(Order).filter_by(dept_id=dept_order.dept_id, meal_id=dept_order.meal_id) \
+                .options(subqueryload(Order.attendee)).all()
+            for order in orders:
+                if order.attendee.webhook_url:
+                    shared_functions.send_webhook(order.attendee.webhook_url, order.attendee.webhook_data)
+                
+            if dept_order.other_contact:
+                session.commit()
+                session.close()
+                raise HTTPRedirect('dept_order_details?dept_order_id=' + str(dept_order.id) +
+                                   '&message=This department has requested manual contact.  '
+                                   'Please contact them as listed in the Other Contact Info box.')
             session.commit()
             session.close()
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
@@ -1070,14 +1119,60 @@ class Root:
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                                '&message=This Bundle is now un-marked Complete.')
 
-      
-    def order_detail(self):
+    def dept_order_details(self, dept_order_id, **params):
         """
-        Displays details of an order in a popup for fulfilment purposes
+        Displays contact info details for a dept's order
+        :param dept_order_id:
+        :param original_location:
+        :return:
         """
+        session = models.new_sesh()
+        dept_order = session.query(DeptOrder).filter_by(id=dept_order_id).one()
         
+        if 'slack_channel' in params:
+            # save record
+            dept_order.slack_contact = params['slack_contact']
+            dept_order.slack_channel = params['slack_channel']
+            #dept_order.text_contact = params['text_contact']
+            #dept_order.email_contact = params['email_contact']
+            dept_order.other_contact = params['other_contact']
+            session.commit()
+            session.close()
+            raise HTTPRedirect('dept_order_details?dept_order_id=' + str(dept_order_id))
         
-    def print_order(self):
+        # load record
+        meal = session.query(Meal).filter_by(id=dept_order.meal_id).one()
+        dept = session.query(Department).filter_by(id=dept_order.dept_id)
+        session.close()
+        template = env.get_template('dept_order_details.html')
+        return template.render(dept_order=dept_order,
+                               meal=meal,
+                               dept=dept.name)
+
+    def dept_contact(self, dept_id, original_location=None, **params):
         """
-        Prints order from popup screen then closes itself
+        Displays and allows updating of Department's default contact info
+        :param dept_order_id:
+        :param original_location:
+        :return:
         """
+        original_location = shared_functions.create_valid_user_supplied_redirect_url(original_location,
+                                                                                     default_url='staffer_meal_list')
+        session = models.new_sesh()
+        dept = session.query(Department).filter_by(id=dept_id).one()
+        
+        if 'slack_channel' in params:
+            # save record
+            dept.slack_contact = params['slack_contact']
+            dept.slack_channel = params['slack_channel']
+            #dept.text_contact = params['text_contact']
+            #dept.email_contact = params['email_contact']
+            dept.other_contact = params['other_contact']
+            session.commit()
+            session.close()
+            raise HTTPRedirect(original_location)
+            
+        session.close()
+        template = env.get_template('dept_contact.html')
+        return template.render(dept=dept.name,
+                               original_location=original_location)

@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% set admin_area=True %}
+{% block title %}Staffer Meal List{% endblock %}
+{% block backlink %}{% endblock %}
+{% block content %}
+
+<div class="container">
+  <h2 class="form-signin-heading">Department Order Contact Details for {{ meal.meal_name }} for {{ dept }}</h2>
+  <form role="form">
+    <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
+    <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
+    <p>Slack Channel: <textarea name="slack_channel" cols="50" rows="1"
+              placeholder="What channel to post in, eg 'staffsuiteordering, #bottesting'"
+      {% if dept_order.completed %} disabled {% endif %}
+    >{{ dept_order.slack_channel }}</textarea><br/>What channel to post in, eg 'staffsuiteordering, #bottesting'</p>
+    <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"
+              placeholder="Who to ping in Slack?  Can include @here or @channel if desired"
+      {% if dept_order.completed %} disabled {% endif %}
+    >{{ dept_order.slack_contact }}</textarea><br/>Who to ping in Slack?  Can include @here or @channel if desired</p>
+    <p>Other Contact: <textarea name="other_contact" cols="50" rows="6"
+                     placeholder="How you else would like to be contacted for order pickup.  Text, email, phone call..."
+      {% if dept_order.completed %} disabled {% endif %}
+    >{{ dept_order.other_contact }}</textarea></p>
+    <p>The above contact info is for meal order bundle completion for this department, for only this meal!</p>
+    <button class="btn btn-lg btn-primary btn-block" type="submit">Update Department's Contact Info</button>
+  </form>
+  <a href="ssf_orders?meal_id={{ dept_order.meal_id }}&dept_id={{ dept_order.dept_id }}" class="btn btn-lg btn-primary btn-block">Done contacting, back to Orders page</a>
+</div>
+{% endblock content %}

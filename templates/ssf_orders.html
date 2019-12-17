@@ -18,12 +18,13 @@
   {% if dept_order.completed %}
   <a class="btn btn-lg btn-primary btn-block" href="ssf_complete_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}&uncomplete_order=True">Un-Mark Bundle Complete</a><br/>
   {% else %}
-  <a class="btn btn-lg btn-primary btn-block" href="ssf_complete_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}">Mark Bundle Complete</a><br/>
+  <a class="btn btn-lg btn-primary btn-block" href="ssf_complete_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}">Mark Bundle Complete</a>
+  <p>Marking bundle complete will send out any configured notifications to the department.</p>
   {% endif %}
+  <a class="btn btn-lg btn-primary btn-block" href="dept_order_details?dept_order_id={{ dept_order.id }}">See Dept's Contact Info for this Bundle</a>
   <br/>
   {% if dept_order.started %}<br/>Bundle Prep Started: {{ dept_order.start_time }} {% endif %}
   {% if dept_order.completed %}<br/>Bundle Prep Completed: {{ dept_order.completed_time }} {% endif %}
-  <!-- todo: button to unlock in case lock clicked by mistake -->
   <h2 class="form-signin-heading">{{ dept_name }} Order List for {{ meal.meal_name }}</h2>
   {% for order in order_list %}
   ---------------------------------------------------

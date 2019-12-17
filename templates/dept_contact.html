@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% set admin_area=True %}
+{% block title %}Staffer Meal List{% endblock %}
+{% block backlink %}{% endblock %}
+{% block content %}
+
+<div class="container">
+  <h2 class="form-signin-heading">Default Contact Details for {{ dept.name }}</h2>
+  <h3>This is the contact info that will be used when your Department's order bundles are processed if no other contact info has been specified.</h3>
+  <form role="form">
+    <input type="hidden" name="original_location" value="{{ original_location }}"/>
+    <p>Slack Channel: <textarea name="slack_channel" cols="50" rows="1"
+              placeholder="What channel to post in, eg 'staffsuiteordering, #bottesting'"
+    >{{ dept.slack_channel }}</textarea><br/>What channel to post in, eg 'staffsuiteordering, #bottesting'</p>
+    <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"
+              placeholder="Who to ping in Slack?  Can include @here or @channel if desired"
+    >{{ dept.slack_contact }}</textarea><br/>Who to ping in Slack?  Can include @here or @channel if desired</p>
+    <p>Other Contact: <textarea name="other_contact" cols="50" rows="6"
+                     placeholder="How you else would like to be contacted for order pickup.  Text, email, phone call..."
+    >{{ dept.other_contact }}</textarea></p>
+    <button class="btn btn-lg btn-primary btn-block" type="submit">Update Department's Default Contact Info</button>
+  </form>
+  <a href="{{ original_location }}" class="btn btn-lg btn-primary btn-block">Return to previous page</a>
+</div>
+{% endblock content %}

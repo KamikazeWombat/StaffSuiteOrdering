@@ -158,11 +158,14 @@ def api_login(first_name, last_name, email, zip_code):
 
 
 def load_departments():
+    """
+    Loads departments from connected Uber instance
+    :return:
+    """
     REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
     
     # data being sent to API
     request_data = {'method': 'dept.list'}
-    
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
     response = json.loads(request.text)
     response = response['result'].items()
@@ -341,8 +344,6 @@ def meal_join(session, params, field):
         try:
             label = params[labelkey]
             if not label == '':
-                if field == 'toggle2':
-                    print('--------------starting field check----------------')
                 try:
                     idkey = field + 'id' + str(count)
                     fieldid = params[idkey]
@@ -605,8 +606,6 @@ def is_dh(staff_id):
                     'params': [staff_id]}
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
     response = json.loads(request.text)
-    print('----------------------------------------')
-    print(response)
     return response['result'][0]['is_dept_head']
 
 
@@ -617,7 +616,6 @@ def allergy_info(badge_num):
     :return:
     """
     response = lookup_attendee(badge_num, full=True)
-    print(response['result']['food_restrictions'])
     if response['result']['food_restrictions']:
         allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
                      'freeform': response['result']['food_restrictions']['freeform']}
@@ -625,3 +623,18 @@ def allergy_info(badge_num):
         allergies = {'standard_labels': '', 'freeform': ''}
 
     return allergies
+
+
+def create_dept_order(dept_id, meal_id, session):
+    this_dept_order = models.dept_order.DeptOrder()
+    this_dept_order.dept_id = dept_id
+    this_dept_order.meal_id = meal_id
+    session.add(this_dept_order)
+    session.commit()
+    dept_order = session.query(models.dept_order.DeptOrder).filter_by(dept_id=dept_id, meal_id=meal_id).one()
+    return dept_order
+
+
+def send_webhook(url, data):
+    request = requests.post(url=url, json=data)
+    return
