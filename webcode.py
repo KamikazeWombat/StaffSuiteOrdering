@@ -61,7 +61,7 @@ class Root:
         if logout:
             cherrypy.lib.sessions.expire()
             raise HTTPRedirect('login?message=Succesfully logged out')
-
+        
         # todo: un-comment this section
         """
         # check if orders open
@@ -595,12 +595,13 @@ class Root:
                             'You will need to get a Department Head to authorize any orders you place.')
 
         attendee = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
+        webhook_response = ''
         if 'webhook_url' in params:
             # save webhook data
             attendee.webhook_url = params['webhook_url']
             attendee.webhook_data = params['webhook_data']
             session.commit()
-            shared_functions.send_webhook(params['webhook_url'], params['webhook_data'])
+            webhook_response = shared_functions.send_webhook(params['webhook_url'], params['webhook_data'])
             junk = attendee.badge_num  # gets SQLAlchemy to reload attendee from database since needed for page display
         
         meals = session.query(Meal).all()
@@ -651,6 +652,7 @@ class Root:
                                allergies=allergies,
                                attendee=attendee,
                                session=session_info,
+                               wresp=webhook_response,
                                c=c)
             
 
