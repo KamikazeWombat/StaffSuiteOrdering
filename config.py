@@ -49,8 +49,10 @@ class Config:
         for arg in argv:
             if arg == '-dev':
                 filename = 'devconfig.json'
+                self.devenv = True
                 break
             else:
+                self.devenv = False
                 filename = 'config.json'
             
         configfile = open(filename, 'r')

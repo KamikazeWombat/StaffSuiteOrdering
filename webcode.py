@@ -597,12 +597,13 @@ class Root:
         attendee = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
         
         if 'webhook_url' in params:
-            # save webhook data
-            attendee.webhook_url = params['webhook_url']
-            attendee.webhook_data = params['webhook_data']
-            session.commit()
-            shared_functions.send_webhook(params['webhook_url'], params['webhook_data'])
-            junk = attendee.badge_num  # gets SQLAlchemy to reload attendee from database since needed for page display
+            if cherrypy.session['is_dh'] or cherrypy.session['is_admin']:
+                # save webhook data
+                attendee.webhook_url = params['webhook_url']
+                attendee.webhook_data = params['webhook_data']
+                session.commit()
+                shared_functions.send_webhook(params['webhook_url'], params['webhook_data'])
+                junk = attendee.badge_num  # gets SQLAlchemy to reload attendee from database since needed for page display
         
         meals = session.query(Meal).all()
         sorted_shifts = combine_shifts(cherrypy.session['badge_num'])
@@ -774,10 +775,12 @@ class Root:
             if not dept.slack_channel and not dept.slack_contact and not dept.other_contact and not dept.text_contact \
                     and not dept.email_contact:
                 session.close()
-                raise HTTPRedirect('dept_contact?dept_id=' + str(dept.id) +
+                raise HTTPRedirect('dept_contact?dept_id=' + str(dept_id) +
                                    '&message=Please add default contact info for your department.  '
                                    'This will be used when beginning new meal bundles for your department '
-                                   'and for meals where no other contact info is specified.')
+                                   'and for meals where no other contact info is specified.' +
+                                   '&original_location=dept_order%3Fdept_id%3D' +
+                                   str(dept_id) + '%26meal_id%3D' + str(meal_id))
         
         thismeal = session.query(Meal).filter_by(id=meal_id).one()
   
@@ -793,6 +796,11 @@ class Root:
             this_dept_order.slack_contact = params['slack_contact']
             this_dept_order.other_contact = params['other_contact']
             session.commit()
+            
+            # reload these items since commit flushes them
+            dept = session.query(Department).filter_by(id=dept_id).one()
+            thismeal = session.query(Meal).filter_by(id=meal_id).one()
+            
             messages.append('Department order contact info successfully updated.')
 
         order_list = session.query(Order).filter_by(meal_id=meal_id, department_id=dept_id).options(
@@ -1023,11 +1031,21 @@ class Root:
                     'encoding': "UTF-8",
                     'print-media-type': None
                 }
-                pdfkit.from_string(labels.render(orders=orders,
-                                                 meal=thismeal,
-                                                 dept_name=dept_name),
-                                   'pdfs\\' + dept_name + '.pdf',
-                                   options=options)
+                if cfg.devenv:  # todo: change this to detect OS instead
+                    path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
+                    config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+                    pdfkit.from_string(labels.render(orders=orders,
+                                                     meal=thismeal,
+                                                     dept_name=dept_name),
+                                       'pdfs\\' + dept_name + '.pdf',
+                                       options=options,
+                                       configuration=config)
+                else:
+                    pdfkit.from_string(labels.render(orders=orders,
+                                                     meal=thismeal,
+                                                     dept_name=dept_name),
+                                       'pdfs\\' + dept_name + '.pdf',
+                                       options=options)
         if dept_order.completed:
             dept_order.completed_time = con_tz(dept_order.completed_time).strftime(cfg.date_format)
         
@@ -1097,7 +1115,7 @@ class Root:
                           '  ' + dept_order.slack_contact
                 slack_bot.send_message(dept_order.slack_channel, message)
                 
-            orders = session.query(Order).filter_by(dept_id=dept_order.dept_id, meal_id=dept_order.meal_id) \
+            orders = session.query(Order).filter_by(department_id=dept_order.dept_id, meal_id=dept_order.meal_id) \
                 .options(subqueryload(Order.attendee)).all()
             for order in orders:
                 if order.attendee.webhook_url:
@@ -1129,6 +1147,13 @@ class Root:
         :param original_location:
         :return:
         """
+
+        session_info = {
+            'is_dh': cherrypy.session['is_dh'],
+            'is_admin': cherrypy.session['is_admin'],
+            'is_ss_staffer': cherrypy.session['is_ss_staffer']
+        }
+
         session = models.new_sesh()
         dept_order = session.query(DeptOrder).filter_by(id=dept_order_id).one()
         
@@ -1150,7 +1175,9 @@ class Root:
         template = env.get_template('dept_order_details.html')
         return template.render(dept_order=dept_order,
                                meal=meal,
-                               dept=dept.name)
+                               dept=dept.name,
+                               session=session_info,
+                               c=c)
     
     @cherrypy.expose
     def dept_contact(self, dept_id, original_location=None, **params):
@@ -1160,6 +1187,13 @@ class Root:
         :param original_location:
         :return:
         """
+        
+        session_info = {
+            'is_dh': cherrypy.session['is_dh'],
+            'is_admin': cherrypy.session['is_admin'],
+            'is_ss_staffer': cherrypy.session['is_ss_staffer']
+        }
+
         original_location = shared_functions.create_valid_user_supplied_redirect_url(original_location,
                                                                                      default_url='staffer_meal_list')
         session = models.new_sesh()
@@ -1178,5 +1212,7 @@ class Root:
             
         session.close()
         template = env.get_template('dept_contact.html')
-        return template.render(dept=dept.name,
-                               original_location=original_location)
+        return template.render(dept=dept,
+                               original_location=original_location,
+                               session=session_info,
+                               c=c)

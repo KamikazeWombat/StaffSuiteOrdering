@@ -626,10 +626,17 @@ def allergy_info(badge_num):
 
 
 def create_dept_order(dept_id, meal_id, session):
-    this_dept_order = models.dept_order.DeptOrder()
-    this_dept_order.dept_id = dept_id
-    this_dept_order.meal_id = meal_id
-    session.add(this_dept_order)
+    dept = session.query(Department).filter_by(id=dept_id).one()
+    dept_order = models.dept_order.DeptOrder()
+    dept_order.dept_id = dept_id
+    dept_order.meal_id = meal_id
+    dept_order.slack_contact = dept.slack_contact
+    dept_order.slack_channel = dept.slack_channel
+    dept_order.other_contact = dept.other_contact
+    dept_order.text_contact = dept.text_contact
+    dept_order.email_contact = dept.email_contact
+    
+    session.add(dept_order)
     session.commit()
     dept_order = session.query(models.dept_order.DeptOrder).filter_by(dept_id=dept_id, meal_id=meal_id).one()
     return dept_order
