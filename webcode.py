@@ -1211,7 +1211,7 @@ class Root:
         
         # load record
         meal = session.query(Meal).filter_by(id=dept_order.meal_id).one()
-        dept = session.query(Department).filter_by(id=dept_order.dept_id)
+        dept = session.query(Department).filter_by(id=dept_order.dept_id).one()
         session.close()
         template = env.get_template('dept_order_details.html')
         return template.render(dept_order=dept_order,
