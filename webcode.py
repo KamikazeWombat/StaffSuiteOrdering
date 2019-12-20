@@ -305,16 +305,30 @@ class Root:
             # : save it lol
             
             try:
-                thisorder = session.query(Order).filter_by(id=order_id).one()
+                if dh_edit:
+                    attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
+                    thisorder = session.query(Order).filter_by(meal_id=save_order,
+                                                               attendee_id=attend.public_id).one()
+                else:
+                    thisorder = session.query(Order).filter_by(meal_id=save_order,
+                                                               attendee_id=cherrypy.session['staffer_id']).one()
                 # does not update if not belong to user or user is DH/Admin
                 if not thisorder.attendee.public_id == cherrypy.session['staffer_id']:
                     if not shared_functions.is_dh(cherrypy.session['staffer_id']):
                         if not shared_functions.is_admin(cherrypy.session['staffer_id']):
                             raise HTTPRedirect("staffer_meal_list?message=This isn't your order.")
                         
-                dept_order = session.query(DeptOrder).filter_by(meal_id=save_order, dept_id=params['department']).one()
-                
-                if thisorder.locked or dept_order.started:
+                try:
+                    # todo: can I do exists or something more efficient?
+                    dept_order = session.query(DeptOrder).filter_by(meal_id=save_order,
+                                                                    dept_id=params['department']).one()
+                    dept_order_started = True
+                except sqlalchemy.orm.exc.NoResultFound:
+                    # it's fine if none there, can't be started if it's not created
+                    dept_order_started = False
+                    pass
+                # todo: do I actually use the locked field anywhere?
+                if thisorder.locked or dept_order_started:
                     if not cherrypy.session['is_admin']:
                         raise HTTPRedirect("staffer_meal_list?message=This order has already been started by Staff Suite"
                                            " and cannot be changed except by Staff Suite Admins")
@@ -616,19 +630,7 @@ class Root:
         sorted_shifts = combine_shifts(cherrypy.session['badge_num'], no_combine=True)
         allergies = allergy_info(cherrypy.session['badge_num'])
 
-        for thismeal in meals:
-            thismeal.start_time = con_tz(thismeal.start_time)
-            thismeal.end_time = con_tz(thismeal.end_time)
-            thismeal.cutoff = con_tz(thismeal.cutoff)
-            try:
-                # todo: more efficient code for this, I think there's a way to load orders for all meals in one query request
-                thisorder = session.query(Order).filter_by(meal_id=thismeal.id,
-                                                           attendee_id=cherrypy.session['staffer_id']).one()
-                thismeal.order_exists = True
-                if thisorder.overridden:
-                    thismeal.overridden = True
-            except sqlalchemy.orm.exc.NoResultFound:
-                pass
+        
 
         meal_display = list()
         
@@ -653,6 +655,25 @@ class Root:
         if len(meal_display) == 0:
             messages.append('You do not have any shifts that are eligible for Carryout.  '
                             'You will need to get a Department Head to authorize any orders you place.')
+        
+        for thismeal in meals:
+            thismeal.start_time = con_tz(thismeal.start_time)
+            thismeal.end_time = con_tz(thismeal.end_time)
+            thismeal.cutoff = con_tz(thismeal.cutoff)
+            try:
+                orders = session.query(Order).filter_by(meal_id=thismeal.id,
+                                                           attendee_id=cherrypy.session['staffer_id']).all()
+                print('0------------------printing matching orders-----------------')
+                for order in orders:
+                    print(str(order.meal_id) + ', ' + str(order.id))
+                # todo: more efficient code for this, I think there's a way to load orders for all meals in one query request
+                thisorder = session.query(Order).filter_by(meal_id=thismeal.id,
+                                                           attendee_id=cherrypy.session['staffer_id']).one()
+                thismeal.order_exists = True
+                if thisorder.overridden:
+                    thismeal.overridden = True
+            except sqlalchemy.orm.exc.NoResultFound:
+                pass
             
         template = env.get_template('staffer_meal_list.html')
         return template.render(messages=messages,
@@ -1039,6 +1060,7 @@ class Root:
                     'print-media-type': None
                 }
                 if cfg.devenv:  # todo: change this to detect OS instead
+                    # for some reason the silly system decided to not find it automatically anymore
                     path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
                     config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
                     pdfkit.from_string(labels.render(orders=orders,
