@@ -160,6 +160,7 @@ class Root:
         
         # this should be triggered if an edit button is clicked from the list
         if id:
+            session.close()
             raise HTTPRedirect('meal_edit?meal_id='+id)
 
         meallist = session.query(Meal).order_by(models.meal.Meal.start_time).all()
@@ -240,6 +241,7 @@ class Root:
                 toggles3 = meal_blank_toppings(meal_split(session, thismeal.toggle3), cfg.radio_select_count)
             except sqlalchemy.orm.exc.NoResultFound:
                 message = 'Requested Meal ID '+meal_id+' not found'
+                session.close()
                 raise HTTPRedirect('meal_setup_list?message='+message)
             
             session.close()
@@ -285,8 +287,6 @@ class Root:
         if message:
             text = message
             messages.append(text)
-            
-        session = models.new_sesh()
 
         session_info = {
             'is_dh': cherrypy.session['is_dh'],
@@ -299,6 +299,8 @@ class Root:
         
         if delete_order:
             raise HTTPRedirect('order_delete_comfirm?order_id=' + str(delete_order))
+
+        session = models.new_sesh()
         
         # parameter save_order should only be present if submit clicked
         if save_order:
@@ -316,6 +318,7 @@ class Root:
                 if not thisorder.attendee.public_id == cherrypy.session['staffer_id']:
                     if not shared_functions.is_dh(cherrypy.session['staffer_id']):
                         if not shared_functions.is_admin(cherrypy.session['staffer_id']):
+                            session.close()
                             raise HTTPRedirect("staffer_meal_list?message=This isn't your order.")
                         
                 try:
@@ -330,6 +333,7 @@ class Root:
                 # todo: do I actually use the locked field anywhere?
                 if thisorder.locked or dept_order_started:
                     if not cherrypy.session['is_admin']:
+                        session.close()
                         raise HTTPRedirect("staffer_meal_list?message=This order has already been started by Staff Suite"
                                            " and cannot be changed except by Staff Suite Admins")
                     
@@ -354,6 +358,7 @@ class Root:
                         thisorder.attendee_id = attend.public_id
                         session.commit()
                 else:
+                    session.close()
                     raise HTTPRedirect('staffer_meal_list?message=You must be DH or admin to use this feature')
             else:
                 # print('not dh_edit')
@@ -451,6 +456,7 @@ class Root:
                     # check if order already exists, DH edit
                     thisorder = session.query(Order).filter_by(attendee_id=attend.public_id, meal_id=meal_id).one()
 
+                    session.close()
                     raise HTTPRedirect('order_edit?dh_edit=True&badge_number=' + str(params['badge_number']) +
                                        '&order_id=' + str(thisorder.id) +
                                        '&message=An order already exists for this Meal, previously created '
@@ -462,6 +468,7 @@ class Root:
                     # check if order already exists, non DH edit
                     thisorder = session.query(Order).filter_by(attendee_id=cherrypy.session['staffer_id'],
                                                                meal_id=meal_id).one()
+                    session.close()
                     raise HTTPRedirect('order_edit?order_id=' + str(thisorder.id) +
                                        '&message=An order already exists for this Meal, previously created order '
                                        'selections loaded.')
@@ -878,6 +885,7 @@ class Root:
         dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
         # todo: check for if order started or completed for admin user and do extra warnings?
         if dept_order.started and not cherrypy.session['is_admin']:
+            session.close()
             raise HTTPRedirect('dept_order_selection?message=The order for your department for this meal has already been started.')
         order = session.query(Order).filter_by(id=order_id).options(subqueryload(Order.attendee)).one()
         if remove_override:
@@ -1109,6 +1117,7 @@ class Root:
                                '&message=This Bundle is now locked.')
         else:
             if dept_order.completed:
+                session.close()
                 raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                                    '&message=You cannot un-lock an Bundle that is marked Completed.')
             
@@ -1132,6 +1141,7 @@ class Root:
         
         if not uncomplete_order:
             if not dept_order.started:
+                session.close()
                 raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                                    '&message=The Bundle must be Locked before it can be marked Complete.')
             dept_order.completed = True
