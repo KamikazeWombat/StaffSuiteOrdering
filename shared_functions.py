@@ -489,7 +489,7 @@ def ss_eligible(badge_num):
         return message
 
 
-def combine_shifts(badge_num, full=False):
+def combine_shifts(badge_num, full=False, no_combine=False):
     """
     Takes badge number and performs lookup against Uber API
     Gets list of shifts, sorts it, then combines any that are close together based on settings for allowable gaps
@@ -514,6 +514,12 @@ def combine_shifts(badge_num, full=False):
                          extra_15=shift['job']['extra15']
                          )
             shift_list.append(item)
+            
+    if no_combine:
+        if full:
+            return shift_list, response
+        else:
+            return shift_list
         
     shifts = sorted(shift_list)
     
@@ -558,13 +564,13 @@ def carryout_eligible(shifts, meal_start, meal_end):
     :return: returns True or False
     """
     # need to check combined if shift starts within <<buffer>> after start of meal time or earlier
-    # AND ends within <<buffer>> before end of meal time or later
+    # AND ends within <<buffer>exc> before end of meal time or later
     
     # if there are no shifts, skip processing
-    
+    print('-----------------beginning eligibility processing---------------')
     if len(shifts) == 0:
         return False
-    
+    """code section for buffer, commented out cause not using buffer for Super 2020
     meal_buffer = relativedelta(minutes=cfg.schedule_tolerance)
     # print("Meal start: {} Meal End {}".format(str(meal_start),str(meal_end)))
     
@@ -579,8 +585,36 @@ def carryout_eligible(shifts, meal_start, meal_end):
         if start_delta >= 0 and end_delta >= 0 and sdelta.days == 0:
             # start_delta.days being anything other than 0 means the shift is more than 24 hours from the meal
             return True
+    """
+    # rd positive if first after second
+    # if ss after ms AND before me then good
+    # if se after ms AND before me then good
+    # if ss before ms AND se after me then good
+    # if the shift is more than a day before or after the meal days != 0
+    print('-----------before loop--------------')
+    for shift in shifts:
+        print('---------------start loop------------')
+        ss_ms = relativedelta(meal_start, shift.start)
+        ss_ms_delta = ss_ms.minutes + (ss_ms.hours * 60)
+        ss_me = relativedelta(meal_end, shift.start)
+        ss_me_delta = ss_me.minutes + (ss_me.hours * 60)
+        if ss_ms_delta <= 0 and ss_me_delta >= 0 and ss_ms.days == 0:
+            print('ss after ms AND before me then good')
+            return True
+
+        se_ms = relativedelta(meal_start, shift.end)
+        se_ms_delta = se_ms.minutes + (se_ms.hours * 60)
+        se_me = relativedelta(meal_end, shift.end)
+        se_me_delta = se_me.minutes + (se_me.hours * 60)
+        if se_ms_delta <= 0 and se_me_delta >= 0 and ss_ms.days == 0:
+            print('se after ms AND before me then good')
+            return True
         
-    # if none of the combined shifts match the meal period, return false.
+        if ss_ms_delta >= 0 and se_me_delta <= 0 and ss_ms.days == 0:
+            print('if ss before ms AND se after me then good')
+            return True
+    print('none matched')
+    # if none of the shifts match the meal period, return false.
     return False
 
 

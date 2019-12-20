@@ -606,7 +606,7 @@ class Root:
                 junk = attendee.badge_num  # gets SQLAlchemy to reload attendee from database since needed for page display
         
         meals = session.query(Meal).all()
-        sorted_shifts = combine_shifts(cherrypy.session['badge_num'])
+        sorted_shifts = combine_shifts(cherrypy.session['badge_num'], no_combine=True)
         allergies = allergy_info(cherrypy.session['badge_num'])
 
         for thismeal in meals:
@@ -808,7 +808,7 @@ class Root:
         # todo: check each order to see if the attendee is eligible for this meal, highlight in html if not
         for order in order_list:
             # print("checking meal")
-            sorted_shifts = combine_shifts(order.attendee.badge_num)
+            sorted_shifts = combine_shifts(order.attendee.badge_num, no_combine=True)
             order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
             
         if len(order_list) == 0:
@@ -1000,7 +1000,7 @@ class Root:
         session.close()  # this has to be before the order loop below.  don't know why, seems like it should be after.
 
         for order in orders:
-            sorted_shifts, response = combine_shifts(order.attendee.badge_num, full=True)
+            sorted_shifts, response = combine_shifts(order.attendee.badge_num, full=True, no_combine=True)
             order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
             # if not eligible and not overridden, remove from list for display/printing
             if not order.eligible and not order.overridden:
