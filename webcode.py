@@ -515,6 +515,12 @@ class Root:
     def order_delete_confirm(self, order_id='', confirm=False):
         session = models.new_sesh()
         
+        session_info = {
+            'is_dh': cherrypy.session['is_dh'],
+            'is_admin': cherrypy.session['is_admin'],
+            'is_ss_staffer': cherrypy.session['is_ss_staffer']
+        }
+        
         thisorder = session.query(Order).filter_by(id=order_id).one()
         
         if confirm:
@@ -530,6 +536,7 @@ class Root:
         template = env.get_template('order_delete_confirm.html')
         return template.render(
             order=thisorder,
+            session=session_info,
             c=c
         )
 
