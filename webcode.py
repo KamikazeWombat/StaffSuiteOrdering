@@ -824,6 +824,10 @@ class Root:
             this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
         except sqlalchemy.orm.exc.NoResultFound:
             this_dept_order = create_dept_order(dept_id, meal_id, session)
+            # reload order since commit flushes it from cache (apparently)
+            this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
+            thismeal = session.query(Meal).filter_by(id=meal_id).one()
+            dept = session.query(Department).filter_by(id=dept_id).one()
         
         if 'other_contact' in params:
             # save changes to dept_order
@@ -835,6 +839,7 @@ class Root:
             # reload these items since commit flushes them
             dept = session.query(Department).filter_by(id=dept_id).one()
             thismeal = session.query(Meal).filter_by(id=meal_id).one()
+            this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
             
             messages.append('Department order contact info successfully updated.')
 
@@ -853,9 +858,6 @@ class Root:
         thismeal.end_time = con_tz(thismeal.end_time)
         thismeal.cutoff = con_tz(thismeal.cutoff)
         
-        # reload order since commit flushes it from cache (apparently)
-        this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
-        thismeal = session.query(Meal).filter_by(id=meal_id).one()
         session.close()
         
         if this_dept_order.started:
