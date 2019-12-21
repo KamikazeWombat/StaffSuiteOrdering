@@ -94,3 +94,27 @@ def dh_or_admin(func):
         return func(*args, **kwargs)
     
     return with_dh_admin
+
+
+def dh_or_staffer(func):
+    """
+    Requires user to be logged in and either a Department Head or an Admin.
+    Department Head status is determined at login by checking their account in Uber/Reggie
+    """
+    @wraps(func)
+    def with_dh_staffer(*args, **kwargs):
+        # check if logged in
+        try:
+            staff_id = cherrypy.session['staffer_id']
+        except KeyError:
+            raise HTTPRedirect('login?message=You+are+not+logged+in - DH or Staffer page', save_location=True)
+        allowed = False
+        if cherrypy.session['is_dh'] or cherrypy.session['is_ss_staffer'] or cherrypy.session['is_admin']:
+            allowed = True
+        
+        if not allowed:
+            raise HTTPRedirect('staffer_meal_list?message=You are not DH or staffer or admin, your id: ' + staff_id)
+        
+        return func(*args, **kwargs)
+    
+    return with_dh_staffer

@@ -772,7 +772,7 @@ class Root:
 
     @cherrypy.expose
     @dh_or_admin
-    def dept_order(self, meal_id, dept_id, message="", **params):
+    def dept_order(self, meal_id, dept_id, skip=False, message="", **params):
         """
         Usable by Department Heads and admins
         list of orders for selected meal and department
@@ -806,7 +806,7 @@ class Root:
         # send DH to page for setting default contact info.
         # DH will be able to skip, but every time the come back to the Dept Order page it will redirect again.
         # hopefully this will result in people filling this out with useful info rather than putting trash.
-        if 'skip' not in params:
+        if not skip:
             if not dept.slack_channel and not dept.slack_contact and not dept.other_contact and not dept.text_contact \
                     and not dept.email_contact:
                 session.close()
@@ -1180,6 +1180,7 @@ class Root:
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                                '&message=This Bundle is now un-marked Complete.')
 
+    @dh_or_staffer
     @cherrypy.expose
     def dept_order_details(self, dept_order_id, **params):
         """
@@ -1220,6 +1221,7 @@ class Root:
                                session=session_info,
                                c=c)
     
+    @dh_or_staffer
     @cherrypy.expose
     def dept_contact(self, dept_id, original_location=None, **params):
         """
