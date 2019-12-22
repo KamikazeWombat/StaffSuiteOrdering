@@ -10,8 +10,8 @@
     <input type="hidden" name="dept_id" value="{{ dept.id }}"/>
     <input type="hidden" name="original_location" value="{{ original_location }}"/>
     <p>Slack Channel: <textarea name="slack_channel" cols="50" rows="1"
-              placeholder="What channel to post in, eg 'staffsuiteordering, #bottesting'"
-    >{{ dept.slack_channel }}</textarea><br/>What channel to post in, eg 'staffsuiteordering, #bottesting'</p>
+              placeholder="Where to send the message"
+    >{{ dept.slack_channel }}</textarea><br/>What channel or DM to post in, eg 'staffsuiteordering, #bottesting, @wombat3</p>
     <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"
               placeholder="Who to ping in Slack?  Can include @here or @channel if desired"
     >{{ dept.slack_contact }}</textarea><br/>Who to ping in Slack?  Can include @here or @channel if desired</p>
@@ -20,6 +20,6 @@
     >{{ dept.other_contact }}</textarea></p>
     <button class="btn btn-lg btn-primary btn-block" type="submit">Update Department's Default Contact Info</button>
   </form>
-  <a href="{{ original_location }}" class="btn btn-lg btn-primary btn-block">Return to previous page</a>
+  <a href="{{ original_location }}&skip=true" class="btn btn-lg btn-primary btn-block">Return to previous page</a>
 </div>
 {% endblock content %}

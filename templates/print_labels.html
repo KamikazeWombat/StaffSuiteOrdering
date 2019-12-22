@@ -18,7 +18,7 @@
 </head>
   <body>
   {% for order in orders %}
-  <div style="position:relative;top:10px;left:50px;height:215px;width:330px;margin-right:0px;padding-left:5px;padding-right:5px;" class="{% if not loop.last %}new-page{% endif %}{% if order.allergies %} border{% endif %}">
+  <div style="position:relative;top:3px;left:50px;height:215px;width:330px;margin-right:0px;padding-left:5px;padding-right:5px;" class="{% if not loop.last %}new-page{% endif %}{% if order.allergies or order.notes %} border{% endif %}">
     <div style="position:absolute;top:0;">
       # {{ order.attendee.badge_num }}
     </div>

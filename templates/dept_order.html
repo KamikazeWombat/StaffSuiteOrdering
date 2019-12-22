@@ -9,9 +9,9 @@
     <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
     <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
     <p>Slack Channel: <textarea name="slack_channel" cols="50" rows="1"
-              placeholder="What channel to post in, eg 'staffsuiteordering, #bottesting'"
+              placeholder="Where to send the message"
       {% if dept_order.completed %} disabled {% endif %}
-    >{{ dept_order.slack_channel }}</textarea><br/>What channel to post in, eg 'staffsuiteordering, #bottesting'</p>
+    >{{ dept_order.slack_channel }}</textarea><br/>What channel or DM to post in, eg 'staffsuiteordering, #bottesting, @wombat3</p>
     <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"
               placeholder="Who to ping in Slack?  Can include @here or @channel if desired"
       {% if dept_order.completed %} disabled {% endif %}
