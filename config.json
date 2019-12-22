@@ -13,9 +13,9 @@
       "server.socket_host": "157.245.3.204",
       "server.socket_port": 443,
       "server.ssl_module": "builtin",
-      "server.ssl_certificate": "/etc/letsencrypt/live/staffsuite.codewombat.software/cert.pem",
-      "server.ssl_private_key": "/etc/letsencrypt/live/staffsuite.codewombat.software/privkey.pem",
-      "server.ssl_certificate_chain": "/etc/letsencrypt/live/staffsuite.codewombat.software/fullchain.pem",
+      "server.ssl_certificate": "/etc/letsencrypt/live/food.magevent.net/cert.pem",
+      "server.ssl_private_key": "/etc/letsencrypt/live/food.magevent.net/privkey.pem",
+      "server.ssl_certificate_chain": "/etc/letsencrypt/live/food.magevent.net/fullchain.pem",
       "tools.force_tls.on": true
     },
     "/": {
