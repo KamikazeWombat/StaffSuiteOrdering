@@ -22,6 +22,10 @@
       "tools.sessions.on": true,
       "tools.staticdir.root": "/root/StaffSuiteOrdering"
     },
+    "/pdfs": {
+      "tools.staticdir.on": true,
+      "tools.staticdir.dir": "./pdfs"
+    },
     "/static": {
       "tools.staticdir.on": true,
       "tools.staticdir.dir": "./static"
