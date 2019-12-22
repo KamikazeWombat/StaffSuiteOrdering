@@ -570,7 +570,7 @@ def carryout_eligible(shifts, meal_start, meal_end):
     # AND ends within <<buffer>exc> before end of meal time or later
     
     # if there are no shifts, skip processing
-    print('-----------------beginning eligibility processing---------------')
+    
     if len(shifts) == 0:
         return False
     """code section for buffer, commented out cause not using buffer for Super 2020
@@ -594,15 +594,15 @@ def carryout_eligible(shifts, meal_start, meal_end):
     # if se after ms AND before me then good
     # if ss before ms AND se after me then good
     # if the shift is more than a day before or after the meal days != 0
-    print('-----------before loop--------------')
+    # print('-----------before loop--------------')
     for shift in shifts:
-        print('---------------start loop------------')
+        # print('---------------start loop------------')
         ss_ms = relativedelta(meal_start, shift.start)
         ss_ms_delta = ss_ms.minutes + (ss_ms.hours * 60)
         ss_me = relativedelta(meal_end, shift.start)
         ss_me_delta = ss_me.minutes + (ss_me.hours * 60)
         if ss_ms_delta <= 0 and ss_me_delta >= 0 and ss_ms.days == 0:
-            print('ss after ms AND before me then good')
+            # print('ss after ms AND before me then good')
             return True
 
         se_ms = relativedelta(meal_start, shift.end)
@@ -610,13 +610,13 @@ def carryout_eligible(shifts, meal_start, meal_end):
         se_me = relativedelta(meal_end, shift.end)
         se_me_delta = se_me.minutes + (se_me.hours * 60)
         if se_ms_delta <= 0 and se_me_delta >= 0 and ss_ms.days == 0:
-            print('se after ms AND before me then good')
+            # print('se after ms AND before me then good')
             return True
         
         if ss_ms_delta >= 0 and se_me_delta <= 0 and ss_ms.days == 0:
-            print('if ss before ms AND se after me then good')
+            # print('if ss before ms AND se after me then good')
             return True
-    print('none matched')
+    # print('none matched')
     # if none of the shifts match the meal period, return false.
     return False
 
