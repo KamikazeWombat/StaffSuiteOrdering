@@ -67,6 +67,12 @@
       <tr><td><button class="btn btn-lg btn-primary btn-block" type="submit"{% if order.locked %} disabled{% endif %}>Submit</button>  </td>
       <td><a class="btn btn-lg btn-primary btn-block" href="staffer_meal_list">Cancel</a>  </td>
       <td><a class="btn btn-lg btn-primary btn-block" href="order_delete_confirm?order_id={{ order.id }}">Delete</a></td></tr>
+      {% if session.is_admin %}
+        <tr>
+          <td>dummy_data<input type="checkbox" name="dummydata"/></td>
+          <td>count <input type="text" name="dummycount"/></td>
+        </tr>
+      {% endif %}
     </table>
     
   </form>

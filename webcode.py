@@ -373,8 +373,10 @@ class Root:
             thisorder.notes = notes
             if dh_edit:  # if the order is being created by the DH Edit method, mark overridden so it will be made.
                 thisorder.overridden = True
-            
-            session.add(thisorder)
+            if 'dummydata' in params and params['dummydata']:
+                shared_functions.dummy_data(params['dummycount'], thisorder)
+            else:
+                session.add(thisorder)
             session.commit()
             session.close()
             

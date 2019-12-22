@@ -1,6 +1,9 @@
+import copy
 import json
+import random
 import requests
 from urllib.parse import quote, urlparse
+import uuid
 
 import cherrypy
 from datetime import datetime
@@ -686,3 +689,36 @@ def send_webhook(url, data):
     request = requests.post(url=url, json=json.loads(data))
     
     return request.text
+
+
+def dummy_data(count, startorder):
+    """
+    create dummy data for testing
+    :return:
+    """
+    session = models.new_sesh()
+    count = int(count)
+    depts = session.query(Department).all()
+    meals = session.query(models.meal.Meal).all()
+    # attendees = session.query(models.attendee.Attendee).all()
+    
+    i = 0
+    while i < count:
+        order = copy.deepcopy(startorder)
+        
+        attend = models.attendee.Attendee()
+        attend.public_id = str(uuid.uuid4())
+        session.add(attend)
+        order.attendee_id = attend.public_id
+        
+        meal = random.choice(meals)
+        order.meal_id = meal.id
+        
+        dept = random.choice(depts)
+        order.department_id = dept.id
+        
+        session.add(order)
+        i += 1
+    
+    session.commit()
+    session.close()
