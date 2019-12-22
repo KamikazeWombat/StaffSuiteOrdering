@@ -672,9 +672,9 @@ class Root:
             try:
                 orders = session.query(Order).filter_by(meal_id=thismeal.id,
                                                            attendee_id=cherrypy.session['staffer_id']).all()
-                #print('0------------------printing matching orders-----------------')
-                for order in orders:
-                    #print(str(order.meal_id) + ', ' + str(order.id))
+                # print('0------------------printing matching orders-----------------')
+                # for order in orders:
+                    # print(str(order.meal_id) + ', ' + str(order.id))
                 # todo: more efficient code for this, I think there's a way to load orders for all meals in one query request
                 thisorder = session.query(Order).filter_by(meal_id=thismeal.id,
                                                            attendee_id=cherrypy.session['staffer_id']).one()
