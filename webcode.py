@@ -1082,14 +1082,13 @@ class Root:
                                        options=options,
                                        configuration=config)
                 else:
-                    path_wkhtmltopdf = r'/usr/local/bin/wkhtmltopdf'
-                    config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+                    #path_wkhtmltopdf = r'/usr/local/bin/wkhtmltopdf'
+                    #config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
                     pdfkit.from_string(labels.render(orders=orders,
                                                      meal=thismeal,
                                                      dept_name=dept_name),
-                                       'pdfs\\' + dept_name + '.pdf',
-                                       options=options,
-                                       configuration=config)
+                                       'pdfs/' + dept_name + '.pdf',
+                                       options=options)
         if dept_order.completed:
             dept_order.completed_time = con_tz(dept_order.completed_time).strftime(cfg.date_format)
         
