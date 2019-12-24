@@ -706,12 +706,13 @@ class Root:
             'is_ss_staffer': cherrypy.session['is_ss_staffer']
         }
 
+        # load lists into plain string for webpage
         admin_list = ',\n'.join(cfg.admin_list)
         staffer_list = ',\n'.join(cfg.staffer_list)
         
         if 'radio_select_count' in params:
             # save config
-            cfg.local_print = params['local_print']
+            # cfg.local_print = params['local_print']
             if 'local_print' in params:
                 cfg.local_print = True
             else:
@@ -722,9 +723,10 @@ class Root:
                 cfg.remote_print = False
             cfg.multi_select_count = int(params['multi_select_count'])
             cfg.radio_select_count = int(params['radio_select_count'])
-            cfg.schedule_tolerance = int(params['schedule_tolerance'])
+            # cfg.schedule_tolerance = int(params['schedule_tolerance'])
             cfg.date_format = params['date_format']
             cfg.ss_hours = int(params['ss_hours'])
+            print(params['staffer_list'])
             cfg.save(params['admin_list'], params['staffer_list'])
             
             raise HTTPRedirect('config?message=Successfully saved config settings')

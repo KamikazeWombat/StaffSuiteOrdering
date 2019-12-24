@@ -10,17 +10,17 @@
   "ss_hours": 12,
   "cherrypy": {
     "global": {
-      "server.socket_host": "157.245.3.204",
+      "server.socket_host": "127.0.0.1",
       "server.socket_port": 443,
       "server.ssl_module": "builtin",
-      "server.ssl_certificate": "/etc/letsencrypt/live/food.magevent.net/cert.pem",
-      "server.ssl_private_key": "/etc/letsencrypt/live/food.magevent.net/privkey.pem",
-      "server.ssl_certificate_chain": "/etc/letsencrypt/live/food.magevent.net/fullchain.pem",
+      "server.ssl_certificate": "./secure/letsencrypt/live/staffsuite.codewombat.software/cert.pem",
+      "server.ssl_private_key": "./secure/letsencrypt/live/staffsuite.codewombat.software/privkey.pem",
+      "server.ssl_certificate_chain": "./secure/letsencrypt/live/staffsuite.codewombat.software/chain.pem",
       "tools.force_tls.on": true
     },
     "/": {
       "tools.sessions.on": true,
-      "tools.staticdir.root": "/root/StaffSuiteOrdering"
+      "tools.staticdir.root": "C:\\Users\\Wombat3\\PycharmProjects\\StaffSuiteOrdering"
     },
     "/pdfs": {
       "tools.staticdir.on": true,

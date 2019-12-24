@@ -110,7 +110,7 @@ class Config:
         adminfile.write(admin_list)
         adminfile.close()
         
-        stafferfile = open('staffer_list.cfg', 'w')
+        stafferfile = open('ss_staffer_list.cfg', 'w')
         stafferfile.write(staffer_list)
         stafferfile.close()
         
