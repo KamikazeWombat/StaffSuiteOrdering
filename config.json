@@ -10,7 +10,7 @@
   "ss_hours": 12,
   "cherrypy": {
     "global": {
-      "server.socket_host": "157.245.32.204",
+      "server.socket_host": "157.245.3.204",
       "server.socket_port": 443,
       "server.ssl_module": "builtin",
       "server.ssl_certificate": "/etc/letsencrypt/live/food.magevent.net/cert.pem",
