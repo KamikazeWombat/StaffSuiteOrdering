@@ -61,18 +61,6 @@ class Root:
         if logout:
             cherrypy.lib.sessions.expire()
             raise HTTPRedirect('login?message=Succesfully logged out')
-        
-        # todo: un-comment this section
-        """
-        # check if orders open
-        if not cfg.orders_open():
-            if not cherrypy.session['is_ss_staffer']:
-                if not cherrypy.session['is_admin']:
-                    # cherrypy.lib.sessions.expire()  # probably not needed
-                    raise HTTPRedirect('login?message=Orders are not yet open.  You can login beginning at '
-                                       + con_tz(c.EPOCH).strftime(cfg.date_format) + ' ID: ' +
-                                       str(cherrypy.session['staffer_id']))
-            """
             
         if first_name and last_name and email and zip_code:
             response = api_login(first_name=first_name, last_name=last_name,
@@ -81,6 +69,7 @@ class Root:
             if 'error' in response:
                 messages.append(response['error']['message'])
                 error = True
+                print(response['error']['message'])
             """ decided it didn't make sense to keep out people not marked staff/volunteer in Uber
             because then people who decide to volunteer after arriving won't be able to login.
             Hours requirements will still require DH override for people who don't have enough hours marked down
@@ -111,7 +100,16 @@ class Root:
                     cherrypy.session['is_dh'] = True
                 else:
                     cherrypy.session['is_dh'] = False
-                    
+
+                # check if orders open
+                if not cfg.orders_open():
+                    if not cherrypy.session['is_ss_staffer']:
+                        if not cherrypy.session['is_admin']:
+                            # cherrypy.lib.sessions.expire()  # probably not needed
+                            raise HTTPRedirect('login?message=Orders are not yet open.  You can login beginning at '
+                                               + con_tz(c.EPOCH).strftime(cfg.date_format) + ' ID: ' +
+                                               str(cherrypy.session['staffer_id']))
+
                 session = models.new_sesh()
                 # print('succesful login, updating record')
                 # add or update attendee record in DB
