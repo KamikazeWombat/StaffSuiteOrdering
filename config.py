@@ -40,10 +40,12 @@ class Config:
         # read in config from files.  todo: have system skip things that are not yet defined.  in particular, API key
         uber_authfile = open('uber_auth.cfg', 'r')
         self.uber_authkey = uber_authfile.read()
+        self.uber_authkey = self.uber_authkey.strip()
         uber_authfile.close()
 
         slack_authfile = open('slack_auth.cfg', 'r')
         self.slack_authkey = slack_authfile.read()
+        self.slack_authkey = self.slack_authkey.strip()
         slack_authfile.close()
         
         for arg in argv:
