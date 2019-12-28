@@ -105,10 +105,11 @@ class Root:
                 if not cfg.orders_open():
                     if not cherrypy.session['is_ss_staffer']:
                         if not cherrypy.session['is_admin']:
-                            # cherrypy.lib.sessions.expire()  # probably not needed
-                            raise HTTPRedirect('login?message=Orders are not yet open.  You can login beginning at '
-                                               + con_tz(c.EPOCH).strftime(cfg.date_format) + ' ID: ' +
-                                               str(cherrypy.session['staffer_id']))
+                            if not cherrypy.session['is_dh']:
+                                # cherrypy.lib.sessions.expire()  # probably not needed
+                                raise HTTPRedirect('login?message=Orders are not yet open.  You can login beginning at '
+                                                   + con_tz(c.EPOCH).strftime(cfg.date_format) + ' ID: ' +
+                                                   str(cherrypy.session['staffer_id']))
 
                 session = models.new_sesh()
                 # print('succesful login, updating record')
