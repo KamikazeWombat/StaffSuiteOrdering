@@ -13,3 +13,4 @@ class Attendee(dec_base):
     webhook_url = Column('webhook_url', String, default='')
     webhook_data = Column('webhook_data', String, default='')
     orders = relationship('Order')
+    checkins = relationship('Checkin')
