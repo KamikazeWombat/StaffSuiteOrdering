@@ -484,10 +484,11 @@ def ss_eligible(badge_num):
     
     if 'error' in response:
         message = response['error']['message']
+        print('------------------eligible weighted hours error---------------------')
         print(message)
         
     if not message:
-        return response['result']['weighted_hours'] > cfg.ss_hours
+        return int(response['result']['weighted_hours']) >= cfg.ss_hours
     else:
         return message
 

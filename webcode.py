@@ -661,7 +661,7 @@ class Root:
                     meal_display.append(meal)
         
         if len(meal_display) == 0:
-            messages.append('You do not have any shifts that are eligible for Carryout.  '
+            messages.append('You do not have any shifts that are eligible for Pickup.  '
                             'You will need to get a Department Head to authorize any orders you place.')
         
         for thismeal in meals:
@@ -694,7 +694,7 @@ class Root:
 
     @cherrypy.expose
     @admin_req
-    def config(self, message=[], **params):
+    def config(self, message=[], dangerous=False, **params):
         messages = []
 
         if message:
@@ -737,8 +737,27 @@ class Root:
                                session=session_info,
                                admin_list=admin_list,
                                staffer_list=staffer_list,
+                               dangerous=dangerous,
                                c=c,
                                cfg=cfg)
+
+    @cherrypy.expose
+    @admin_req
+    def dangerous(self, reset_dept_list=False):
+        """
+        For hidden buttons to do potentially very dangerous things
+        """
+        session = models.new_sesh()
+        if reset_dept_list:
+            depts = session.query(Department).all()
+            for dept in depts:
+                session.delete(dept)
+            session.commit()
+            shared_functions.load_departments()
+        
+        session.close()
+        raise HTTPRedirect("config")
+        
 
     @cherrypy.expose
     @dh_or_admin
