@@ -440,7 +440,7 @@ class Root:
             if dh_edit and (is_dh(cherrypy.session['staffer_id']) or is_admin(cherrypy.session['staffer_id'])):
                 try:
                     attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
-                    allergies = allergy_info(params['badge_num'])
+                    allergies = allergy_info(params['badge_number'])
                 except sqlalchemy.orm.exc.NoResultFound:
                     response = shared_functions.lookup_attendee(params['badge_number'], full=True)
                     print(response)
@@ -453,6 +453,7 @@ class Root:
                     attend.full_name = response['result']['full_name']
                     session.add(attend)
                     session.commit()
+                    
                 try:
                     # check if order already exists, DH edit
                     thisorder = session.query(Order).filter_by(attendee_id=attend.public_id, meal_id=meal_id).one()
