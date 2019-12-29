@@ -661,7 +661,7 @@ class Root:
                     meal_display.append(meal)
         
         if len(meal_display) == 0:
-            messages.append('You do not have any shifts that are eligible for Carryout.  '
+            messages.append('You do not have any shifts that are eligible for Pickup.  '
                             'You will need to get a Department Head to authorize any orders you place.')
         
         for thismeal in meals:
