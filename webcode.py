@@ -182,7 +182,7 @@ class Root:
                                c=c)
 
     @cherrypy.expose
-    @admin_req
+    @ss_staffer
     def dinein_checkin(self):
         session = models.new_sesh()
         now = now_utc()
@@ -204,7 +204,7 @@ class Root:
         return template.render(current_meal=current_meal, c=c, session=session_info)
 
     @cherrypy.expose
-    @admin_req
+    @ss_staffer
     def checkin_badge(self, meal_id='', badge=''):
         if badge[0] == "~":
             badge = shared_functions.barcode_to_badge(badge)
