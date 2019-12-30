@@ -209,42 +209,73 @@ class Root:
         if badge[0] == "~":
             badge = shared_functions.barcode_to_badge(badge)
         else:
-            badge = int(badge)
+            try:
+                badge = int(badge)
+            except ValueError:
+                return json.dumps({"success": False, "badge": badge, "reason": "Not a number?"})
+            
         if not badge:
             return json.dumps({"success": False, "badge": badge, "reason": "Could not locate badge."})
-        if not meal_id:
-            return json.dumps({"success": False, "badge": badge, "reason": ""})
+        
+        #if not meal_id:
+         #   return json.dumps({"success": False, "badge": badge, "reason": ""})
+        
         session = models.new_sesh()
-        meal = session.query(Meal).filter(Meal.id == meal_id).one()
-        if not meal:
-            sesson.close()
-            return json.dumps({"success": False, "badge": badge, "reason": "Could not find meal {}.".format(meal_id)})
+        meal = session.query(Meal).filter(Meal.id == meal_id).one_or_none()
+        #if not meal:
+        #    session.close()
+        #    return json.dumps({"success": False, "badge": badge, "reason": "Could not find meal {}.".format(meal_id)})
+        
         try:
             attend = session.query(Attendee).filter_by(badge_num=badge).one()
         except sqlalchemy.orm.exc.NoResultFound:
             response = shared_functions.lookup_attendee(badge)
+            if 'error' in response:
+                session.close()
+                return json.dumps({"success": False, "badge": badge, "reason": "Badge # {} is not found in Reggie".format(badge)})
             attend = Attendee()
             attend.badge_num = response['result']['badge_num']
             attend.public_id = response['result']['public_id']
             attend.full_name = response['result']['full_name']
             session.add(attend)
             session.commit()
-        order = session.query(Order).filter(Order.attendee_id == attend.public_id, Order.meal_id == meal.id).one_or_none()
-        if order:
-            session.close()
-            return json.dumps({"success": False, "badge": badge, "reason": "Attendee {} has placed a delivery order for this meal.".format(badge)})
+            
+        if meal:
+            order = session.query(Order).filter(Order.attendee_id == attend.public_id, Order.meal_id == meal.id).one_or_none()
+            if order:
+                session.close()
+                return json.dumps({"success": False, "badge": badge, "reason": "Attendee {} has placed a delivery order for this meal.".format(badge)})
+        
         allergy_msg = ""
         allergies = allergy_info(badge)
         for allergy in allergies['standard_labels']:
             allergy_msg += allergy+"<br>"
         allergy_msg += allergies['freeform']
-        checkin = session.query(Checkin).filter(Checkin.attendee_id == attend.public_id, Checkin.meal_id == meal.id).one_or_none()
-        if checkin:
+        if meal:
+            checkin = session.query(Checkin).filter(Checkin.attendee_id == attend.public_id, Checkin.meal_id == meal.id).all()
+        else:
+            checkin = session.query(Checkin).filter(Checkin.attendee_id == attend.public_id,
+                                                    Checkin.meal_id == None).all()
+        if checkin and meal:
             session.close()
             return json.dumps({"success": False, "badge": badge, "reason": "Badge is already checked in for this meal.", "allergies": allergy_msg})
-        if not shared_functions.check_eligibility(badge):
+        
+        if not shared_functions.ss_eligible(badge):
+            session.close()
             return json.dumps({"success": False, "badge": badge, "reason": "Badge is not eligible for food. Please see STOPS."})
-        checkin = Checkin(attendee_id=attend.public_id, meal_id=meal.id)
+        
+        if meal:
+            checkin = Checkin(attendee_id=attend.public_id, meal_id=meal.id)
+        else:
+            if checkin:
+                # if not meal, but checkin.  ie if attempting checkin not during meal AND this has one or more checkins.
+                for item in checkin:
+                    delta = relativedelta(item.timestamp, datetime.utcnow())
+                    # if a previously received checkin NOT associated with a meal is with 2 hours of current non meal checkin
+                    if not item.meal_id and abs(delta.hours) <= 1 and abs(delta.days) == 0:
+                        session.close()
+                        return json.dumps({"success": True, "badge": badge, "reason": "", "allergies": allergy_msg})
+            checkin = Checkin(attendee_id=attend.public_id, meal_id=None)
         session.add(checkin)
         session.commit()
         session.close()
@@ -814,17 +845,24 @@ class Root:
 
     @cherrypy.expose
     @admin_req
-    def dangerous(self, reset_dept_list=False):
+    def dangerous(self, reset_dept_list=False, reset_checkin_list=False):
         """
         For hidden buttons to do potentially very dangerous things
         """
         session = models.new_sesh()
+        
         if reset_dept_list:
             depts = session.query(Department).all()
             for dept in depts:
                 session.delete(dept)
             session.commit()
             shared_functions.load_departments()
+        
+        if reset_checkin_list:
+            checkins = session.query(Checkin).all()
+            for checkin in checkins:
+                session.delete(checkin)
+            session.commit()
         
         session.close()
         raise HTTPRedirect("config")

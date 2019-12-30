@@ -159,6 +159,7 @@ def api_login(first_name, last_name, email, zip_code):
     #print(response)
     return response
 
+
 def barcode_to_badge(barcode):
     """
     Queries uber to get the badge number associated with a barcode
@@ -172,30 +173,6 @@ def barcode_to_badge(barcode):
         return None
     return response['result']['badge_num']
 
-def check_eligibility(badge):
-    """
-    Queries uber to make sure the given badge number is allowed to pickup food.
-    """
-    REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
-    request_data = {'method': 'attendee.lookup',
-                    'params': [badge, "full"]}
-    request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
-    response = json.loads(request.text)
-    if "error" in response:
-        return False
-    attendee = response['result']
-    if attendee['badge_type_label'] in ["Guest", "Contractor"]:
-        return True
-    if attendee['badge_type_label'] == "Staff":
-        if "Department Head" in attendee['ribbon_labels']:
-            return True
-        if attendee["weighted_hours"] >= 12:
-            return True
-    if attendee['badge_type_label'] == "Attendee":
-        if attendee['weighted_hours'] >= 12:
-            if attendee['worked_hours'] > 0:
-                return True
-    return False
 
 def load_departments():
     """
@@ -237,7 +214,7 @@ def lookup_attendee(badge_num, full=False):
     # data being sent to API
     if full:
         request_data = {'method': 'attendee.lookup',
-                        'params': [badge_num, full]}
+                        'params': [badge_num, True]}
     else:
         request_data = {'method': 'attendee.lookup',
                         'params': [badge_num]}
@@ -511,23 +488,40 @@ class Shift:
 
 def ss_eligible(badge_num):
     """
-    Asks API for weighted hours, checks if they are more than configured minimum for eligibility
+    Looks up attendee badge number in Uber and returns whether they are eligible to use Staff Suite.
+    General eligiblity to get food, not eligiblity for any specific meal
     :param badge_num: attendee's badge number for lookup
-    :return: returns True or False, unless error performing the API Lookup in which case it returns the error
+    :return: returns True or False
     """
     
     response = lookup_attendee(badge_num, full=True)
-    message = ''
     
-    if 'error' in response:
-        message = response['error']['message']
-        print('------------------eligible weighted hours error---------------------')
-        print(message)
-        
-    if not message:
-        return int(response['result']['weighted_hours']) >= cfg.ss_hours
-    else:
-        return message
+    if "error" in response:
+        print('------------Error looking up attendee eligibility for ' + badge_num + ' --------------')
+        return False
+    
+    attendee = response['result']
+    
+    # people who signed up for no shifts but have worked
+    if attendee['worked_hours'] >= cfg.ss_hours:
+        return True
+    # non-staff who are signed up for at least <current year's hours req> and have worked at least one shift
+    if attendee['badge_type_label'] == "Attendee":
+        if attendee['weighted_hours'] >= cfg.ss_hours:
+            if attendee['worked_hours'] > 0:
+                return True
+    # Guests and Contractors automatically get access
+    if attendee['badge_type_label'] in ["Guest", "Contractor"]:
+        return True
+    # Staff who are a DH or who have signed up for at least 12 hours.
+    # Having already worked a shift this event not required for people with Staff status
+    if attendee['badge_type_label'] == "Staff":
+        if "Department Head" in attendee['ribbon_labels']:
+            return True
+        if attendee["weighted_hours"] >= cfg.ss_hours:
+            return True
+    # if nothing above matches, not eligible.
+    return False
 
 
 def combine_shifts(badge_num, full=False, no_combine=False):
