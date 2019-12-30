@@ -1,0 +1,44 @@
+{% extends "base.html" %}{% set admin_area=True %}
+{% block title %}Dine-In Check-In{% endblock %}
+{% block backlink %}{% endblock %}
+{% block content %}
+
+<div class="container">
+{% if current_meal %}
+  <h2>Check in diners for {{ current_meal.meal_name }}</h2>
+  <script type="text/javascript">
+    function checkin() {
+        barcode = document.getElementById("barcode");
+        console.log("Checking in " + barcode.value);
+        message = document.getElementById("message");
+        message.innerHTML = "Loading...";
+        allergies = document.getElementById("allergies");
+        allergies.innerHTML = "";
+        fetch("checkin_badge?meal_id={{ current_meal.id }}&badge="+barcode.value, {credentials: "include"}, ).then((response) => {
+            return response.json();
+        }).then((response) => {
+            barcode.value = "";
+            barcode.focus();
+            if (response.success) {
+                message.innerHTML = "Badge " + response.badge + " checked in successfully.";
+                allergies.innerHTML = response.allergies;
+            } else {
+                message.innerHTML = "Failed to check in badge " + response.badge + ": " + response.reason;
+                allergies.innerHTML = response.allergies;
+            }
+        });
+        barcode.focus();
+        return false;
+    }
+  </script>
+  <form onsubmit="return checkin()">
+      <input id="barcode" type="text" name="barcode" autofocus>
+  </form>
+  <div id="message"></div>
+  <div id="allergies"></div>
+{% else %}
+  <h2>Check-in is currently inactive, as no meal is currently active.</h2>
+{% endif %}
+
+</div>
+{% endblock content %}

@@ -159,6 +159,43 @@ def api_login(first_name, last_name, email, zip_code):
     #print(response)
     return response
 
+def barcode_to_badge(barcode):
+    """
+    Queries uber to get the badge number associated with a barcode
+    """
+    REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
+    request_data = {'method': 'barcode.lookup_badge_number_from_barcode',
+                    'params': [barcode,]}
+    request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
+    response = json.loads(request.text)
+    if "error" in response:
+        return None
+    return response['result']['badge_num']
+
+def check_eligibility(badge):
+    """
+    Queries uber to make sure the given badge number is allowed to pickup food.
+    """
+    REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
+    request_data = {'method': 'attendee.lookup',
+                    'params': [badge, "full"]}
+    request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
+    response = json.loads(request.text)
+    if "error" in response:
+        return False
+    attendee = response['result']
+    if attendee['badge_type_label'] in ["Guest", "Contractor"]:
+        return True
+    if attendee['badge_type_label'] == "Staff":
+        if "Department Head" in attendee['ribbon_labels']:
+            return True
+        if attendee["weighted_hours"] >= 12:
+            return True
+    if attendee['badge_type_label'] == "Attendee":
+        if attendee['weighted_hours'] >= 12:
+            if attendee['worked_hours'] > 0:
+                return True
+    return False
 
 def load_departments():
     """
