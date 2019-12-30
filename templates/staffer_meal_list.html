@@ -7,7 +7,7 @@
   <h2 class="form-signin-heading">Meal and Order list for {{ attendee.full_name }}</h2>
   {{ macros.display_allergies(allergies) }}
   {% if session.is_dh or session.is_admin %}
-  <h3>Webhook for your orders, for those few people who want to use it.  If you don't know what a webhook is just ignore these two boxes.</h3>
+  <h3>Webhook for your orders, for those who want to use it.  If you don't know what a webhook is just ignore these two boxes.</h3>
     <form role="form">
       <input style="width:80%;" name="webhook_url" type="text" value="{{ attendee.webhook_url }}" placeholder="URL for your webhook"/> <br/>
       <textarea name="webhook_data" rows="4" style="width:80%;" placeholder="JSON data for your webhook">{{ attendee.webhook_data }}</textarea>
