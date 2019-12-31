@@ -763,8 +763,9 @@ class Root:
                     meal_display.append(meal)
         
         if len(meal_display) == 0:
-            messages.append('You do not have any shifts that are eligible for Pickup.  '
-                            'You will need to get a Department Head to authorize any orders you place.')
+            messages.append('You are not signed up for any shifts that overlap with meal times. '
+                            'If you work in a non-shift capacity, please click the "Show all meals" button below '
+                            'to submit a carryout order.')
         
         for thismeal in meals:
             thismeal.start_time = con_tz(thismeal.start_time)
