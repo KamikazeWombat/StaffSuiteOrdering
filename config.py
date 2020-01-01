@@ -117,6 +117,7 @@ class Config:
         self.load_user_lists()
         return
 
+
 cfg = Config()
 
 
@@ -153,9 +154,6 @@ class Uberconfig:
         self.EPOCH = EPOCH.astimezone(pytz.utc)
     
     
-        
-    
-
 c = Uberconfig()
 
 env = Environment(

@@ -174,6 +174,49 @@ def barcode_to_badge(barcode):
     return response['result']['badge_num']
 
 
+def add_access(badge, usertype=None):
+    """
+    Adds provided badge number (or barcode) to selected access list
+    :param badge:
+    :param usertype: 'admin' or 'staff'
+    :return:
+    """
+    if badge[0] == "~":
+        badge = barcode_to_badge(badge)
+    else:
+        try:
+            badge = int(badge)
+        except ValueError:
+            raise HTTPRedirect("nNot a number?")
+
+    if not badge:
+        raise HTTPRedirect("config?message=Badge not found")
+
+    session = models.new_sesh()
+   
+    try:
+        attend = session.query(models.attendee.Attendee).filter_by(badge_num=badge).one()
+    except sqlalchemy.orm.exc.NoResultFound:
+        response = lookup_attendee(badge)
+        if 'error' in response:
+            session.close()
+            raise HTTPRedirect("config?message=Badge #" + str(badge) + "is not found in Reggie")
+        
+        attend = models.attendee.Attendee()
+        attend.badge_num = response['result']['badge_num']
+        attend.public_id = response['result']['public_id']
+        attend.full_name = response['result']['full_name']
+        session.add(attend)
+        session.commit()
+
+    if usertype == 'admin' and attend.public_id not in cfg.admin_list:
+        cfg.admin_list.append(attend.public_id)
+    if usertype == 'staff' and attend.public_id not in cfg.staffer_list:
+        cfg.staffer_list.append(attend.public_id)
+        
+    session.close()
+    return
+
 def load_departments():
     """
     Loads departments from connected Uber instance
@@ -513,11 +556,12 @@ def ss_eligible(badge_num):
     # Guests and Contractors automatically get access
     if attendee['badge_type_label'] in ["Guest", "Contractor"]:
         return True
-    # Staff who are a DH or who have signed up for at least 12 hours.
+    # Department Heads get access, period.
+    if response['result']['is_dept_head']:
+        return True
+    # Staff who have signed up for at least <event required> hours.
     # Having already worked a shift this event not required for people with Staff status
     if attendee['badge_type_label'] == "Staff":
-        if "Department Head" in attendee['ribbon_labels']:
-            return True
         if attendee["weighted_hours"] >= cfg.ss_hours:
             return True
     # if nothing above matches, not eligible.
@@ -627,6 +671,7 @@ def carryout_eligible(shifts, meal_start, meal_end):
     # if ss before ms AND se after me then good
     # if the shift is more than a day before or after the meal days != 0
     # print('-----------before loop--------------')
+    
     for shift in shifts:
         # print('---------------start loop------------')
         ss_ms = relativedelta(meal_start, shift.start)

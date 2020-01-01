@@ -13,9 +13,9 @@
       {% if dept_order.completed %} disabled {% endif %}
     >{{ dept_order.slack_channel }}</textarea><br/>What channel or DM to post in, eg 'staffsuiteordering, #bottesting, @wombat3</p>
     <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"
-              placeholder="Who to ping in Slack?  Can include @here or @channel if desired"
+              placeholder="Who to ping in Slack?"
       {% if dept_order.completed %} disabled {% endif %}
-    >{{ dept_order.slack_contact }}</textarea><br/>Who to ping in Slack?  Can include @here or @channel if desired</p>
+    >{{ dept_order.slack_contact }}</textarea><br/>Who to ping in Slack?</p>
     <p>Other Contact: <textarea name="other_contact" cols="50" rows="6"
                      placeholder="How you else would like to be contacted for order pickup.  Text, email, phone call..."
       {% if dept_order.completed %} disabled {% endif %}
