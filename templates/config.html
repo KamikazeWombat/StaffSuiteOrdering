@@ -42,11 +42,16 @@
       <br/>
       <button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button>
       <button class="btn btn-lg btn-primary btn-block" onclick="window.location.href = 'meal_setup_list';">Cancel</button>
-      {% if dangerous %}
-      <a href="dangerous?reset_dept_list=True">Reset Dept List</a><br/>
-      <a href="dangerous?reset_checkin_list=True">Reset Checkins List</a>
-      {% endif %}
+      
     </form>
-
+    {% if dangerous %}
+  <form>
+    <a href="dangerous?reset_dept_list=True">Reset Dept List</a><br/>
+    <a href="dangerous?reset_checkin_list=True">Reset Checkins List</a><br/>
+    <input type="text" name="badge"/>
+    <button type="submit">Lookup Attendee</button>
+    {{ attendee }}
+  </form>
+    {% endif %}
 </div>
 {% endblock content %}

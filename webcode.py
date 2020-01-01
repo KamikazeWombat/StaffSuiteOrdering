@@ -797,7 +797,7 @@ class Root:
 
     @cherrypy.expose
     @admin_req
-    def config(self, message=[], dangerous=False, **params):
+    def config(self, badge='', message=[], dangerous=False, **params):
         messages = []
 
         if message:
@@ -834,6 +834,21 @@ class Root:
             cfg.save(params['admin_list'], params['staffer_list'])
             
             raise HTTPRedirect('config?message=Successfully saved config settings')
+        
+        if badge:
+            print('------------looking up attendee------------------')
+            attendee = shared_functions.lookup_attendee(badge, True)
+            attendee = json.dumps(attendee, indent=2)
+            print(attendee)
+            template = env.get_template('config.html')
+            return template.render(messages=messages,
+                                   session=session_info,
+                                   admin_list=admin_list,
+                                   staffer_list=staffer_list,
+                                   dangerous=True,
+                                   attendee=attendee,
+                                   c=c,
+                                   cfg=cfg)
         
         template = env.get_template('config.html')
         return template.render(messages=messages,
