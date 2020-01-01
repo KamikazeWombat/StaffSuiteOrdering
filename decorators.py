@@ -19,7 +19,7 @@ def restricted(func):
             # print('staffer id already assigned')
         except KeyError:
             # print('Redirect to login page')
-            raise HTTPRedirect('login?message=You+are+not+logged+in', save_location=True)
+            raise HTTPRedirect('login', save_location=True)
 
         return func(*args, **kwargs)
     return logged_in
