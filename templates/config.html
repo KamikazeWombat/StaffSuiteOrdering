@@ -3,6 +3,46 @@
 {% block backlink %}{% endblock %}
 {% block content %}
 <div class="container">
+  <script type="text/javascript">
+    function add_badge_to_staff() {
+        staff_barcode = document.getElementById("barcode");
+        console.log("Adding " + barcode.value + " to Staff list);
+        message = document.getElementById("message");
+        message.innerHTML = "Loading...";
+        fetch("add_badge_to_staff?badge="+staff_barcode.value, {credentials: "include"}, ).then((response) => {
+            return response.json();
+        }).then((response) => {
+            staff_barcode.value = "";
+            staff_barcode.focus();
+            if (response.success) {
+                message.innerHTML = "Badge " + response.badge + " added to list successfully.";
+            } else {
+                message.innerHTML = "Failed to add badge " + response.badge + " to list : " + response.reason;
+            }
+        });
+        staff_barcode.focus();
+        return false;
+    }
+    function add_badge_to_admin() {
+        admin_barcode = document.getElementById("barcode");
+        console.log("Adding " + barcode.value + " to Staff list);
+        message = document.getElementById("message");
+        message.innerHTML = "Loading...";
+        fetch("add_badge_to_staff?badge="+staff_barcode.value, {credentials: "include"}, ).then((response) => {
+            return response.json();
+        }).then((response) => {
+            staff_barcode.value = "";
+            staff_barcode.focus();
+            if (response.success) {
+                message.innerHTML = "Badge " + response.badge + " added to list successfully.";
+            } else {
+                message.innerHTML = "Failed to add badge " + response.badge + " to list : " + response.reason;
+            }
+        });
+        staff_barcode.focus();
+        return false;
+    }
+  </script>
   <h2>{{ message }} <br/></h2>
   <h2 class="form-signin-heading">Settings Config</h2>
     <form role="form">
@@ -11,11 +51,22 @@
           <td><textarea name="admin_list" cols="50" rows="4"
                         placeholder="Public IDs from Uber, comma separated list.  Whitespace will be cleared."
           >{{ admin_list }}</textarea>
+        </td>
+        <td>
+          <label>Badge/Barcode</label>
+          <input id="admin_barcode" type="text" name="admin_barcode">
+          <button type="submit">Add</button>
         </td></tr>
         <tr><td>Staff Suite Staffers list</td>
           <td><textarea name="staffer_list" cols="50" rows="4"
           placeholder="Public IDs from Uber, comma separated list.  Whitespace will be cleared."
           >{{ staffer_list }}</textarea>
+        </td>
+        <td>
+          <label>Badge/Barcode</label>
+          <input id="staff_barcode" type="text" name="staff_barcode">
+          <button type="submit">Add</button>
+          <div id="staff_message"></div>
         </td></tr>
         <tr><td>Printing Setup - select one :</td>
           <td><label class="checkbox-label">Local Printer </label><input type="checkbox" name="local_print"{% if cfg.local_print %} checked{% endif %}>

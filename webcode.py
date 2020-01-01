@@ -425,13 +425,13 @@ class Root:
                     # todo: can I do exists or something more efficient?
                     dept_order = session.query(DeptOrder).filter_by(meal_id=save_order,
                                                                     dept_id=params['department']).one()
-                    dept_order_started = True
+                    dept_order_started = dept_order.started
                 except sqlalchemy.orm.exc.NoResultFound:
                     # it's fine if none there, can't be started if it's not created
                     dept_order_started = False
-                    pass
-                # todo: do I actually use the locked field anywhere?
-                if thisorder.locked or dept_order_started:
+                    
+                # todo: do I actually set the locked field anywhere?
+                if dept_order_started or thisorder.locked:
                     if not cherrypy.session['is_admin']:
                         session.close()
                         raise HTTPRedirect("staffer_meal_list?message=This order has already been started by Staff Suite"
@@ -471,6 +471,7 @@ class Root:
             thisorder.toggle3 = order_selections(field='toggle3', params=params, is_toggle=True)
             thisorder.toppings = order_selections(field='toppings', params=params)
             thisorder.notes = notes
+            
             if dh_edit:  # if the order is being created by the DH Edit method, mark overridden so it will be made.
                 thisorder.overridden = True
             if 'dummydata' in params and params['dummydata']:
@@ -747,7 +748,7 @@ class Root:
         now = now_utc()
         for meal in meals:
             # print("checking meal")
-            if response['result'][0]['is_dept_head']:
+            if cherrypy.session['is_dh']:
                 meal.eligible = True
             else:
                 meal.eligible = carryout_eligible(sorted_shifts, meal.start_time, meal.end_time)
@@ -810,14 +811,13 @@ class Root:
             'is_admin': cherrypy.session['is_admin'],
             'is_ss_staffer': cherrypy.session['is_ss_staffer']
         }
-
-        # load lists into plain string for webpage
-        admin_list = ',\n'.join(cfg.admin_list)
-        staffer_list = ',\n'.join(cfg.staffer_list)
         
         if 'radio_select_count' in params:
             # save config
-            # cfg.local_print = params['local_print']
+            
+            admin_list = params['admin_list']
+            staffer_list = params['staffer_list']
+            
             if 'local_print' in params:
                 cfg.local_print = True
             else:
@@ -831,16 +831,30 @@ class Root:
             # cfg.schedule_tolerance = int(params['schedule_tolerance'])
             cfg.date_format = params['date_format']
             cfg.ss_hours = int(params['ss_hours'])
-            print(params['staffer_list'])
-            cfg.save(params['admin_list'], params['staffer_list'])
+            # print(params['staffer_list'])
+            
+            if 'staff_barcode' in params and params['staff_barcode']:
+                print('----------------------staff_barcode----------------------')
+                shared_functions.add_access(params['staff_barcode'], 'staff')
+                staffer_list = ',\n'.join(cfg.staffer_list)
+            if 'admin_barcode' in params and params['admin_barcode']:
+                print('----------------------admin_barcode----------------------')
+                shared_functions.add_access(params['admin_barcode'], 'admin')
+                admin_list = ',\n'.join(cfg.admin_list)
+                
+            cfg.save(admin_list, staffer_list)
             
             raise HTTPRedirect('config?message=Successfully saved config settings')
-        
+
+        # load lists into plain string for webpage
+        admin_list = ',\n'.join(cfg.admin_list)
+        staffer_list = ',\n'.join(cfg.staffer_list)
+
         if badge:
-            print('------------looking up attendee------------------')
+            # print('------------looking up attendee------------------')
             attendee = shared_functions.lookup_attendee(badge, True)
             attendee = json.dumps(attendee, indent=2)
-            print(attendee)
+            # print(attendee)
             template = env.get_template('config.html')
             return template.render(messages=messages,
                                    session=session_info,
@@ -883,8 +897,7 @@ class Root:
         
         session.close()
         raise HTTPRedirect("config")
-        
-
+    
     @cherrypy.expose
     @dh_or_admin
     def dept_order_selection(self, **params):
@@ -1195,7 +1208,7 @@ class Root:
 
         for order in orders:
             sorted_shifts, response = combine_shifts(order.attendee.badge_num, full=True, no_combine=True)
-            if response['result'][0]['is_dept_head']:
+            if response['result']['is_dept_head']:
                 order.eligible = True
             else:
                 order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)

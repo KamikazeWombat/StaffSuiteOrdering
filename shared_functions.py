@@ -174,6 +174,49 @@ def barcode_to_badge(barcode):
     return response['result']['badge_num']
 
 
+def add_access(badge, usertype=None):
+    """
+    Adds provided badge number (or barcode) to selected access list
+    :param badge:
+    :param usertype: 'admin' or 'staff'
+    :return:
+    """
+    if badge[0] == "~":
+        badge = barcode_to_badge(badge)
+    else:
+        try:
+            badge = int(badge)
+        except ValueError:
+            raise HTTPRedirect("nNot a number?")
+
+    if not badge:
+        raise HTTPRedirect("config?message=Badge not found")
+
+    session = models.new_sesh()
+   
+    try:
+        attend = session.query(models.attendee.Attendee).filter_by(badge_num=badge).one()
+    except sqlalchemy.orm.exc.NoResultFound:
+        response = lookup_attendee(badge)
+        if 'error' in response:
+            session.close()
+            raise HTTPRedirect("config?message=Badge #" + str(badge) + "is not found in Reggie")
+        
+        attend = models.attendee.Attendee()
+        attend.badge_num = response['result']['badge_num']
+        attend.public_id = response['result']['public_id']
+        attend.full_name = response['result']['full_name']
+        session.add(attend)
+        session.commit()
+
+    if usertype == 'admin' and attend.public_id not in cfg.admin_list:
+        cfg.admin_list.append(attend.public_id)
+    if usertype == 'staff' and attend.public_id not in cfg.staffer_list:
+        cfg.staffer_list.append(attend.public_id)
+        
+    session.close()
+    return
+
 def load_departments():
     """
     Loads departments from connected Uber instance
@@ -514,7 +557,7 @@ def ss_eligible(badge_num):
     if attendee['badge_type_label'] in ["Guest", "Contractor"]:
         return True
     # Department Heads get access, period.
-    if response['result'][0]['is_dept_head']:
+    if response['result']['is_dept_head']:
         return True
     # Staff who have signed up for at least <event required> hours.
     # Having already worked a shift this event not required for people with Staff status
