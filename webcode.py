@@ -740,8 +740,6 @@ class Root:
         sorted_shifts = combine_shifts(cherrypy.session['badge_num'], no_combine=True)
         allergies = allergy_info(cherrypy.session['badge_num'])
 
-        
-
         meal_display = list()
         
         session.close()
@@ -749,7 +747,10 @@ class Root:
         now = now_utc()
         for meal in meals:
             # print("checking meal")
-            meal.eligible = carryout_eligible(sorted_shifts, meal.start_time, meal.end_time)
+            if response['result'][0]['is_dept_head']:
+                meal.eligible = True
+            else:
+                meal.eligible = carryout_eligible(sorted_shifts, meal.start_time, meal.end_time)
             
             if meal.eligible or display_all or meal.order_exists:
                 delta = relativedelta(meal.end_time, now)
@@ -909,6 +910,11 @@ class Root:
         # todo: filter by future meals, by end time of meal
         meal_list = session.query(Meal).all()
         
+        for meal in meal_list:
+            meal.start_time = con_tz(meal.start_time)
+            meal.end_time = con_tz(meal.end_time)
+            meal.cutoff = con_tz(meal.cutoff)
+            
         session.close()
         template = env.get_template("dept_order_selection.html")
         return template.render(depts=departments,
@@ -976,7 +982,7 @@ class Root:
             thismeal = session.query(Meal).filter_by(id=meal_id).one()
             dept = session.query(Department).filter_by(id=dept_id).one()
         
-        if 'other_contact' in params:
+        if 'other_contact' in params or 'slack_channel' in params or 'text_contact' in params or 'email_contact' in params:
             # save changes to dept_order
             this_dept_order.slack_channel = params['slack_channel']
             this_dept_order.slack_contact = params['slack_contact']
@@ -996,7 +1002,10 @@ class Root:
         for order in order_list:
             # print("checking meal")
             sorted_shifts = combine_shifts(order.attendee.badge_num, no_combine=True)
-            order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
+            if is_dh(order.attendee_id):
+                order.eligible = True
+            else:
+                order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
             
         if len(order_list) == 0:
             messages.append('Your department does not have any orders for this meal.')
@@ -1186,7 +1195,10 @@ class Root:
 
         for order in orders:
             sorted_shifts, response = combine_shifts(order.attendee.badge_num, full=True, no_combine=True)
-            order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
+            if response['result'][0]['is_dept_head']:
+                order.eligible = True
+            else:
+                order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
             # if not eligible and not overridden, remove from list for display/printing
             if not order.eligible and not order.overridden:
                 orders.remove(order)

@@ -513,11 +513,12 @@ def ss_eligible(badge_num):
     # Guests and Contractors automatically get access
     if attendee['badge_type_label'] in ["Guest", "Contractor"]:
         return True
-    # Staff who are a DH or who have signed up for at least 12 hours.
+    # Department Heads get access, period.
+    if response['result'][0]['is_dept_head']:
+        return True
+    # Staff who have signed up for at least <event required> hours.
     # Having already worked a shift this event not required for people with Staff status
     if attendee['badge_type_label'] == "Staff":
-        if "Department Head" in attendee['ribbon_labels']:
-            return True
         if attendee["weighted_hours"] >= cfg.ss_hours:
             return True
     # if nothing above matches, not eligible.
@@ -627,6 +628,7 @@ def carryout_eligible(shifts, meal_start, meal_end):
     # if ss before ms AND se after me then good
     # if the shift is more than a day before or after the meal days != 0
     # print('-----------before loop--------------')
+    
     for shift in shifts:
         # print('---------------start loop------------')
         ss_ms = relativedelta(meal_start, shift.start)
