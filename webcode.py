@@ -241,10 +241,24 @@ class Root:
             session.commit()
             
         if meal:
-            order = session.query(Order).filter(Order.attendee_id == attend.public_id, Order.meal_id == meal.id).one_or_none()
+            order = session.query(Order).filter(Order.attendee_id == attend.public_id,
+                                                Order.meal_id == meal.id).one_or_none()
             if order:
-                session.close()
-                return json.dumps({"success": False, "badge": badge, "reason": "Attendee {} has placed a delivery order for this meal.".format(badge)})
+                sorted_shifts, response = combine_shifts(attend.badge_num, full=True, no_combine=True)
+                user_exempt = False
+                for dept in response['result']['assigned_depts_labels']:
+                    if dept in cfg.exempt_depts:
+                        user_exempt = True
+
+                if cherrypy.session['is_dh'] or user_exempt:
+                    eligible = True
+                else:
+                    eligible = carryout_eligible(sorted_shifts, meal.start_time, meal.end_time)
+                
+                # if their order is eligible for carryout, they get kicked out
+                if eligible or user_exempt:
+                    session.close()
+                    return json.dumps({"success": False, "badge": badge, "reason": "Attendee {} has placed a delivery order for this meal.".format(badge)})
         
         allergy_msg = ""
         allergies = allergy_info(badge)
@@ -992,12 +1006,19 @@ class Root:
                                    str(dept_id) + '%26meal_id%3D' + str(meal_id))
         
         thismeal = session.query(Meal).filter_by(id=meal_id).one()
-  
+        
         # tries to load existing dept order, if none creates a new one.
         try:
             this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
         except sqlalchemy.orm.exc.NoResultFound:
             this_dept_order = create_dept_order(dept_id, meal_id, session)
+            this_dept_order.slack_channel = dept.slack_channel
+            this_dept_order.slack_contact = dept.slack_contact
+            this_dept_order.other_contact = dept.other_contact
+            #this_dept_order.text_contact = dept.text_contact
+            #this_dept_order.email_contact = dept.email_contact
+            
+            session.commit()
             # reload order since commit flushes it from cache (apparently)
             this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
             thismeal = session.query(Meal).filter_by(id=meal_id).one()
@@ -1008,8 +1029,8 @@ class Root:
             this_dept_order.slack_channel = params['slack_channel']
             this_dept_order.slack_contact = params['slack_contact']
             this_dept_order.other_contact = params['other_contact']
-            session.commit()
             
+            session.commit()
             # reload these items since commit flushes them
             dept = session.query(Department).filter_by(id=dept_id).one()
             thismeal = session.query(Meal).filter_by(id=meal_id).one()
@@ -1435,6 +1456,18 @@ class Root:
             #dept.text_contact = params['text_contact']
             #dept.email_contact = params['email_contact']
             dept.other_contact = params['other_contact']
+            
+            dept_orders = session.query(DeptOrder).filter_by(dept_id=dept_id).all()
+            for do in dept_orders:
+                # finds dept orders with blank contact info and fills their default contact info
+                if not do.slack_channel and not do.slack_contact and not do.other_contact and not do.text_contact \
+                        and not do.email_contact:
+                    do.slack_contact = dept.slack_contact
+                    do.slack_channel = dept.slack_channel
+                    do.other_contact = dept.other_contact
+                    #do.text_contact = dept.text_contact
+                    #do.email_contact = dept.email_contact
+            
             session.commit()
             session.close()
             raise HTTPRedirect(original_location)
