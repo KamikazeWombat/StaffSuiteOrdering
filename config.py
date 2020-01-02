@@ -98,7 +98,7 @@ class Config:
         else:
             return False
         
-    def save(self, admin_list, staffer_list, dept_list):
+    def save(self, admin_list, staffer_list, exempt_depts):
         cdata = {
             'api_endpoint': self.api_endpoint,
             'database_location': self.database_location,
@@ -125,7 +125,7 @@ class Config:
         stafferfile.close()
         
         deptfile = open('exempt_depts.cfg', 'w')
-        deptfile.write(dept_list)
+        deptfile.write(exempt_depts)
         deptfile.close()
         
         self.load_user_lists()

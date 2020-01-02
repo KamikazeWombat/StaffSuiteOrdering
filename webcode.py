@@ -821,7 +821,7 @@ class Root:
             
             admin_list = params['admin_list']
             staffer_list = params['staffer_list']
-            dept_list = params['dept_list']
+            exempt_depts = params['exempt_depts']
             
             if 'local_print' in params:
                 cfg.local_print = True
@@ -847,14 +847,14 @@ class Root:
                 shared_functions.add_access(params['admin_barcode'], 'admin')
                 admin_list = ',\n'.join(cfg.admin_list)
                 
-            cfg.save(admin_list, staffer_list, dept_list)
+            cfg.save(admin_list, staffer_list, exempt_depts)
             
             raise HTTPRedirect('config?message=Successfully saved config settings')
 
         # load lists into plain string for webpage
         admin_list = ',\n'.join(cfg.admin_list)
         staffer_list = ',\n'.join(cfg.staffer_list)
-        dept_list = ',\n'.join(cfg.dept_list)
+        exempt_depts = ',\n'.join(cfg.exempt_depts)
 
         if badge:
             # print('------------looking up attendee------------------')
@@ -866,7 +866,7 @@ class Root:
                                    session=session_info,
                                    admin_list=admin_list,
                                    staffer_list=staffer_list,
-                                   dept_list=dept_list,
+                                   exempt_depts=exempt_depts,
                                    dangerous=True,
                                    attendee=attendee,
                                    c=c,
@@ -877,6 +877,7 @@ class Root:
                                session=session_info,
                                admin_list=admin_list,
                                staffer_list=staffer_list,
+                               exempt_depts=exempt_depts,
                                dangerous=dangerous,
                                c=c,
                                cfg=cfg)
