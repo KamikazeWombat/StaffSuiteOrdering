@@ -33,7 +33,7 @@
       <table>
         <tr>
           <td>
-            <label>{{ order.attendee.badge_num }}</label>
+            <label>{{ order.attendee.badge_num }}</label>  <label>{{ order.attendee.full_name }}</label>
             {% if order.allergies %}
               {{ macros.display_allergies(order.allergies, view_only=True) }}
             {% endif %}
