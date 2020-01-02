@@ -835,7 +835,7 @@ class Root:
             
     @cherrypy.expose
     @admin_req
-    def config(self, badge='', message=[], dangerous=False, **params):
+    def config(self, badge='', message=[], dangerous=False, delete_order='', **params):
         messages = []
 
         if message:
@@ -847,6 +847,14 @@ class Root:
             'is_admin': cherrypy.session['is_admin'],
             'is_ss_staffer': cherrypy.session['is_ss_staffer']
         }
+        
+        if delete_order:
+            session = models.new_sesh()
+            thisorder = session.query(Order).filter_by(id=delete_order).one()
+            session.delete(thisorder)
+            session.commit()
+            session.close()
+            raise HTTPRedirect('config?dangerouse=true&message=order ' + delete_order + ' deleted.')
         
         if 'radio_select_count' in params:
             # save config
@@ -1252,7 +1260,8 @@ class Root:
         dept_name = dept.name
         
         session.close()  # this has to be before the order loop below.  don't know why, seems like it should be after.
-
+        
+        order_list = list()
         for order in orders:
             sorted_shifts, response = combine_shifts(order.attendee.badge_num, full=True, no_combine=True)
             if response['result']['is_dept_head']:
@@ -1264,9 +1273,7 @@ class Root:
                 if not order.eligible:  # checks for exempt dept first, then if not exempt checks shifts
                     order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
             # if not eligible and not overridden, remove from list for display/printing
-            if not order.eligible and not order.overridden:
-                orders.remove(order)
-                continue
+            
 
             order.toggle1 = return_selected_only(session, choices=thismeal.toggle1, orders=order.toggle1)
             order.toggle2 = return_selected_only(session, choices=thismeal.toggle2, orders=order.toggle2)
@@ -1276,6 +1283,10 @@ class Root:
             if response['result']['food_restrictions']:
                 order.allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
                                    'freeform': response['result']['food_restrictions']['freeform']}
+            if order.eligible or order.overridden:
+                order_list.append(order)
+                
+        orders = order_list
         
         if dept_order.started:
             dept_order.start_time = con_tz(dept_order.start_time).strftime(cfg.date_format)

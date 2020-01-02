@@ -101,13 +101,17 @@
       
     </form>
     {% if dangerous %}
-  <form>
     <a href="dangerous?reset_dept_list=True">Reset Dept List</a><br/>
     <a href="dangerous?reset_checkin_list=True">Reset Checkins List</a><br/>
-    <input type="text" name="badge"/>
-    <button type="submit">Lookup Attendee</button>
-    {{ attendee }}
-  </form>
+    <form>
+      <input type="text" name="badge"/>
+      <button type="submit">Lookup Attendee</button>
+      {{ attendee }}
+    </form>
+    <form>
+      <input type="text" name="delete_order">
+      <button type="submit">Delete Order</button>
+    </form>
     {% endif %}
 </div>
 {% endblock content %}
