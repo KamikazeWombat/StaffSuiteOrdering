@@ -88,6 +88,11 @@
         <td><input disabled type="text" name="schedule_tolerance" value="{{ cfg.schedule_tolerance }}"/> Tolerance in minutes for amount of meal period not overlapped by shifts for carryout eligiblity</td></tr>
         <tr><td>Weighted Hours</td>
           <td><input type="text" name="ss_hours" value="{{ cfg.ss_hours }}"/> How many weighted hours are needed for base Staff Suite eligibilty</td></tr>
+        <tr><td>Shiftless Departments</td>
+          <td><textarea name="exempt_depts" cols="50" rows="4"
+          placeholder="Department IDs from Uber, CaSe SensiTive, comma separated list.  Whitespace will be cleared."
+          >{{ exempt_depts }}</textarea>
+        </td>
       </table>
       
       <br/>

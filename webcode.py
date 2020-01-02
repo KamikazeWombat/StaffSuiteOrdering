@@ -738,17 +738,22 @@ class Root:
                 junk = attendee.badge_num  # gets SQLAlchemy to reload attendee from database since needed for page display
         
         meals = session.query(Meal).all()
-        sorted_shifts = combine_shifts(cherrypy.session['badge_num'], no_combine=True)
+        sorted_shifts, response = combine_shifts(cherrypy.session['badge_num'], no_combine=True, full=True)
         allergies = allergy_info(cherrypy.session['badge_num'])
 
         meal_display = list()
         
         session.close()
         
-        now = now_utc()
+        user_exempt = False
+        for dept in response['result']['assigned_depts_labels']:
+            if dept in cfg.exempt_depts:
+                user_exempt = True
+            
+        now = datetime.utcnow()
         for meal in meals:
             # print("checking meal")
-            if cherrypy.session['is_dh']:
+            if cherrypy.session['is_dh'] or user_exempt:
                 meal.eligible = True
             else:
                 meal.eligible = carryout_eligible(sorted_shifts, meal.start_time, meal.end_time)
@@ -796,7 +801,6 @@ class Root:
                                session=session_info,
                                c=c)
             
-
     @cherrypy.expose
     @admin_req
     def config(self, badge='', message=[], dangerous=False, **params):
@@ -817,6 +821,7 @@ class Root:
             
             admin_list = params['admin_list']
             staffer_list = params['staffer_list']
+            exempt_depts = params['exempt_depts']
             
             if 'local_print' in params:
                 cfg.local_print = True
@@ -834,21 +839,22 @@ class Root:
             # print(params['staffer_list'])
             
             if 'staff_barcode' in params and params['staff_barcode']:
-                print('----------------------staff_barcode----------------------')
+                # print('----------------------staff_barcode----------------------')
                 shared_functions.add_access(params['staff_barcode'], 'staff')
                 staffer_list = ',\n'.join(cfg.staffer_list)
             if 'admin_barcode' in params and params['admin_barcode']:
-                print('----------------------admin_barcode----------------------')
+                # print('----------------------admin_barcode----------------------')
                 shared_functions.add_access(params['admin_barcode'], 'admin')
                 admin_list = ',\n'.join(cfg.admin_list)
                 
-            cfg.save(admin_list, staffer_list)
+            cfg.save(admin_list, staffer_list, exempt_depts)
             
             raise HTTPRedirect('config?message=Successfully saved config settings')
 
         # load lists into plain string for webpage
         admin_list = ',\n'.join(cfg.admin_list)
         staffer_list = ',\n'.join(cfg.staffer_list)
+        exempt_depts = ',\n'.join(cfg.exempt_depts)
 
         if badge:
             # print('------------looking up attendee------------------')
@@ -860,6 +866,7 @@ class Root:
                                    session=session_info,
                                    admin_list=admin_list,
                                    staffer_list=staffer_list,
+                                   exempt_depts=exempt_depts,
                                    dangerous=True,
                                    attendee=attendee,
                                    c=c,
@@ -870,6 +877,7 @@ class Root:
                                session=session_info,
                                admin_list=admin_list,
                                staffer_list=staffer_list,
+                               exempt_depts=exempt_depts,
                                dangerous=dangerous,
                                c=c,
                                cfg=cfg)
@@ -1211,7 +1219,11 @@ class Root:
             if response['result']['is_dept_head']:
                 order.eligible = True
             else:
-                order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
+                for dept in response['result']['assigned_depts_labels']:
+                    if dept in cfg.exempt_depts:
+                        order.eligible = True
+                if not order.eligible:  # checks for exempt dept first, then if not exempt checks shifts
+                    order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
             # if not eligible and not overridden, remove from list for display/printing
             if not order.eligible and not order.overridden:
                 orders.remove(order)

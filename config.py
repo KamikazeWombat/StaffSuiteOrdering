@@ -35,6 +35,15 @@ class Config:
         for staffer in staffer_list:
             staffer = staffer.strip()
             self.staffer_list.append(staffer)
+        
+        deptfile = open('exempt_depts.cfg', 'r')
+        depts = deptfile.read()
+        deptfile.close()
+        dept_list = depts.split(',')
+        self.exempt_depts = list()
+        for dept in dept_list:
+            dept = dept.strip()
+            self.exempt_depts.append(dept)
     
     def __init__(self):
         # read in config from files.  todo: have system skip things that are not yet defined.  in particular, API key
@@ -63,6 +72,7 @@ class Config:
         
         self.admin_list = ''
         self.staffer_list = ''
+        self.exempt_depts = ''
         self.load_user_lists()
         
         self.api_endpoint = cdata['api_endpoint']
@@ -88,7 +98,7 @@ class Config:
         else:
             return False
         
-    def save(self, admin_list, staffer_list):
+    def save(self, admin_list, staffer_list, exempt_depts):
         cdata = {
             'api_endpoint': self.api_endpoint,
             'database_location': self.database_location,
@@ -114,6 +124,10 @@ class Config:
         stafferfile.write(staffer_list)
         stafferfile.close()
         
+        deptfile = open('exempt_depts.cfg', 'w')
+        deptfile.write(exempt_depts)
+        deptfile.close()
+        
         self.load_user_lists()
         return
 
@@ -132,7 +146,7 @@ class Uberconfig:
         request_data = {'method': 'config.info'}
         request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
         # print("------printing request before json load")
-        print(request.text)
+        # print(request.text)
         response = json.loads(request.text)
         
         try:
