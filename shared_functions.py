@@ -229,6 +229,9 @@ def load_departments():
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
     response = json.loads(request.text)
     response = response['result'].items()
+    # print('----------------------------')
+    # print(response)
+    # print('----------------------------')
 
     # print('loading departments')
     session = models.new_sesh()
@@ -556,6 +559,10 @@ def ss_eligible(badge_num):
     # Guests and Contractors automatically get access
     if attendee['badge_type_label'] in ["Guest", "Contractor"]:
         return True
+    # shiftless departments are exempt from eligibility requirements
+    for dept in attendee['assigned_depts_labels']:
+        if dept in cfg.exempt_depts:
+            return True
     # Department Heads get access, period.
     if response['result']['is_dept_head']:
         return True
@@ -579,7 +586,9 @@ def combine_shifts(badge_num, full=False, no_combine=False):
     
     response = lookup_attendee(badge_num, full=True)
     shift_list = []
-    
+    # print('-------------------------------')
+    # print(response)
+    # print('-------------------------------')
     if 'error' in response:
         message = response['error']['message']
         print(message)
