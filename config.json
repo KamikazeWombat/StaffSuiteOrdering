@@ -1,5 +1,5 @@
 {
-  "api_endpoint": "https://super2020.reggie.magfest.org/jsonrpc/",
+  "api_endpoint": "https://onsite.reggie.magfest.org/jsonrpc/",
   "database_location": "sqlite:///livedb.db",
   "local_print": true,
   "remote_print": false,
