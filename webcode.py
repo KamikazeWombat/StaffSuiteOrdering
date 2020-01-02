@@ -420,6 +420,7 @@ class Root:
         if save_order:
             # : save it lol
             
+            # try to load existing order
             try:
                 if dh_edit:
                     attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
@@ -453,7 +454,16 @@ class Root:
                     
             except sqlalchemy.orm.exc.NoResultFound:
                 thisorder = Order()
-                
+                thismeal = session.query(Meal).filter_by(id=save_order).one()
+                thisorder.meal = thismeal
+
+            hour = relativedelta(hours=1)
+            now = datetime.utcnow() + hour
+            rd = relativedelta(now, thisorder.meal.end_time)
+            
+            if rd.minutes > 0 or rd.hours > 0 or rd.days > 0:
+                raise HTTPRedirect("staffer_meal_list?message=Pickup orders for this meal time are closed")
+            
             if dh_edit:
                 # actually verifies you are admin and not just you edited URL
                 # print('starting dh_edit')
@@ -501,6 +511,14 @@ class Root:
             # load order
             thisorder = session.query(Order).filter_by(id=order_id).one()
             thismeal = thisorder.meal  # session.query(Meal).filter_by(id=thisorder.meal_id).one()
+            hour = relativedelta(hours=1)
+            now = datetime.utcnow() + hour
+            rd = relativedelta(now, thisorder.meal.end_time)
+
+            if rd.minutes > 0 or rd.hours > 0 or rd.days > 0:
+                messages.append('Pickup orders are closed for this meal.')
+                thisorder.locked = True
+                
             if dh_edit:
                 try:
                     attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
