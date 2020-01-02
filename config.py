@@ -132,7 +132,7 @@ class Uberconfig:
         request_data = {'method': 'config.info'}
         request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
         # print("------printing request before json load")
-        # print(request.text)
+        print(request.text)
         response = json.loads(request.text)
         
         try:

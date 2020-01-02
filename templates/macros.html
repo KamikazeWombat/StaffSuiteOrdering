@@ -21,7 +21,7 @@
       <br/><textbox disabled {% if color %}style="color:red; font-size:20px;"{% endif %}>{{ allergies.freeform }}</textbox>
     {% endif %}
     {% if not view_only %}
-      <br/><a href="{{ c.EVENT_URL_ROOT }}/staffing/index" target="_blank">Click here to edit your dietary restrictions in Reggie</a>
+    <br/><h3><a href="{{ c.EVENT_URL_ROOT }}/staffing/index" target="_blank">Click here to edit your dietary restrictions in Reggie</a></h3>
     {% endif %}
   </div>
 {% endmacro %}
