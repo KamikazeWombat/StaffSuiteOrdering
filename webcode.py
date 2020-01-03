@@ -101,7 +101,15 @@ class Root:
                     cherrypy.session['is_dh'] = True
                 else:
                     cherrypy.session['is_dh'] = False
-
+                    
+                    # food manager tag is for a person who only has this specific privilige, not DH or admin also.
+                if cherrypy.session['staffer_id'] in cfg.food_managers and not cherrypy.session['is_dh'] \
+                        and not cherrypy.session['is_admin']:
+                    cherrypy.session['is_food_manager'] = True
+                    cherrypy.session['is_dh'] = True
+                else:
+                    cherrypy.session['is_food_manager'] = False
+                    
                 # check if orders open
                 if not cfg.orders_open():
                     if not cherrypy.session['is_ss_staffer']:
@@ -886,8 +894,9 @@ class Root:
                 # print('----------------------admin_barcode----------------------')
                 shared_functions.add_access(params['admin_barcode'], 'admin')
                 admin_list = ',\n'.join(cfg.admin_list)
+            manager_list = ',\n'.join(cfg.food_managers)
                 
-            cfg.save(admin_list, staffer_list, exempt_depts)
+            cfg.save(admin_list, staffer_list, exempt_depts, manager_list)
             
             raise HTTPRedirect('config?message=Successfully saved config settings')
 
@@ -948,12 +957,16 @@ class Root:
     
     @cherrypy.expose
     @dh_or_admin
-    def dept_order_selection(self, **params):
+    def dept_order_selection(self, message='', **params):
         """
         Allows DH to select meal time and which department they wish to view the dept_order for.
         Filters meal list to only show future meals by default (by end time, not start time)
         Filters selectable departments to only include ones the DH is assigned to unless user is Admin
         """
+        messages = []
+        if message:
+            text = message
+            messages.append(text)
 
         session_info = {
             'is_dh': cherrypy.session['is_dh'],
@@ -981,6 +994,7 @@ class Root:
         return template.render(depts=departments,
                                meals=meal_list,
                                session=session_info,
+                               messages=messages,
                                c=c)
         
 
@@ -1006,12 +1020,28 @@ class Root:
         session_info = {
             'is_dh': cherrypy.session['is_dh'],
             'is_admin': cherrypy.session['is_admin'],
-            'is_ss_staffer': cherrypy.session['is_ss_staffer']
+            'is_ss_staffer': cherrypy.session['is_ss_staffer'],
+            'is_food_manager': cherrypy.session['is_food_manager']
         }
         
         if 'order_badge' in params:
             raise HTTPRedirect('order_edit?dh_edit=True&meal_id=' + str(meal_id) + '&badge_number=' +
                                str(params['order_badge']) + '&department=' + str(params['order_department']))
+        
+        if 'food_manager' in params:
+            success = shared_functions.add_access(params['food_manager'], 'food_manager')
+            if success:
+                raise HTTPRedirect('dept_order?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
+                                   '&skip=true&message=Food Manager Succesfully Added')
+            else:
+                session = models.new_sesh()
+                attend = session.query(Attendee).filter_by(badge_num=params['food_manager']).one()
+                if attend.public_id in cfg.food_managers:
+                    raise HTTPRedirect('dept_order?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
+                                       '&skip=true&message=Food Manager already added to list')
+                else:
+                    raise HTTPRedirect('dept_order?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
+                                       '&skip=true&message=Error adding food manager')
         
         session = models.new_sesh()
         
@@ -1274,7 +1304,6 @@ class Root:
                     order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
             # if not eligible and not overridden, remove from list for display/printing
             
-
             order.toggle1 = return_selected_only(session, choices=thismeal.toggle1, orders=order.toggle1)
             order.toggle2 = return_selected_only(session, choices=thismeal.toggle2, orders=order.toggle2)
             order.toggle3 = return_selected_only(session, choices=thismeal.toggle3, orders=order.toggle3)
