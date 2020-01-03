@@ -143,6 +143,7 @@ def now_contz():
     now = now.replace(tzinfo=None)  # removes tzinfo to avoid confusing other systems
     return now
 
+
 def api_login(first_name, last_name, email, zip_code):
     """
     Performs login request against Uber API and returns resulting json data
@@ -178,7 +179,7 @@ def add_access(badge, usertype=None):
     """
     Adds provided badge number (or barcode) to selected access list
     :param badge:
-    :param usertype: 'admin' or 'staff'
+    :param usertype: 'admin' or 'staff' or 'food_manager'
     :return:
     """
     if badge[0] == "~":
@@ -200,7 +201,10 @@ def add_access(badge, usertype=None):
         response = lookup_attendee(badge)
         if 'error' in response:
             session.close()
-            raise HTTPRedirect("config?message=Badge #" + str(badge) + "is not found in Reggie")
+            if usertype == 'admin' or usertype == 'staff':
+                raise HTTPRedirect("config?message=Badge " + str(badge) + " is not found in Reggie")
+            else:
+                raise HTTPRedirect("dept_order_selection?message=Badge " + str(badge) + "is not found in Reggie")
         
         attend = models.attendee.Attendee()
         attend.badge_num = response['result']['badge_num']
@@ -213,9 +217,17 @@ def add_access(badge, usertype=None):
         cfg.admin_list.append(attend.public_id)
     if usertype == 'staff' and attend.public_id not in cfg.staffer_list:
         cfg.staffer_list.append(attend.public_id)
+    if usertype == 'food_manager' and attend.public_id not in cfg.food_managers:
+        cfg.food_managers.append(attend.public_id)
+        manager_list = ',\n'.join(cfg.food_managers)
+        managerfile = open('food_managers.cfg', 'w')
+        managerfile.write(manager_list)
+        managerfile.close()
+        session.close()
+        return True
         
     session.close()
-    return
+    return False
 
 def load_departments():
     """

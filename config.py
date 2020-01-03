@@ -35,6 +35,15 @@ class Config:
         for staffer in staffer_list:
             staffer = staffer.strip()
             self.staffer_list.append(staffer)
+            
+        managerfile = open('food_managers.cfg', 'r')
+        managers = managerfile.read()
+        managerfile.close()
+        manager_list = managers.split(',')
+        self.food_managers = list()
+        for manager in manager_list:
+            manager = manager.strip()
+            self.food_managers.append(manager)
         
         deptfile = open('exempt_depts.cfg', 'r')
         depts = deptfile.read()
@@ -73,6 +82,7 @@ class Config:
         self.admin_list = ''
         self.staffer_list = ''
         self.exempt_depts = ''
+        self.food_managers = ''
         self.load_user_lists()
         
         self.api_endpoint = cdata['api_endpoint']
@@ -98,7 +108,7 @@ class Config:
         else:
             return False
         
-    def save(self, admin_list, staffer_list, exempt_depts):
+    def save(self, admin_list, staffer_list, exempt_depts, manager_list):
         cdata = {
             'api_endpoint': self.api_endpoint,
             'database_location': self.database_location,
@@ -127,6 +137,10 @@ class Config:
         deptfile = open('exempt_depts.cfg', 'w')
         deptfile.write(exempt_depts)
         deptfile.close()
+        
+        managerfile = open('food_managers.cfg', 'w')
+        managerfile.write(manager_list)
+        managerfile.close()
         
         self.load_user_lists()
         return

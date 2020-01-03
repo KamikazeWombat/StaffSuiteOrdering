@@ -4,7 +4,7 @@ from functools import wraps
 import cherrypy
 
 from shared_functions import HTTPRedirect, is_admin, is_ss_staffer, is_dh
-
+from config import cfg
 
 def restricted(func):
     """
@@ -75,6 +75,7 @@ def ss_staffer(func):
 def dh_or_admin(func):
     """
     Requires user to be logged in and either a Department Head or an Admin.
+    Also now 'food manager' which is a non-DH person assigned to handle order related things
     Department Head status is determined at login by checking their account in Uber/Reggie
     """
     @wraps(func)
@@ -87,7 +88,7 @@ def dh_or_admin(func):
         allowed = False
         if cherrypy.session['is_dh'] or cherrypy.session['is_admin']:
             allowed = True
-        
+           
         if not allowed:
             raise HTTPRedirect('staffer_meal_list?message=You are not DH or admin, your id: ' + staff_id)
         
@@ -98,7 +99,7 @@ def dh_or_admin(func):
 
 def dh_or_staffer(func):
     """
-    Requires user to be logged in and either a Department Head or an Admin.
+    Requires user to be logged in and either a SS Staffer or Department Head or an Admin.
     Department Head status is determined at login by checking their account in Uber/Reggie
     """
     @wraps(func)
