@@ -449,16 +449,15 @@ class Root:
                     dept_order = session.query(DeptOrder).filter_by(meal_id=save_order,
                                                                     dept_id=params['department']).one()
                     dept_order_started = dept_order.started
+                    
                 except sqlalchemy.orm.exc.NoResultFound:
                     # it's fine if none there, can't be started if it's not created
                     dept_order_started = False
                     
                 # todo: do I actually set the locked field anywhere?
                 if dept_order_started or thisorder.locked:
-                    if not cherrypy.session['is_admin']:
-                        session.close()
-                        raise HTTPRedirect("staffer_meal_list?message=This order has already been started by Staff Suite"
-                                           " and cannot be changed except by Staff Suite Admins")
+                    session.close()
+                    raise HTTPRedirect("staffer_meal_list?message=This order has already been started by Staff Suite")
                     
             except sqlalchemy.orm.exc.NoResultFound:
                 thisorder = Order()
