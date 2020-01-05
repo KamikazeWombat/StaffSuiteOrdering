@@ -16,29 +16,25 @@
     </form>
   {% endif %}
   <br/>
-  
+
   {% for meal in meallist %}
     <form role="form">
-      <table>
-        <tr>
+      <div class="meal_selection">
           {% if meal.eligible == False and meal.overridden == False %}
-            <td><label>Not Eligible for Carryout</label></td>
+            <span class="meal_selection_item">Not Eligible for Carryout</span>
           {% endif %}
           {% if meal.overridden %}
-            <td><label>Order Authorized by DH</label></td>
+            <span class="meal_selection_item">Order Authorized by DH</span>
           {% endif %}
-          <td>
             <input type="hidden" name="meal_id" value ="{{ meal.id }}">
-            <label class="form-control">{{ meal.meal_name }} </label>
-          </td>
-            <td><label class="form-control">{{ meal.start_time }}</label></td>
+            <span class="meal_selection_item">{{ meal.meal_name }} </span>
+            <span class="meal_selection_item">{{ meal.start_time }}</span>
           {% if meal.order_exists %}
-            <td><a class="btn btn-lg btn-primary btn-block" href="order_edit?meal_id={{ meal.id }}">Edit Existing Order</a></td>
+            <span style="display: inline-block;"><a class="btn btn-lg btn-primary btn-block" href="order_edit?meal_id=1">Edit Existing Order</a></span>
           {% else %}
-            <td><a class="btn btn-lg btn-primary btn-block" href="order_edit?meal_id={{ meal.id }}">Create Order</a></td>
+            <span style="display: inline-block;"><a class="btn btn-lg btn-primary btn-block" href="order_edit?meal_id={{ meal.id }}">Create Order</a></span>
           {% endif %}
-        </tr>
-      </table>
+      </div>
     </form>
   {% endfor %}
 
