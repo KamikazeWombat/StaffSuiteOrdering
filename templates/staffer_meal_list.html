@@ -30,7 +30,7 @@
             <span class="meal_selection_item">{{ meal.meal_name }} </span>
             <span class="meal_selection_item">{{ meal.start_time }}</span>
           {% if meal.order_exists %}
-            <span style="display: inline-block;"><a class="btn btn-lg btn-primary btn-block" href="order_edit?meal_id=1">Edit Existing Order</a></span>
+            <span style="display: inline-block;"><a class="btn btn-lg btn-primary btn-block" href="order_edit?meal_id={{ meal.id }}">Edit Existing Order</a></span>
           {% else %}
             <span style="display: inline-block;"><a class="btn btn-lg btn-primary btn-block" href="order_edit?meal_id={{ meal.id }}">Create Order</a></span>
           {% endif %}
