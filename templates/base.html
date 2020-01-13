@@ -74,12 +74,17 @@
             z-index: 9998;
             background: rgb(249,249,249);
         }
+        .meal_selection {
+            border-style: ridge;
+            border-width: light;
+            border-radius: 5px;
+        }
         .meal_selection_item {
             display: inlne-block;
             height: 34px;
             padding: 6px 12px;
             font-size: 14px;
-            line-height: 1.42857143;
+            line-height: 1.5;
             color: #555;
             background-color: #fff;
             border: 1px solid #ccc;
@@ -112,7 +117,7 @@
             <div id="floating_logo">
                 <img src={{ c.EVENT_URL_ROOT }}/static/theme/bg-logo.png/>
                 <a href="https://bit.ly/StaffSuite2020" target="_blank">Staff Suite Info & Allergies</a>
-                <div style="text-align:center;"><h1>{{ c.EVENT_NAME }} Staff Suite v 0.9.0</h1></div>
+                <div style="text-align:center;"><h1>{{ c.EVENT_NAME }} Staff Suite v 0.9.1</h1></div>
             </div>
     {% endblock %}
     <div id="mainContainer" class="container-fluid">
