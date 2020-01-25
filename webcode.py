@@ -1535,3 +1535,76 @@ class Root:
                                original_location=original_location,
                                session=session_info,
                                c=c)
+
+    @cherrypy.expose
+    @admin_req
+    def create_checkin_csv(self):
+        """
+        creates a .csv file with data from the eat-in checkins
+        """
+        session = models.new_sesh()
+    
+        checkins = session.query(models.checkin.Checkin).all()
+        
+        export = 'Meal ID,Meal Desc,Badge Number,Timestamp\n'
+        for checkin in checkins:
+            if checkin.meal_id:
+                export += str(checkin.meal_id)
+                export += ','
+                export += checkin.meal.description
+            else:
+                export += ','
+                export += 'non-meal period'
+            export += ','
+            export += str(checkin.attendee.badge_num)
+            export += ','
+            export += checkin.timestamp.strftime(cfg.date_format)
+            export += '\n'
+        
+        exportfile = open('checkin_export.csv', 'w')
+        exportfile.write(export)
+        exportfile.close()
+        
+        session.close()
+        raise HTTPRedirect('config?message=Succesfully exported checkins csv')
+
+    @cherrypy.expose
+    @admin_req
+    def create_orders_csv(self):
+        """
+        Creates a .csv file with data from the carryout orders
+        """
+        session = models.new_sesh()
+        start = datetime.utcnow()
+        orders = session.query(models.order.Order).all()
+        export = 'Meal Id,Meal Desc,Department,Badge Number,Overridden,Eligible for Carryout,Notes\n'
+        print('-------------beginning order CSV export-------------')
+        for order in orders:
+            export += str(order.meal_id)
+            export += ','
+            export += order.meal.description
+            export += ','
+            export += order.department.name
+            export += ','
+            export += str(order.attendee.badge_num)
+            export += ','
+            export += str(order.overridden)
+            export += ','
+            shifts = combine_shifts(order.attendee.badge_num, no_combine=True)
+            export += str(shared_functions.carryout_eligible(shifts, order.meal.start_time, order.meal.end_time))
+            export += ','
+            export += order.notes
+            export += '\n'
+        
+        end = datetime.utcnow()
+        rd = relativedelta(start, end)
+        print('-------------done pulling orders--------------')
+        print('minutes ' + str(rd.minutes))
+        print('seconds ' + str(rd.seconds))
+        
+        exportfile = open('order_export.csv', 'w', encoding='utf-8')
+        exportfile.write(export)
+        exportfile.close()
+
+        session.close()
+        raise HTTPRedirect('config?message=succesfully exported orders report')

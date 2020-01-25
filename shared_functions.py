@@ -820,3 +820,4 @@ def dummy_data(count, startorder):
     
     session.commit()
     session.close()
+    return
