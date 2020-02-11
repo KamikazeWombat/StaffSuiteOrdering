@@ -443,26 +443,26 @@ class Root:
                         if not shared_functions.is_admin(cherrypy.session['staffer_id']):
                             session.close()
                             raise HTTPRedirect("staffer_meal_list?message=This isn't your order.")
-                        
-                try:
-                    # todo: can I do exists or something more efficient?
-                    dept_order = session.query(DeptOrder).filter_by(meal_id=save_order,
-                                                                    dept_id=params['department']).one()
-                    dept_order_started = dept_order.started
-                    
-                except sqlalchemy.orm.exc.NoResultFound:
-                    # it's fine if none there, can't be started if it's not created
-                    dept_order_started = False
-                    
-                # todo: do I actually set the locked field anywhere?
-                if dept_order_started or thisorder.locked:
-                    session.close()
-                    raise HTTPRedirect("staffer_meal_list?message=This order has already been started by Staff Suite")
-                    
+                
             except sqlalchemy.orm.exc.NoResultFound:
+                # if no existing order create new order
                 thisorder = Order()
                 thismeal = session.query(Meal).filter_by(id=save_order).one()
                 thisorder.meal = thismeal
+
+            try:
+                dept_order = session.query(DeptOrder).filter_by(meal_id=save_order,
+                                                                dept_id=params['department']).one()
+                dept_order_started = dept_order.started
+
+            except sqlalchemy.orm.exc.NoResultFound:
+                # it's fine if none there, can't be started if it's not created
+                dept_order_started = False
+                
+            if dept_order_started or thisorder.locked:
+                session.close()
+                raise HTTPRedirect("staffer_meal_list?message=Your department's bundle "
+                                   "has already been started by Staff Suite")
 
             hour = relativedelta(hours=1)
             now = datetime.utcnow() + hour
@@ -477,6 +477,7 @@ class Root:
                 if is_dh(cherrypy.session['staffer_id']) or is_admin(cherrypy.session['staffer_id']):
                     # print('is actualy dh or admin')
                     try:
+                        # load attendee from database or Reggie if not already in DB
                         attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
                         thisorder.attendee_id = attend.public_id
                     except sqlalchemy.orm.exc.NoResultFound:
@@ -489,6 +490,7 @@ class Root:
                         thisorder.attendee_id = attend.public_id
                         session.commit()
                 else:
+                    # currently logged in user is not a DH or admin
                     session.close()
                     raise HTTPRedirect('staffer_meal_list?message=You must be DH or admin to use this feature')
             else:
@@ -505,10 +507,12 @@ class Root:
             
             if dh_edit:  # if the order is being created by the DH Edit method, mark overridden so it will be made.
                 thisorder.overridden = True
+                
             if 'dummydata' in params and params['dummydata']:
                 shared_functions.dummy_data(params['dummycount'], thisorder)
             else:
                 session.add(thisorder)
+                
             session.commit()
             session.close()
             
@@ -518,14 +522,7 @@ class Root:
             # load order
             thisorder = session.query(Order).filter_by(id=order_id).one()
             thismeal = thisorder.meal  # session.query(Meal).filter_by(id=thisorder.meal_id).one()
-            hour = relativedelta(hours=1)
-            now = datetime.utcnow() + hour
-            rd = relativedelta(now, thisorder.meal.end_time)
-
-            if rd.minutes > 0 or rd.hours > 0 or rd.days > 0:
-                messages.append('Pickup orders are closed for this meal.')
-                thisorder.locked = True
-                
+            
             if dh_edit:
                 try:
                     attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
@@ -576,7 +573,7 @@ class Root:
                                    c=c)
             
         if meal_id:
-            print('start meal_id')
+            # print('start meal_id')
             # attempt new order from meal_id
             if dh_edit and (is_dh(cherrypy.session['staffer_id']) or is_admin(cherrypy.session['staffer_id'])):
                 try:
