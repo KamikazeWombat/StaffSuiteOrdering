@@ -516,7 +516,11 @@ def department_split(session, default=""):
         else:
             result.append((dept.name, dept.id, False))
     
-    return sorted(result)
+    def dept_sort(dept_tuple):
+        # lets sorting be case insensitive
+        return dept_tuple[0].casefold()
+    
+    return sorted(result, key=dept_sort)
 
 
 class Shift:
