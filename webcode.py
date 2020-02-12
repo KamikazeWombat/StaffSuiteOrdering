@@ -1328,13 +1328,20 @@ class Root:
                     'encoding': "UTF-8",
                     'print-media-type': None
                 }
+                
+                # / in name confuses the pdf creator when it tries to save the file
+                dept_name.replace('/', '-')
+                dept_name.replace('\\', '-')
+
                 if cfg.devenv:  # todo: change this to detect OS instead
                     # for some reason the silly system decided to not find it automatically anymore
                     path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
                     config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
-                    pdfkit.from_string(labels.render(orders=orders,
-                                                     meal=thismeal,
-                                                     dept_name=dept_name),
+                    rendered_labels = labels.render(orders=orders,
+                                                    meal=thismeal,
+                                                    dept_name=dept_name)
+                    
+                    pdfkit.from_string(rendered_labels,
                                        'pdfs\\' + dept_name + '.pdf',
                                        options=options,
                                        configuration=config)
