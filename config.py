@@ -72,7 +72,7 @@ class Config:
                 self.devenv = True
                 break
             elif arg == '-test':
-                filename = 'testserver.json'
+                filename = 'testingserver.json'
                 self.devenv = True
                 break
             elif arg == '-prod':
