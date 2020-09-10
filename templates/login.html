@@ -31,5 +31,13 @@ then modified to my needs-->
 <div class="text-center">
     {{ macros.popup_link(c.EVENT_URL_ROOT+"/static_views/howToStaff.html", "How do I volunteer?") }}
 </div>
-
+{% if c.devenv %}
+    <div class="text-center">
+        Testing server logins:
+        Test Admin, testadmin@example.com, 24502
+        Test Staff, teststaff@example.com, 24502
+        Test User, testuser@example.com, 24502
+        Test Dh, testdh@example.com, 24502
+    </div>
+{% endif %}
 {% endblock content %}
