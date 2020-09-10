@@ -443,26 +443,26 @@ class Root:
                         if not shared_functions.is_admin(cherrypy.session['staffer_id']):
                             session.close()
                             raise HTTPRedirect("staffer_meal_list?message=This isn't your order.")
-                        
-                try:
-                    # todo: can I do exists or something more efficient?
-                    dept_order = session.query(DeptOrder).filter_by(meal_id=save_order,
-                                                                    dept_id=params['department']).one()
-                    dept_order_started = dept_order.started
-                    
-                except sqlalchemy.orm.exc.NoResultFound:
-                    # it's fine if none there, can't be started if it's not created
-                    dept_order_started = False
-                    
-                # todo: do I actually set the locked field anywhere?
-                if dept_order_started or thisorder.locked:
-                    session.close()
-                    raise HTTPRedirect("staffer_meal_list?message=This order has already been started by Staff Suite")
-                    
+                
             except sqlalchemy.orm.exc.NoResultFound:
+                # if no existing order create new order
                 thisorder = Order()
                 thismeal = session.query(Meal).filter_by(id=save_order).one()
                 thisorder.meal = thismeal
+
+            try:
+                dept_order = session.query(DeptOrder).filter_by(meal_id=save_order,
+                                                                dept_id=params['department']).one()
+                dept_order_started = dept_order.started
+
+            except sqlalchemy.orm.exc.NoResultFound:
+                # it's fine if none there, can't be started if it's not created
+                dept_order_started = False
+                
+            if dept_order_started or thisorder.locked:
+                session.close()
+                raise HTTPRedirect("staffer_meal_list?message=Your department's bundle "
+                                   "has already been started by Staff Suite")
 
             hour = relativedelta(hours=1)
             now = datetime.utcnow() + hour
@@ -477,6 +477,7 @@ class Root:
                 if is_dh(cherrypy.session['staffer_id']) or is_admin(cherrypy.session['staffer_id']):
                     # print('is actualy dh or admin')
                     try:
+                        # load attendee from database or Reggie if not already in DB
                         attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
                         thisorder.attendee_id = attend.public_id
                     except sqlalchemy.orm.exc.NoResultFound:
@@ -489,6 +490,7 @@ class Root:
                         thisorder.attendee_id = attend.public_id
                         session.commit()
                 else:
+                    # currently logged in user is not a DH or admin
                     session.close()
                     raise HTTPRedirect('staffer_meal_list?message=You must be DH or admin to use this feature')
             else:
@@ -505,10 +507,12 @@ class Root:
             
             if dh_edit:  # if the order is being created by the DH Edit method, mark overridden so it will be made.
                 thisorder.overridden = True
+                
             if 'dummydata' in params and params['dummydata']:
                 shared_functions.dummy_data(params['dummycount'], thisorder)
             else:
                 session.add(thisorder)
+                
             session.commit()
             session.close()
             
@@ -518,14 +522,7 @@ class Root:
             # load order
             thisorder = session.query(Order).filter_by(id=order_id).one()
             thismeal = thisorder.meal  # session.query(Meal).filter_by(id=thisorder.meal_id).one()
-            hour = relativedelta(hours=1)
-            now = datetime.utcnow() + hour
-            rd = relativedelta(now, thisorder.meal.end_time)
-
-            if rd.minutes > 0 or rd.hours > 0 or rd.days > 0:
-                messages.append('Pickup orders are closed for this meal.')
-                thisorder.locked = True
-                
+            
             if dh_edit:
                 try:
                     attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
@@ -576,7 +573,7 @@ class Root:
                                    c=c)
             
         if meal_id:
-            print('start meal_id')
+            # print('start meal_id')
             # attempt new order from meal_id
             if dh_edit and (is_dh(cherrypy.session['staffer_id']) or is_admin(cherrypy.session['staffer_id'])):
                 try:
@@ -1291,14 +1288,19 @@ class Root:
         session.close()  # this has to be before the order loop below.  don't know why, seems like it should be after.
         
         order_list = list()
+        print('-------------------orders list-------------------')
+        print(orders)
         for order in orders:
             sorted_shifts, response = combine_shifts(order.attendee.badge_num, full=True, no_combine=True)
+            print('-------------------eligibility code starts--------------------')
             if response['result']['is_dept_head']:
                 order.eligible = True
+                print('----------------eligible by being DH----------------')
             else:
                 for dept in response['result']['assigned_depts_labels']:
                     if dept in cfg.exempt_depts:
                         order.eligible = True
+                        print('---------------------------eligible by being in exempt dept-------------------')
                 if not order.eligible:  # checks for exempt dept first, then if not exempt checks shifts
                     order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
             # if not eligible and not overridden, remove from list for display/printing
@@ -1312,6 +1314,7 @@ class Root:
                 order.allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
                                    'freeform': response['result']['food_restrictions']['freeform']}
             if order.eligible or order.overridden:
+                print('------------appending ordering-------------')
                 order_list.append(order)
                 
         orders = order_list
@@ -1320,7 +1323,7 @@ class Root:
             dept_order.start_time = con_tz(dept_order.start_time).strftime(cfg.date_format)
             # generate labels
             if cfg.local_print:
-                labels = env.get_template('print_labels.html')
+                labels = env.get_template('print_labels2.html')
                 options = {
                     'page-height': '2.0in',
                     'page-width': '4.0in',
@@ -1328,16 +1331,25 @@ class Root:
                     'margin-right': '0.0in',
                     'margin-bottom': '0.0in',
                     'margin-left': '0.0in',
-                    'encoding': "UTF-8",
-                    'print-media-type': None
+                    #'encoding': "UTF-8",
+                    #'print-media-type': None,
+                    'dpi': '203'
                 }
+                
+                # / in name confuses the pdf creator when it tries to save the file
+                dept_name.replace('/', '-')
+                dept_name.replace('\\', '-')
+
                 if cfg.devenv:  # todo: change this to detect OS instead
                     # for some reason the silly system decided to not find it automatically anymore
                     path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
                     config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
-                    pdfkit.from_string(labels.render(orders=orders,
-                                                     meal=thismeal,
-                                                     dept_name=dept_name),
+                    
+                    rendered_labels = labels.render(orders=orders,
+                                                    meal=thismeal,
+                                                    dept_name=dept_name)
+                    
+                    pdfkit.from_string(rendered_labels,
                                        'pdfs\\' + dept_name + '.pdf',
                                        options=options,
                                        configuration=config)
@@ -1535,3 +1547,76 @@ class Root:
                                original_location=original_location,
                                session=session_info,
                                c=c)
+
+    @cherrypy.expose
+    @admin_req
+    def create_checkin_csv(self):
+        """
+        creates a .csv file with data from the eat-in checkins
+        """
+        session = models.new_sesh()
+    
+        checkins = session.query(models.checkin.Checkin).all()
+        
+        export = 'Meal ID,Meal Desc,Badge Number,Timestamp\n'
+        for checkin in checkins:
+            if checkin.meal_id:
+                export += str(checkin.meal_id)
+                export += ','
+                export += checkin.meal.description
+            else:
+                export += ','
+                export += 'non-meal period'
+            export += ','
+            export += str(checkin.attendee.badge_num)
+            export += ','
+            export += checkin.timestamp.strftime(cfg.date_format)
+            export += '\n'
+        
+        exportfile = open('checkin_export.csv', 'w')
+        exportfile.write(export)
+        exportfile.close()
+        
+        session.close()
+        raise HTTPRedirect('config?message=Succesfully exported checkins csv')
+
+    @cherrypy.expose
+    @admin_req
+    def create_orders_csv(self):
+        """
+        Creates a .csv file with data from the carryout orders
+        """
+        session = models.new_sesh()
+        start = datetime.utcnow()
+        orders = session.query(models.order.Order).all()
+        export = 'Meal Id,Meal Desc,Department,Badge Number,Overridden,Eligible for Carryout,Notes\n'
+        print('-------------beginning order CSV export-------------')
+        for order in orders:
+            export += str(order.meal_id)
+            export += ','
+            export += order.meal.description
+            export += ','
+            export += order.department.name
+            export += ','
+            export += str(order.attendee.badge_num)
+            export += ','
+            export += str(order.overridden)
+            export += ','
+            shifts = combine_shifts(order.attendee.badge_num, no_combine=True)
+            export += str(shared_functions.carryout_eligible(shifts, order.meal.start_time, order.meal.end_time))
+            export += ','
+            export += order.notes
+            export += '\n'
+        
+        end = datetime.utcnow()
+        rd = relativedelta(start, end)
+        print('-------------done pulling orders--------------')
+        print('minutes ' + str(rd.minutes))
+        print('seconds ' + str(rd.seconds))
+        
+        exportfile = open('order_export.csv', 'w', encoding='utf-8')
+        exportfile.write(export)
+        exportfile.close()
+
+        session.close()
+        raise HTTPRedirect('config?message=succesfully exported orders report')
