@@ -1,5 +1,5 @@
 {
-  "api_endpoint": "https://staging-super.reggie.magfest.org/jsonrpc/",
+  "api_endpoint": "https://staging-west.reggie.magfest.org/jsonrpc/",
   "database_location": "sqlite:///testdb.db",
   "local_print": true,
   "remote_print": false,

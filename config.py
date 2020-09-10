@@ -71,9 +71,15 @@ class Config:
                 filename = 'devconfig.json'
                 self.devenv = True
                 break
-            else:
+            elif arg == '-test':
+                filename = 'testserver.json'
+                self.devenv = True
+                break
+            elif arg == '-prod':
                 self.devenv = False
                 filename = 'config.json'
+            else:
+                filename = 'invalid commandline args.  choices are -dev, -test, and -prod.'
             
         configfile = open(filename, 'r')
         cdata = json.load(configfile)
