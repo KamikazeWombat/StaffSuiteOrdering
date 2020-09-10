@@ -1288,14 +1288,19 @@ class Root:
         session.close()  # this has to be before the order loop below.  don't know why, seems like it should be after.
         
         order_list = list()
+        print('-------------------orders list-------------------')
+        print(orders)
         for order in orders:
             sorted_shifts, response = combine_shifts(order.attendee.badge_num, full=True, no_combine=True)
+            print('-------------------eligibility code starts--------------------')
             if response['result']['is_dept_head']:
                 order.eligible = True
+                print('----------------eligible by being DH----------------')
             else:
                 for dept in response['result']['assigned_depts_labels']:
                     if dept in cfg.exempt_depts:
                         order.eligible = True
+                        print('---------------------------eligible by being in exempt dept-------------------')
                 if not order.eligible:  # checks for exempt dept first, then if not exempt checks shifts
                     order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
             # if not eligible and not overridden, remove from list for display/printing
@@ -1309,6 +1314,7 @@ class Root:
                 order.allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
                                    'freeform': response['result']['food_restrictions']['freeform']}
             if order.eligible or order.overridden:
+                print('------------appending ordering-------------')
                 order_list.append(order)
                 
         orders = order_list
@@ -1317,7 +1323,7 @@ class Root:
             dept_order.start_time = con_tz(dept_order.start_time).strftime(cfg.date_format)
             # generate labels
             if cfg.local_print:
-                labels = env.get_template('print_labels.html')
+                labels = env.get_template('print_labels2.html')
                 options = {
                     'page-height': '2.0in',
                     'page-width': '4.0in',
@@ -1325,8 +1331,9 @@ class Root:
                     'margin-right': '0.0in',
                     'margin-bottom': '0.0in',
                     'margin-left': '0.0in',
-                    'encoding': "UTF-8",
-                    'print-media-type': None
+                    #'encoding': "UTF-8",
+                    #'print-media-type': None,
+                    'dpi': '203'
                 }
                 
                 # / in name confuses the pdf creator when it tries to save the file
@@ -1337,6 +1344,7 @@ class Root:
                     # for some reason the silly system decided to not find it automatically anymore
                     path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
                     config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+                    
                     rendered_labels = labels.render(orders=orders,
                                                     meal=thismeal,
                                                     dept_name=dept_name)
