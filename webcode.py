@@ -145,7 +145,7 @@ class Root:
                 session.close()
 
                 raise HTTPRedirect(original_location)
-        
+
         template = env.get_template('login.html')
         return template.render(messages=messages,
                                first_name=first_name,
@@ -153,7 +153,8 @@ class Root:
                                email=email,
                                zip_code=zip_code,
                                original_location=original_location,
-                               c=c)
+                               c=c,
+                               isdev=cfg.devenv)
 
     @cherrypy.expose
     @admin_req
