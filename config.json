@@ -1,5 +1,7 @@
 {
   "api_endpoint": "https://super2020.reggie.magfest.org/jsonrpc/",
+  "uber_key_location": "./secure/uber_auth_2022.key",
+  "slack_key_location": "./secure/slack_api.key",
   "database_location": "sqlite:///livedb.db",
   "local_print": true,
   "remote_print": false,
