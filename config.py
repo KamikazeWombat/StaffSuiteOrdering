@@ -45,7 +45,7 @@ class Config:
             manager = manager.strip()
             self.food_managers.append(manager)
         
-        deptfile = open('exempt_depts.cfg', 'r')
+        deptfile = open('eligibility_exempt_depts.cfg', 'r')
         depts = deptfile.read()
         deptfile.close()
         dept_list = depts.split(',')
@@ -56,15 +56,6 @@ class Config:
     
     def __init__(self):
         # read in config from files.  todo: have system skip things that are not yet defined.  in particular, API key
-        uber_authfile = open('uber_auth.cfg', 'r')
-        self.uber_authkey = uber_authfile.read()
-        self.uber_authkey = self.uber_authkey.strip()
-        uber_authfile.close()
-
-        slack_authfile = open('slack_auth.cfg', 'r')
-        self.slack_authkey = slack_authfile.read()
-        self.slack_authkey = self.slack_authkey.strip()
-        slack_authfile.close()
         
         for arg in argv:
             if arg == '-dev':
@@ -80,6 +71,7 @@ class Config:
                 filename = 'config.json'
             else:
                 filename = 'invalid commandline args.  choices are -dev, -test, and -prod.'
+
             
         configfile = open(filename, 'r')
         cdata = json.load(configfile)
@@ -92,6 +84,8 @@ class Config:
         self.load_user_lists()
         
         self.api_endpoint = cdata['api_endpoint']
+        self.uber_key_location = cdata['uber_key_location']
+        self.slack_key_location = cdata['slack_key_location']
         self.database_location = cdata['database_location']
         self.local_print = int(cdata['local_print'])
         self.remote_print = int(cdata['remote_print'])
@@ -102,6 +96,16 @@ class Config:
         self.ss_hours = int(cdata['ss_hours'])
         self.cherrypy = cdata['cherrypy']
         self.cherrypy['/']['tools.staticdir.root'] = os.path.abspath(os.getcwd())
+        print(self.uber_key_location)
+        uber_authfile = open(self.uber_key_location, 'r')
+        self.uber_authkey = uber_authfile.read()
+        self.uber_authkey = self.uber_authkey.strip()
+        uber_authfile.close()
+
+        slack_authfile = open(self.slack_key_location, 'r')
+        self.slack_authkey = slack_authfile.read()
+        self.slack_authkey = self.slack_authkey.strip()
+        slack_authfile.close()
 
     def orders_open(self):
         now = datetime.now()
@@ -117,6 +121,8 @@ class Config:
     def save(self, admin_list, staffer_list, exempt_depts, manager_list):
         cdata = {
             'api_endpoint': self.api_endpoint,
+            'uber_key_location': self.uber_key_location,
+            'slack_key_location': self.slack_key_location,
             'database_location': self.database_location,
             'local_print': self.local_print,
             'remote_print': self.remote_print,
@@ -186,15 +192,17 @@ class Uberconfig:
         EPOCH = parse(EPOCH)
         EPOCH = self.EVENT_TIMEZONE.localize(EPOCH)
         self.EPOCH = EPOCH.astimezone(pytz.utc)
-    
-    
+
+
+# Config info pulled from Uber
 c = Uberconfig()
 
+# environment used by Jinja
 env = Environment(
         loader=FileSystemLoader('templates'),
         autoescape=True,
         lstrip_blocks=True,
         trim_blocks=True
     )
-
+# shared base for database items
 dec_base = declarative_base()

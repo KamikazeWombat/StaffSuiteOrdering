@@ -1,5 +1,7 @@
 {
-  "api_endpoint": "https://staging-west.reggie.magfest.org/jsonrpc/",
+  "api_endpoint": "https://staging-super.reggie.magfest.org/jsonrpc/",
+  "uber_key_location": "./secure/uber_auth_2022.key",
+  "slack_key_location": "./secure/slack_api.key",
   "database_location": "sqlite:///testdb.db",
   "local_print": true,
   "remote_print": false,
