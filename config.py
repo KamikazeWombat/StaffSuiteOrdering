@@ -55,7 +55,7 @@ class Config:
             self.exempt_depts.append(dept)
     
     def __init__(self):
-        # read in config from files.  todo: have system skip things that are not yet defined.  in particular, API key
+        # read in config from files.  todo: have system skip things that are not yet defined.  in particular, API keys
         
         for arg in argv:
             if arg == '-dev':
@@ -108,6 +108,9 @@ class Config:
         slack_authfile.close()
 
     def orders_open(self):
+        """
+        Returns if orders open yet for attendees, based on official start time for event in Uber
+        """
         now = datetime.now()
         now = now.replace(tzinfo=tzlocal())  # sets timezone info to server local TZ
         now = now.astimezone(pytz.utc)  # converts time from local TZ to UTC
@@ -163,27 +166,18 @@ cfg = Config()
 
 class Uberconfig:
     """
-    Class to make relevant config data from Uber easily accessible
+    Class to load relevant config data from Uber and make easily accessible
     """
     def __init__(self):
-        # runs API request
         REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
-        # data being sent to API
         request_data = {'method': 'config.info'}
         request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
-        # print("------printing request before json load")
-        # print(request.text)
         response = json.loads(request.text)
         
-        try:
-            response = response['error']
-            print("error in response")
+        if 'error' in response:
+            print("----------Error loading config from Uber----------")
             print(response)
-        except KeyError:
-            response = response['result']
-            # print("no error in response")
-            # print(response)
-        
+
         self.EVENT_NAME = response['EVENT_NAME']
         self.EVENT_URL_ROOT = response['URL_ROOT']
         self.EVENT_TIMEZONE = pytz.timezone(response['EVENT_TIMEZONE'])
@@ -191,18 +185,20 @@ class Uberconfig:
         EPOCH = response['EPOCH']
         EPOCH = parse(EPOCH)
         EPOCH = self.EVENT_TIMEZONE.localize(EPOCH)
+        # Uber returns EPOCH in local TZ for event, I want to store all dates as UTC
         self.EPOCH = EPOCH.astimezone(pytz.utc)
 
 
 # Config info pulled from Uber
 c = Uberconfig()
 
-# environment used by Jinja
+# environment setup used by Jinja
 env = Environment(
         loader=FileSystemLoader('templates'),
         autoescape=True,
         lstrip_blocks=True,
         trim_blocks=True
     )
-# shared base for database items
+
+# shared base for database models
 dec_base = declarative_base()

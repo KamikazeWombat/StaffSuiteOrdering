@@ -9,18 +9,18 @@
     <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
     <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
     <p>Slack Channel: <textarea name="slack_channel" cols="50" rows="1"
-              placeholder="Where to send the message"
+              placeholder="Where to send the Slack message"
       {% if dept_order.completed %} disabled {% endif %}
-    >{{ dept_order.slack_channel }}</textarea><br/>What channel or DM to post in, eg 'staffsuiteordering, #bottesting, @wombat3</p>
+    >{{ dept_order.slack_channel }}</textarea><br/>Would you like us to post in a channel or DM, e.g. staffsuiteordering, #bottesting, @wombat3</p>
     <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"
               placeholder="Who to ping in Slack?"
       {% if dept_order.completed %} disabled {% endif %}
-    >{{ dept_order.slack_contact }}</textarea><br/>Who to ping in Slack?</p>
+    >{{ dept_order.slack_contact }}</textarea><br/>Should we ping anyone in Slack?</p>
     <p>Other Contact: <textarea name="other_contact" cols="50" rows="6"
                      placeholder="How you else would like to be contacted for order pickup.  Text, email, phone call..."
       {% if dept_order.completed %} disabled {% endif %}
     >{{ dept_order.other_contact }}</textarea></p>
-    <p>The above contact info is for meal order bundle completion for this department, for only this meal!</p>
+    <p>The above contact info is for meal order bundle completion for this department, for only this meal.  </p>
     <button style="width:3.25in;" class="btn btn-lg btn-primary btn-block" type="submit">Update Department's Contact Info</button>
   </form>
   <a style="width:5in;" class="btn btn-lg btn-primary btn-block" href="dept_contact?dept_id={{ dept_order.dept_id }}&original_location=dept_order%3Fmeal_id%3D{{ dept_order.meal_id }}%26dept_id%3D{{ dept_order.dept_id }}">Edit default contact info for {{ dept.name }}</a>

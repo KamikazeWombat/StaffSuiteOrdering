@@ -3,3 +3,5 @@ config.json
 admin_list.cfg
 ss_staffer_list.cfg
 slack_auth.cfg
+secure/
+.idea/
