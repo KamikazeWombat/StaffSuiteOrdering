@@ -18,42 +18,54 @@ class Config:
     """
     
     def load_user_lists(self):
-        adminfile = open('admin_list.cfg', 'r')
-        admins = adminfile.read()
-        adminfile.close()
-        admin_list = admins.split(',')
         self.admin_list = list()
-        for admin in admin_list:
-            admin = admin.strip()
-            self.admin_list.append(admin)
-    
-        ssfile = open('ss_staffer_list.cfg', 'r')
-        staffers = ssfile.read()
-        ssfile.close()
-        staffer_list = staffers.split(',')
+        try:
+            adminfile = open('admin_list.cfg', 'r')
+            admins = adminfile.read()
+            adminfile.close()
+            admin_list = admins.split(',')
+            for admin in admin_list:
+                admin = admin.strip()
+                self.admin_list.append(admin)
+        except FileNotFoundError:
+            pass
+
         self.staffer_list = list()
-        for staffer in staffer_list:
-            staffer = staffer.strip()
-            self.staffer_list.append(staffer)
-            
-        managerfile = open('food_managers.cfg', 'r')
-        managers = managerfile.read()
-        managerfile.close()
-        manager_list = managers.split(',')
+        try:
+            ssfile = open('ss_staffer_list.cfg', 'r')
+            staffers = ssfile.read()
+            ssfile.close()
+            staffer_list = staffers.split(',')
+            for staffer in staffer_list:
+                staffer = staffer.strip()
+                self.staffer_list.append(staffer)
+        except FileNotFoundError:
+            pass
+
         self.food_managers = list()
-        for manager in manager_list:
-            manager = manager.strip()
-            self.food_managers.append(manager)
-        
-        deptfile = open('eligibility_exempt_depts.cfg', 'r')
-        depts = deptfile.read()
-        deptfile.close()
-        dept_list = depts.split(',')
+        try:
+            managerfile = open('food_managers.cfg', 'r')
+            managers = managerfile.read()
+            managerfile.close()
+            manager_list = managers.split(',')
+            for manager in manager_list:
+                manager = manager.strip()
+                self.food_managers.append(manager)
+        except FileNotFoundError:
+            pass
+
         self.exempt_depts = list()
-        for dept in dept_list:
-            dept = dept.strip()
-            self.exempt_depts.append(dept)
-    
+        try:
+            deptfile = open('eligibility_exempt_depts.cfg', 'r')
+            depts = deptfile.read()
+            deptfile.close()
+            dept_list = depts.split(',')
+            for dept in dept_list:
+                dept = dept.strip()
+                self.exempt_depts.append(dept)
+        except FileNotFoundError:
+            pass
+
     def __init__(self):
         # read in config from files.  todo: have system skip things that are not yet defined.  in particular, API keys
         
@@ -71,7 +83,6 @@ class Config:
                 filename = 'config.json'
             else:
                 filename = 'invalid commandline args.  choices are -dev, -test, and -prod.'
-
             
         configfile = open(filename, 'r')
         cdata = json.load(configfile)
@@ -178,6 +189,7 @@ class Uberconfig:
             print("----------Error loading config from Uber----------")
             print(response)
 
+        response = response['result']
         self.EVENT_NAME = response['EVENT_NAME']
         self.EVENT_URL_ROOT = response['URL_ROOT']
         self.EVENT_TIMEZONE = pytz.timezone(response['EVENT_TIMEZONE'])
