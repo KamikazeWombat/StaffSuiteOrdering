@@ -830,3 +830,13 @@ def load_contact_details(dept_order, dept, params):
         dept_order.other_contact = dept.other_contact
 
     return dept_order
+
+
+def get_session_info():
+    session = {
+        'is_dh': cherrypy.session['is_dh'],
+        'is_admin': cherrypy.session['is_admin'],
+        'is_ss_staffer': cherrypy.session['is_ss_staffer'],
+        'is_food_manager': cherrypy.session['is_food_manager']
+    }
+    return session

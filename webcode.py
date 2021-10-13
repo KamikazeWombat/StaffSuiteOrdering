@@ -26,7 +26,8 @@ import shared_functions
 from shared_functions import api_login, HTTPRedirect, order_split, order_selections, allergy_info, \
                      meal_join, meal_split, meal_blank_toppings, department_split, create_dept_order, \
                      ss_eligible, carryout_eligible, combine_shifts, return_selected_only, \
-                     con_tz, utc_tz, now_utc, now_contz, is_admin, is_ss_staffer, is_dh, return_not_selected
+                     con_tz, utc_tz, now_utc, now_contz, is_admin, is_ss_staffer, is_dh, return_not_selected, \
+                     get_session_info
 import slack_bot
 
 
@@ -170,11 +171,7 @@ class Root:
         for meal in meallist:
             meal.start_time = con_tz(meal.start_time)
 
-        session_info = {
-            'is_dh': cherrypy.session['is_dh'],
-            'is_admin': cherrypy.session['is_admin'],
-            'is_ss_staffer': cherrypy.session['is_ss_staffer']
-        }
+        session_info = get_session_info()
         
         template = env.get_template('meal_setup_list.html')
         return template.render(messages=messages,
@@ -196,11 +193,7 @@ class Root:
 
         template = env.get_template("dinein_checkin.html")
 
-        session_info = {
-            'is_dh': cherrypy.session['is_dh'],
-            'is_admin': cherrypy.session['is_admin'],
-            'is_ss_staffer': cherrypy.session['is_ss_staffer']
-        }
+        session_info = get_session_info()
 
         return template.render(current_meal=current_meal, c=c, session=session_info)
 
@@ -217,16 +210,12 @@ class Root:
             
         if not badge:
             return json.dumps({"success": False, "badge": badge, "reason": "Could not locate badge."})
-        
-        #if not meal_id:
-         #   return json.dumps({"success": False, "badge": badge, "reason": ""})
-        
+
         session = models.new_sesh()
+        # meal_id would be blank if checking attendee in for self-serve food outside an offical meal period
+        # this is fine, skips checking for a pickup order and leaves meal detail blank in log
         meal = session.query(Meal).filter(Meal.id == meal_id).one_or_none()
-        #if not meal:
-        #    session.close()
-        #    return json.dumps({"success": False, "badge": badge, "reason": "Could not find meal {}.".format(meal_id)})
-        
+
         try:
             attend = session.query(Attendee).filter_by(badge_num=badge).one()
             #
@@ -376,11 +365,7 @@ class Root:
             toggles2 = meal_blank_toppings([], cfg.radio_select_count)
             toggles3 = meal_blank_toppings([], cfg.radio_select_count)
 
-        session_info = {
-            'is_dh': cherrypy.session['is_dh'],
-            'is_admin': cherrypy.session['is_admin'],
-            'is_ss_staffer': cherrypy.session['is_ss_staffer']
-        }
+        session_info = get_session_info()
         
         template = env.get_template("meal_edit.html")
         return template.render(meal=thismeal,
@@ -668,11 +653,7 @@ class Root:
     def order_delete_confirm(self, order_id='', confirm=False):
         session = models.new_sesh()
         
-        session_info = {
-            'is_dh': cherrypy.session['is_dh'],
-            'is_admin': cherrypy.session['is_admin'],
-            'is_ss_staffer': cherrypy.session['is_ss_staffer']
-        }
+        session_info = get_session_info()
         
         thisorder = session.query(Order).filter_by(id=order_id).one()
         
@@ -701,11 +682,7 @@ class Root:
         #       Also change system to disable meal instead of physically deleting it so they can be recovered
         
         session = models.new_sesh()
-        session_info = {
-            'is_dh': cherrypy.session['is_dh'],
-            'is_admin': cherrypy.session['is_admin'],
-            'is_ss_staffer': cherrypy.session['is_ss_staffer']
-        }
+        session_info = get_session_info()
         
         thismeal = session.query(Meal).filter_by(id=meal_id).one()
     
@@ -736,11 +713,7 @@ class Root:
         """
         # todo: display some information about order status for available meals
 
-        session_info = {
-            'is_dh': cherrypy.session['is_dh'],
-            'is_admin': cherrypy.session['is_admin'],
-            'is_ss_staffer': cherrypy.session['is_ss_staffer']
-        }
+        session_info = get_session_info()
         
         messages = []
         if message:
@@ -839,11 +812,7 @@ class Root:
             text = message
             messages.append(text)
 
-        session_info = {
-            'is_dh': cherrypy.session['is_dh'],
-            'is_admin': cherrypy.session['is_admin'],
-            'is_ss_staffer': cherrypy.session['is_ss_staffer']
-        }
+        session_info = get_session_info()
         
         if delete_order:
             session = models.new_sesh()
@@ -957,11 +926,7 @@ class Root:
             text = message
             messages.append(text)
 
-        session_info = {
-            'is_dh': cherrypy.session['is_dh'],
-            'is_admin': cherrypy.session['is_admin'],
-            'is_ss_staffer': cherrypy.session['is_ss_staffer']
-        }
+        session_info = get_session_info()
         
         # meal_id would be present if Select button is clicked, sends to selected dept_order
         if 'meal_id' in params:
@@ -1004,12 +969,7 @@ class Root:
             text = message
             messages.append(text)
 
-        session_info = {
-            'is_dh': cherrypy.session['is_dh'],
-            'is_admin': cherrypy.session['is_admin'],
-            'is_ss_staffer': cherrypy.session['is_ss_staffer'],
-            'is_food_manager': cherrypy.session['is_food_manager']
-        }
+        session_info = get_session_info()
 
         # editing a user's order
         if 'order_badge' in params:
@@ -1144,11 +1104,7 @@ class Root:
         Displays list of Meals to be fulfilled
         """
         
-        session_info = {
-            'is_dh': cherrypy.session['is_dh'],
-            'is_admin': cherrypy.session['is_admin'],
-            'is_ss_staffer': cherrypy.session['is_ss_staffer']
-        }
+        session_info = get_session_info()
         
         session = models.new_sesh()
         
@@ -1190,11 +1146,7 @@ class Root:
         Fulfilment staff can select a department to view order details.
         """
         
-        session_info = {
-            'is_dh': cherrypy.session['is_dh'],
-            'is_admin': cherrypy.session['is_admin'],
-            'is_ss_staffer': cherrypy.session['is_ss_staffer']
-        }
+        session_info = get_session_info()
         
         session = models.new_sesh()
         
@@ -1242,11 +1194,7 @@ class Root:
         Button to mark department order complete - notifies departments it's ready for pickup
         """
         
-        session_info = {
-            'is_dh': cherrypy.session['is_dh'],
-            'is_admin': cherrypy.session['is_admin'],
-            'is_ss_staffer': cherrypy.session['is_ss_staffer']
-        }
+        session_info = get_session_info()
 
         messages = []
         if message:
@@ -1446,11 +1394,7 @@ class Root:
         :return:
         """
 
-        session_info = {
-            'is_dh': cherrypy.session['is_dh'],
-            'is_admin': cherrypy.session['is_admin'],
-            'is_ss_staffer': cherrypy.session['is_ss_staffer']
-        }
+        session_info = get_session_info()
 
         session = models.new_sesh()
         dept_order = session.query(DeptOrder).filter_by(id=dept_order_id).one()
@@ -1487,11 +1431,7 @@ class Root:
         :return:
         """
         
-        session_info = {
-            'is_dh': cherrypy.session['is_dh'],
-            'is_admin': cherrypy.session['is_admin'],
-            'is_ss_staffer': cherrypy.session['is_ss_staffer']
-        }
+        session_info = get_session_info()
 
         original_location = shared_functions.create_valid_user_supplied_redirect_url(original_location,
                                                                                      default_url='staffer_meal_list')
