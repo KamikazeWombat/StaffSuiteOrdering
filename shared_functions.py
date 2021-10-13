@@ -751,7 +751,7 @@ def create_dept_order(dept_id, meal_id, session):
     dept_order.slack_contact = dept.slack_contact
     dept_order.slack_channel = dept.slack_channel
     dept_order.other_contact = dept.other_contact
-    dept_order.text_contact = dept.text_contact
+    dept_order.sms_contact = dept.sms_contact
     dept_order.email_contact = dept.email_contact
     
     session.add(dept_order)

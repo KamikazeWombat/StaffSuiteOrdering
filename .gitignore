@@ -7,3 +7,4 @@ slack_auth.cfg
 secure/
 .idea/
 pdfs/
+*.db

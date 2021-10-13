@@ -1001,7 +1001,7 @@ class Root:
         # DH will be able to skip, but every time the come back to the Dept Order page it will redirect again.
         # hopefully this will result in people filling this out with useful info rather than putting trash.
         if not skip_contact:
-            if not dept.slack_channel and not dept.slack_contact and not dept.other_contact and not dept.text_contact \
+            if not dept.slack_channel and not dept.slack_contact and not dept.other_contact and not dept.sms_contact \
                     and not dept.email_contact:
                 session.close()
                 raise HTTPRedirect('dept_contact?dept_id=' + str(dept_id) +
@@ -1024,7 +1024,7 @@ class Root:
             thismeal = session.query(Meal).filter_by(id=meal_id).one()
             dept = session.query(Department).filter_by(id=dept_id).one()
         
-        if 'other_contact' in params or 'slack_channel' in params or 'text_contact' in params or 'email_contact' in params:
+        if 'other_contact' in params or 'slack_channel' in params or 'sms_contact' in params or 'email_contact' in params:
             # save changes to dept_order
             this_dept_order = shared_functions.load_contact_details(this_dept_order, dept, params)
             
@@ -1403,7 +1403,7 @@ class Root:
             # save record
             dept_order.slack_contact = params['slack_contact']
             dept_order.slack_channel = params['slack_channel']
-            #dept_order.text_contact = params['text_contact']
+            #dept_order.sms_contact = params['sms_contact']
             #dept_order.email_contact = params['email_contact']
             dept_order.other_contact = params['other_contact']
             session.commit()
@@ -1426,7 +1426,7 @@ class Root:
     def dept_contact(self, dept_id, original_location=None, **params):
         """
         Displays and allows updating of Department's default contact info
-        :param dept_order_id:
+        :param dept_id:
         :param original_location:
         :return:
         """
@@ -1442,19 +1442,19 @@ class Root:
             # save record
             dept.slack_contact = params['slack_contact']
             dept.slack_channel = params['slack_channel']
-            #dept.text_contact = params['text_contact']
+            #dept.sms_contact = params['sms_contact']
             #dept.email_contact = params['email_contact']
             dept.other_contact = params['other_contact']
 
             dept_orders = session.query(DeptOrder).filter_by(dept_id=dept_id).all()
             for do in dept_orders:
                 # finds dept orders with blank contact info and fills their default contact info
-                if not do.slack_channel and not do.slack_contact and not do.other_contact and not do.text_contact \
+                if not do.slack_channel and not do.slack_contact and not do.other_contact and not do.sms_contact \
                         and not do.email_contact:
                     do.slack_contact = dept.slack_contact
                     do.slack_channel = dept.slack_channel
                     do.other_contact = dept.other_contact
-                    #do.text_contact = dept.text_contact
+                    #do.sms_contact = dept.sms_contact
                     #do.email_contact = dept.email_contact
             
             session.commit()
