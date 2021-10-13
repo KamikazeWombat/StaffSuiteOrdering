@@ -67,8 +67,9 @@ class Config:
             pass
 
     def __init__(self):
-        # read in config from files.  todo: have system skip things that are not yet defined.  in particular, API keys
-        
+        """
+        Load in config files and API keys (if files exist)
+        """
         for arg in argv:
             if arg == '-dev':
                 filename = 'devconfig.json'
@@ -107,16 +108,20 @@ class Config:
         self.ss_hours = int(cdata['ss_hours'])
         self.cherrypy = cdata['cherrypy']
         self.cherrypy['/']['tools.staticdir.root'] = os.path.abspath(os.getcwd())
-        print(self.uber_key_location)
+
+        # Uber auth key is needed for login, so no skipping if file does not exist.  Others can be added later
         uber_authfile = open(self.uber_key_location, 'r')
         self.uber_authkey = uber_authfile.read()
         self.uber_authkey = self.uber_authkey.strip()
         uber_authfile.close()
 
-        slack_authfile = open(self.slack_key_location, 'r')
-        self.slack_authkey = slack_authfile.read()
-        self.slack_authkey = self.slack_authkey.strip()
-        slack_authfile.close()
+        try:
+            slack_authfile = open(self.slack_key_location, 'r')
+            self.slack_authkey = slack_authfile.read()
+            self.slack_authkey = self.slack_authkey.strip()
+            slack_authfile.close()
+        except FileNotFoundError:
+            pass
 
     def orders_open(self):
         """
