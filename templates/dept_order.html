@@ -4,7 +4,7 @@
 {% block content %}
 
 <div class="container">
-  <h2 class="form-signin-heading">View/Edit Department Order for {{ meal.meal_name }} for {{ dept.name }}</h2>
+  <h2 class="form-signin-heading">View/Edit Department Order Bundle for {{ meal.meal_name }} for {{ dept.name }}</h2>
   <form role="form">
     <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
     <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
@@ -58,6 +58,8 @@
   {% if dept_order.completed %}<br/><h3 style="color:darkgreen;">Meal Prep Completed: {{ dept_order.completed_time }} </h3>{% endif %}
   
   <h3>Orders for this department's Bundle:</h3>
+  Orders labeled Not Eligible will not be made unless Overriden by a DH or Food Manager.
+  Nothing can be changed once meal prep has started for you department's order bundle.
   {% for order in orders %}
     <form role="form">
       <table>

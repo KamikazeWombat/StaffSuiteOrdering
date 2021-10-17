@@ -961,9 +961,7 @@ class Root:
         Can create new orders for specified badge number
         Will disable all these features once the dept order is started
         """
-        # todo: needs to check if the dept_order for selected meal time and department is marked started
-        # todo: if started needs to put notice at top that it is started.  if completed, same.
-        
+
         messages = []
         if message:
             text = message
@@ -1043,13 +1041,12 @@ class Root:
             thismeal = session.query(Meal).filter_by(id=meal_id).one()
             this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
             
-            messages.append('Department order contact info successfully updated.')
+            messages.append('Department order bundle contact info successfully updated.')
 
         order_list = session.query(Order).filter_by(meal_id=meal_id, department_id=dept_id).options(
             subqueryload(Order.attendee)).all()
-        # todo: check each order to see if the attendee is eligible for this meal, highlight in html if not
+
         for order in order_list:
-            # print("checking meal")
             sorted_shifts = combine_shifts(order.attendee.badge_num, no_combine=True)
             if is_dh(order.attendee_id):
                 order.eligible = True
@@ -1062,7 +1059,9 @@ class Root:
         thismeal.start_time = con_tz(thismeal.start_time)
         thismeal.end_time = con_tz(thismeal.end_time)
         thismeal.cutoff = con_tz(thismeal.cutoff)
-        
+
+        departments = department_split(session, dept_id)
+
         session.close()
         
         if this_dept_order.started:
@@ -1070,8 +1069,6 @@ class Root:
         if this_dept_order.completed:
             this_dept_order.completed_time = con_tz(this_dept_order.completed_time).strftime(cfg.date_format)
 
-        departments = department_split(session, dept_id)
-            
         template = env.get_template('dept_order.html')
         return template.render(dept=dept,
                                orders=order_list,
