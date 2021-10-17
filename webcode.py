@@ -1430,14 +1430,16 @@ class Root:
     
     @dh_or_staffer
     @cherrypy.expose
-    def dept_contact(self, dept_id, original_location=None, **params):
+    def dept_contact(self, dept_id, message="", original_location=None, **params):
         """
         Displays and allows updating of Department's default contact info
-        :param dept_id:
-        :param original_location:
-        :return:
         """
-        
+
+        messages = []
+        if message:
+            text = message
+            messages.append(text)
+
         session_info = get_session_info()
 
         original_location = shared_functions.create_valid_user_supplied_redirect_url(original_location,
@@ -1461,6 +1463,7 @@ class Root:
         template = env.get_template('dept_contact.html')
         return template.render(dept=dept,
                                original_location=original_location,
+                               messages=messages,
                                session=session_info,
                                c=c)
 
