@@ -1006,7 +1006,7 @@ class Root:
                 session.close()
                 raise HTTPRedirect('dept_contact?dept_id=' + str(dept_id) +
                                    '&message=Please add default contact info for your department.  '
-                                   'This will be prefilled when opening meal bundles for your department. '
+                                   'This will be used if no other info is provided for meal bundles for your department'
                                    '&original_location=dept_order%3Fdept_id%3D' +
                                    str(dept_id) + '%26meal_id%3D' + str(meal_id))
         
