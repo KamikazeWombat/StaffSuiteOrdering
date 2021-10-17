@@ -812,27 +812,34 @@ def dummy_data(count, startorder):
     return
 
 
-def load_contact_details(dept_order, dept, params):
+def load_d_o_contact_details(dept_order, dept):
     """
-    If contact field is blank, use default configured for overall department instead.  Perhaps default is not blank.
+    Returns best available contact details for the provided department order bundle
     """
-    if 'slack_channel' in params:
-        dept_order.slack_channel = params['slack_channel']
-    else:
-        dept_order.slack_channel = dept.slack_channel
-    if 'slack_contact' in params:
-        dept_order.slack_contact = params['slack_contact']
-    else:
-        dept_order.slack_contact = dept.slack_contact
-    if 'other_contact' in params:
-        dept_order.other_contact = params['other_contact']
-    else:
-        dept_order.other_contact = dept.other_contact
+    contact_details = models.department.Department()
 
-    return dept_order
-
-
+    # if someone has edited the contact details for this order bundle, use that.  otherwise use department defaults
+    if dept_order.slack_contact or dept_order.slack_channel or dept_order.sms_contact or dept_order.other_contact or \
+            dept_order.email_contact:
+        contact_details.slack_contact = dept_order.slack_contact
+        contact_details.slack_channel = dept_order.slack_channel
+        contact_details.email_contact = dept_order.email_contact
+        contact_details.sms_contact = dept_order.sms_contact
+        contact_details.other_contact = dept_order.other_contact
+    else:
+        contact_details.slack_contact = dept.slack_contact
+        contact_details.slack_channel = dept.slack_channel
+        contact_details.email_contact = dept.email_contact
+        contact_details.sms_contact = dept.sms_contact
+        contact_details.other_contact = dept.other_contact
+    
+    return contact_details
+    
+    
 def get_session_info():
+    """
+    Loads session info for use with Jinja templates
+    """
     session = {
         'is_dh': cherrypy.session['is_dh'],
         'is_admin': cherrypy.session['is_admin'],

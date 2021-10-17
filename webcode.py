@@ -998,7 +998,7 @@ class Root:
         dept = session.query(Department).filter_by(id=dept_id).one()
         
         # send DH to page for setting default contact info.
-        # DH will be able to skip, but every time the come back to the Dept Order page it will redirect again.
+        # DH will be able to skip, but every time they come back to the Dept Order page it will redirect again.
         # hopefully this will result in people filling this out with useful info rather than putting trash.
         if not skip_contact:
             if not dept.slack_channel and not dept.slack_contact and not dept.other_contact and not dept.sms_contact \
@@ -1026,8 +1026,17 @@ class Root:
         
         if 'other_contact' in params or 'slack_channel' in params or 'sms_contact' in params or 'email_contact' in params:
             # save changes to dept_order
-            this_dept_order = shared_functions.load_contact_details(this_dept_order, dept, params)
-            
+            if 'slack_channel' in params:
+                this_dept_order.slack_channel = params['slack_channel']
+            if 'slack_contact' in params:
+                this_dept_order.slack_contact = params['slack_contact']
+            if 'email_contact' in params:
+                this_dept_order.email_contact = params['email_contact']
+            if 'sms_contact' in params:
+                this_dept_order.sms_contact = params['sms_contact']
+            if 'other_contact' in params:
+                this_dept_order.other_contact = params['other_contact']
+
             session.commit()
             # reload these items since commit flushes them
             dept = session.query(Department).filter_by(id=dept_id).one()
@@ -1352,8 +1361,8 @@ class Root:
             dept_order.completed = True
             dept_order.completed_time = now_utc()
             dept = session.query(Department).filter_by(id=dept_id).one()
-            
-            if dept_order.slack_channel:
+            contact_details = shared_functions.load_d_o_contact_details(dept_order, dept)
+            if contact_details.slack_channel:
                 message = 'Your food order bundle for ' + dept.name + ' ' \
                           'is ready, please pickup from Staff Suite.  ' + now_contz().strftime(cfg.date_format) + \
                           '  ' + dept_order.slack_contact
@@ -1398,11 +1407,12 @@ class Root:
 
         session = models.new_sesh()
         dept_order = session.query(DeptOrder).filter_by(id=dept_order_id).one()
-        
+
         if 'slack_channel' in params:
             # save record
             dept_order.slack_contact = params['slack_contact']
             dept_order.slack_channel = params['slack_channel']
+            # todo: add sms and email to html then uncomment below
             #dept_order.sms_contact = params['sms_contact']
             #dept_order.email_contact = params['email_contact']
             dept_order.other_contact = params['other_contact']
@@ -1445,17 +1455,6 @@ class Root:
             #dept.sms_contact = params['sms_contact']
             #dept.email_contact = params['email_contact']
             dept.other_contact = params['other_contact']
-
-            dept_orders = session.query(DeptOrder).filter_by(dept_id=dept_id).all()
-            for do in dept_orders:
-                # finds dept orders with blank contact info and fills their default contact info
-                if not do.slack_channel and not do.slack_contact and not do.other_contact and not do.sms_contact \
-                        and not do.email_contact:
-                    do.slack_contact = dept.slack_contact
-                    do.slack_channel = dept.slack_channel
-                    do.other_contact = dept.other_contact
-                    #do.sms_contact = dept.sms_contact
-                    #do.email_contact = dept.email_contact
             
             session.commit()
             session.close()
