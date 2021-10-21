@@ -13,6 +13,7 @@ import pytz
 import sqlalchemy.orm.exc
 from sqlalchemy.orm import joinedload, subqueryload
 
+import aws_bot
 from config import env, cfg, c
 from decorators import *
 import models
@@ -29,6 +30,7 @@ from shared_functions import api_login, HTTPRedirect, order_split, order_selecti
                      con_tz, utc_tz, now_utc, now_contz, is_admin, is_ss_staffer, is_dh, return_not_selected, \
                      get_session_info
 import slack_bot
+import twilio_bot
 
 
 class Root:
@@ -1364,12 +1366,26 @@ class Root:
             dept_order.completed = True
             dept_order.completed_time = now_utc()
             dept = session.query(Department).filter_by(id=dept_id).one()
+            meal = session.query(Meal).filter_by(id=meal_id).one()
             contact_details = shared_functions.load_d_o_contact_details(dept_order, dept)
+
             if contact_details.slack_channel:
                 message = 'Your food order bundle for ' + dept.name + ' ' \
                           'is ready, please pickup from Staff Suite.  ' + now_contz().strftime(cfg.date_format) + \
                           '  ' + dept_order.slack_contact
                 slack_bot.send_message(dept_order.slack_channel, message)
+
+            if contact_details.email_contact:
+                emails1 = contact_details.email_contact.split(',')
+                emails = []
+                for email1 in emails1:
+                    # in case someone puts semicolons out of habit puts semicolons to separate emails
+                    emailsplit = email1.split(';')
+                    for email in emailsplit:
+                        emails.append(email)
+
+                for email in emails:
+                    aws_bot.send_message(email, dept.name, meal.meal_name)
                 
             orders = session.query(Order).filter_by(department_id=dept_order.dept_id, meal_id=dept_order.meal_id) \
                 .options(subqueryload(Order.attendee)).all()
@@ -1417,7 +1433,7 @@ class Root:
             dept_order.slack_channel = params['slack_channel']
             # todo: add sms and email to html then uncomment below
             #dept_order.sms_contact = params['sms_contact']
-            #dept_order.email_contact = params['email_contact']
+            dept_order.email_contact = params['email_contact']
             dept_order.other_contact = params['other_contact']
             session.commit()
             session.close()
@@ -1458,7 +1474,7 @@ class Root:
             dept.slack_contact = params['slack_contact']
             dept.slack_channel = params['slack_channel']
             #dept.sms_contact = params['sms_contact']
-            #dept.email_contact = params['email_contact']
+            dept.email_contact = params['email_contact']
             dept.other_contact = params['other_contact']
             
             session.commit()

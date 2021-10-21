@@ -8,6 +8,7 @@ pip3 install jinja2
 pip3 install requests
 pip3 install pdfkit
 pip3 install sqlalchemy
+pip3 install boto3
 apt-get update
 sudo apt install -y certbot
 apt-get install software-properties-common
