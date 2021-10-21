@@ -550,15 +550,21 @@ class Root:
             
         if meal_id:
             # print('start meal_id')
-            # attempt new order from meal_id
+            # attempt new order for meal_id
             if dh_edit and (is_dh(cherrypy.session['staffer_id']) or is_admin(cherrypy.session['staffer_id'])):
+                # this is when DH or Food Manager is creating an order for another attendee
                 try:
                     attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
                     allergies = allergy_info(params['badge_number'])
                 except sqlalchemy.orm.exc.NoResultFound:
                     # if attendee not already in DB load from Uber.
                     response = shared_functions.lookup_attendee(params['badge_number'], full=True)
-                    print(response)
+
+                    if 'error' in response:
+                        raise HTTPRedirect('dept_order?dept_id=' + str(params['department']) + '&meal_id='+str(meal_id)
+                                           + '&skip_contact=true&message=Problem looking up Attendee, '
+                                             'please recheck badge number and try again.')
+
                     if response['result']['food_restrictions']:
                         allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
                                      'freeform': response['result']['food_restrictions']['freeform']}

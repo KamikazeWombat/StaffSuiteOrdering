@@ -202,7 +202,7 @@ def add_access(badge, usertype=None):
             if usertype == 'admin' or usertype == 'staff':
                 raise HTTPRedirect("config?message=Badge " + str(badge) + " is not found in Reggie")
             else:
-                raise HTTPRedirect("dept_order_selection?message=Badge " + str(badge) + "is not found in Reggie")
+                raise HTTPRedirect("dept_order_selection?message=Badge " + str(badge) + " is not found in Reggie")
         
         attend = models.attendee.Attendee()
         attend.badge_num = response['result']['badge_num']
