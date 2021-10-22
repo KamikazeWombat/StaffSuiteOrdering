@@ -98,6 +98,8 @@ class Config:
         self.api_endpoint = cdata['api_endpoint']
         self.uber_key_location = cdata['uber_key_location']
         self.slack_key_location = cdata['slack_key_location']
+        self.aws_key_location = cdata['aws_key_location']
+        self.twilio_key_location = cdata['twilio_key_location']
         self.database_location = cdata['database_location']
         self.local_print = int(cdata['local_print'])
         self.remote_print = int(cdata['remote_print'])
@@ -122,6 +124,28 @@ class Config:
             slack_authfile.close()
         except FileNotFoundError:
             pass
+
+        try:
+            aws_authfile = open(self.aws_key_location, 'r')
+            jsondata = aws_authfile.read()
+            awsdata = json.load(jsondata)
+            self.aws_authuser = awsdata['aws_user'].strip()
+            self.aws_authkey = awsdata['aws_authkey'].strip()
+            aws_authfile.close()
+        except FileNotFoundError:
+            pass
+
+        try:
+            twilio_authfile = open(self.twilio_key_location, 'r')
+            jsondata = twilio_authfile.read()
+            twiliodata = json.load(jsondata)
+            self.twilio_sid = twiliodata['twilio_user'].strip()
+            self.twilio_authkey = twiliodata['twilio_authkey'].strip()
+            twilio_authfile.close()
+        except FileNotFoundError:
+            pass
+
+        return
 
     def orders_open(self):
         """

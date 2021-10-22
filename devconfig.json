@@ -2,6 +2,8 @@
   "api_endpoint": "https://staging-super.reggie.magfest.org/jsonrpc/",
   "uber_key_location": ".\\secure\\uber_auth_staging.key",
   "slack_key_location": ".\\secure\\slack_api.key",
+  "aws_key_location": ".\\secure\\aws_auth.json",
+  "twilio_key_location": ".\\secure\\twilio_auth.json",
   "database_location": "sqlite:///testdb.db",
   "local_print": true,
   "remote_print": false,

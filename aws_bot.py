@@ -8,13 +8,11 @@ def send_message(RECIPIENT, dept_name, meal_name):
     """
     Send email message using Amazon AWS
     """
-    SENDER = "contact@magfest.org"
-    # RECIPIENT = "benmillerhnd@gmail.com"
-    # CONFIGURATION_Set =
+    SENDER = "noreply@food.magevent.net"
     AWS_REGION = "us-east-1"
     CHARSET = "UTF-8"
     SUBJECT = "Tuber Eats test email"
-    BODY_TEXT = ("Your department's order bundle for " + str(dept_name) + " for " + str(meal_name)
+    BODY_TEXT = ("Your department's order bundle for " + str(meal_name) + " for " + str(dept_name)
                  + " is ready for pickup. \r\n"
                  "Please have someone come get it.  Thanks!\r\n \r\n"
                  "Staff Suite for 2022 is in room \r\n"
@@ -53,10 +51,10 @@ def send_message(RECIPIENT, dept_name, meal_name):
             },
             Source=SENDER
         )
-        return
+
     except ClientError as e:
         print(e.response['Error']['Message'])
         slack_bot.send_message("bottesting", "Email message failed to send to " + str(RECIPIENT) + " from "
                                + str(dept_name) + " for " + str(meal_name) + " \r\n" +
                                e.response['Error']['Message'])
-        return
+    return

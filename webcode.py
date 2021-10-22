@@ -1370,8 +1370,8 @@ class Root:
             contact_details = shared_functions.load_d_o_contact_details(dept_order, dept)
 
             if contact_details.slack_channel:
-                message = 'Your food order bundle for ' + dept.name + ' ' \
-                          'is ready, please pickup from Staff Suite.  ' + now_contz().strftime(cfg.date_format) + \
+                message = 'Your food order bundle for ' + meal.meal_name + ' for ' + dept.name + \
+                          'is ready, please pickup from Staff Suite.  ' + \
                           '  ' + dept_order.slack_contact
                 slack_bot.send_message(dept_order.slack_channel, message)
 
