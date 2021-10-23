@@ -127,8 +127,7 @@ class Config:
 
         try:
             aws_authfile = open(self.aws_key_location, 'r')
-            jsondata = aws_authfile.read()
-            awsdata = json.load(jsondata)
+            awsdata = json.load(aws_authfile)
             self.aws_authuser = awsdata['aws_user'].strip()
             self.aws_authkey = awsdata['aws_authkey'].strip()
             aws_authfile.close()
@@ -137,9 +136,8 @@ class Config:
 
         try:
             twilio_authfile = open(self.twilio_key_location, 'r')
-            jsondata = twilio_authfile.read()
-            twiliodata = json.load(jsondata)
-            self.twilio_sid = twiliodata['twilio_user'].strip()
+            twiliodata = json.load(twilio_authfile)
+            self.twilio_sid = twiliodata['twilio_sid'].strip()
             self.twilio_authkey = twiliodata['twilio_authkey'].strip()
             twilio_authfile.close()
         except FileNotFoundError:
