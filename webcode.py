@@ -1384,8 +1384,7 @@ class Root:
                     for email in emailsplit:
                         emails.append(email)
 
-                for email in emails:
-                    aws_bot.send_message(email, dept.name, meal.meal_name)
+                aws_bot.send_message(emails, dept.name, meal.meal_name)
                 
             orders = session.query(Order).filter_by(department_id=dept_order.dept_id, meal_id=dept_order.meal_id) \
                 .options(subqueryload(Order.attendee)).all()

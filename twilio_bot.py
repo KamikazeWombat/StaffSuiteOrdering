@@ -1,3 +1,4 @@
+import time
 import re
 
 from twilio.rest import Client
@@ -7,9 +8,14 @@ from config import cfg
 
 
 def send_message(phone_numbers, dept_name, meal_name):
+    """
+    Sends message to list of phone numbers
+    """
     client = Client(cfg.twilio_sid, cfg.twilio_authkey)
 
-    for phone in phone_numbers:
+    for index, phone in enumerate(phone_numbers):
+        if index % 5 == 0:
+            time.sleep(5)
         # remove hyphens and such from phone number
         phone = re.sub(r'[-,()\.\+a-zA-Z]', '', phone)
 
