@@ -6,6 +6,7 @@ import cherrypy
 from shared_functions import HTTPRedirect, is_admin, is_ss_staffer, is_dh
 from config import cfg
 
+
 def restricted(func):
     """
     Requires user to be logged in to a valid account

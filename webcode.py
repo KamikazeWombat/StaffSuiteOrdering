@@ -711,8 +711,7 @@ class Root:
             session=session_info,
             c=c
         )
-        
-        
+
     @cherrypy.expose
     @restricted
     def staffer_meal_list(self, message=[], meal_id='', display_all=False, **params):
