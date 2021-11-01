@@ -564,7 +564,7 @@ class Root:
 
                     if 'error' in response:
                         raise HTTPRedirect('dept_order?dept_id=' + str(params['department']) + '&meal_id='+str(meal_id)
-                                           + '&skip_contact=true&message=Problem looking up Attendee, '
+                                           + '&message=Problem looking up Attendee, '
                                              'please recheck badge number and try again.')
 
                     if response['result']['food_restrictions']:
@@ -959,7 +959,7 @@ class Root:
 
     @cherrypy.expose
     @dh_or_admin
-    def dept_order(self, meal_id, dept_id, skip_contact=False, message="", **params):
+    def dept_order(self, meal_id, dept_id, message="", **params):
         """
         Usable by Department Heads and admins
         list of orders for selected meal and department
@@ -987,33 +987,27 @@ class Root:
             # adding is succesful if badge # or barcode is found AND not already in list
             if success:
                 raise HTTPRedirect('dept_order?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                                   '&skip_contact=true&message=Food Manager Succesfully Added')
+                                   '&message=Food Manager Succesfully Added')
             else:
                 session = models.new_sesh()
                 attend = session.query(Attendee).filter_by(badge_num=params['food_manager']).one()
                 if attend.public_id in cfg.food_managers:
                     raise HTTPRedirect('dept_order?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                                       '&skip_contact=true&message=Food Manager already added to list')
+                                       '&message=Food Manager already added to list')
                 else:
                     raise HTTPRedirect('dept_order?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                                       '&skip_contact=true&message=Error adding food manager.  Invalid badge number?')
+                                       '&message=Error adding food manager.  Invalid badge number?')
         
         session = models.new_sesh()
         
         dept = session.query(Department).filter_by(id=dept_id).one()
         
-        # send DH to page for setting default contact info.
-        # DH will be able to skip, but every time they come back to the Dept Order page it will redirect again.
-        # hopefully this will result in people filling this out with useful info rather than putting trash.
-        if not skip_contact:
-            if not dept.slack_channel and not dept.slack_contact and not dept.other_contact and not dept.sms_contact \
-                    and not dept.email_contact:
-                session.close()
-                raise HTTPRedirect('dept_contact?dept_id=' + str(dept_id) +
-                                   '&message=Please add default contact info for your department.  '
-                                   'This will be used if no other info is provided for meal bundles for your department'
-                                   '&original_location=dept_order%3Fdept_id%3D' +
-                                   str(dept_id) + '%26meal_id%3D' + str(meal_id))
+        # adds note about contact info to top of page if no contact info is filled out
+        if not dept.slack_channel and not dept.slack_contact and not dept.other_contact and not dept.sms_contact \
+                and not dept.email_contact:
+            no_contact = True
+        else:
+            no_contact = False
         
         thismeal = session.query(Meal).filter_by(id=meal_id).one()
         
@@ -1082,6 +1076,7 @@ class Root:
                                dept_order=this_dept_order,
                                meal=thismeal,
                                departments=departments,
+                               no_contact=no_contact,
                                messages=messages,
                                session=session_info,
                                c=c)
