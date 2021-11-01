@@ -716,7 +716,7 @@ class Root:
     @restricted
     def staffer_meal_list(self, message=[], meal_id='', display_all=False, **params):
         """
-        Display list of meals staffer is eligible for, unless requested to show all
+        Display list of meals staffer is eligible for or has already created an order for, unless requested to show all
         """
         # todo: display some information about order status for available meals
 
@@ -733,7 +733,11 @@ class Root:
         
         if not eligible:
             messages.append('You are not scheduled for enough volunteer hours to be eligible for Staff Suite.  '
-                            'You will need to get a Department Head to authorize any orders you place.')
+                            'You will need to get a Department Head to authorize any orders you place.  '
+                            'If you work in a non-shift capacity, please click the "Show all meals" button below '
+                            'to submit a carryout order.  You will need to have a DH Override your order '
+                            'after it has been created or if your department is a non-shift department you can request '
+                            'this change in Slack #StaffSuiteOrdering.')
 
         attendee = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
         
@@ -744,7 +748,8 @@ class Root:
                 attendee.webhook_data = params['webhook_data']
                 session.commit()
                 shared_functions.send_webhook(params['webhook_url'], params['webhook_data'])
-                junk = attendee.badge_num  # gets SQLAlchemy to reload attendee from database since needed for page display
+                # below gets SQLAlchemy to reload attendee from database since needed for page display
+                junk = attendee.badge_num
         
         meals = session.query(Meal).all()
         sorted_shifts, response = combine_shifts(cherrypy.session['badge_num'], no_combine=True, full=True)
@@ -761,6 +766,23 @@ class Root:
                 user_exempt = True
             
         now = datetime.utcnow()
+
+        for thismeal in meals:
+            thismeal.start_time = con_tz(thismeal.start_time)
+            thismeal.end_time = con_tz(thismeal.end_time)
+            thismeal.cutoff = con_tz(thismeal.cutoff)
+            try:
+                # orders = session.query(Order).filter_by(meal_id=thismeal.id,
+                #                                         attendee_id=cherrypy.session['staffer_id']).all()
+                # todo: more efficient code for this, I think there's a way to load orders for all meals in one query request
+                thisorder = session.query(Order).filter_by(meal_id=thismeal.id,
+                                                           attendee_id=cherrypy.session['staffer_id']).one()
+                thismeal.order_exists = True
+                if thisorder.overridden:
+                    thismeal.overridden = True
+            except sqlalchemy.orm.exc.NoResultFound:
+                pass
+
         for meal in meals:
             # determining whether user is automatically eligible for a specific meal
             if cherrypy.session['is_dh'] or user_exempt:
@@ -778,29 +800,15 @@ class Root:
                 rd += delta.hours * 60
                 rd += delta.days * 1440
                 # hides meals in the past by default
-                if rd >= 0 or display_all:
+                if rd >= 0 or display_all or meal.order_exists:
                     meal_display.append(meal)
         
-        if len(meal_display) == 0:
+        if len(meal_display) == 0 and eligible:
             messages.append('You are not signed up for any shifts that overlap with meal times. '
                             'If you work in a non-shift capacity, please click the "Show all meals" button below '
-                            'to submit a carryout order.')
-        
-        for thismeal in meals:
-            thismeal.start_time = con_tz(thismeal.start_time)
-            thismeal.end_time = con_tz(thismeal.end_time)
-            thismeal.cutoff = con_tz(thismeal.cutoff)
-            try:
-                # orders = session.query(Order).filter_by(meal_id=thismeal.id,
-                #                                         attendee_id=cherrypy.session['staffer_id']).all()
-                # todo: more efficient code for this, I think there's a way to load orders for all meals in one query request
-                thisorder = session.query(Order).filter_by(meal_id=thismeal.id,
-                                                           attendee_id=cherrypy.session['staffer_id']).one()
-                thismeal.order_exists = True
-                if thisorder.overridden:
-                    thismeal.overridden = True
-            except sqlalchemy.orm.exc.NoResultFound:
-                pass
+                            'to submit a carryout order.  You will need to have a DH Override your order '
+                            'after it has been created or if your department is a non-shift department you can request '
+                            'this change in Slack #StaffSuiteOrdering.')
             
         template = env.get_template('staffer_meal_list.html')
         return template.render(messages=messages,
