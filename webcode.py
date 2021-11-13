@@ -820,7 +820,7 @@ class Root:
             
     @cherrypy.expose
     @admin_req
-    def config(self, badge='', message=[], dangerous=False, delete_order='', **params):
+    def config(self, badge='', message=[], delete_order='', **params):
         messages = []
 
         if message:
@@ -830,12 +830,14 @@ class Root:
         session_info = get_session_info()
         
         if delete_order:
+            if not session_info.is_super_admin:
+                raise HTTPRedirect('config&message=You must be super admin to delete orders.')
             session = models.new_sesh()
             thisorder = session.query(Order).filter_by(id=delete_order).one()
             session.delete(thisorder)
             session.commit()
             session.close()
-            raise HTTPRedirect('config?dangerouse=true&message=order ' + delete_order + ' deleted.')
+            raise HTTPRedirect('config&message=order ' + delete_order + ' deleted.')
         
         if 'radio_select_count' in params:
             # save config
@@ -879,6 +881,8 @@ class Root:
         exempt_depts = ',\n'.join(cfg.exempt_depts)
 
         if badge:
+            if not session_info.is_super_admin:
+                raise HTTPRedirect('config&message=You must be super admin to use the attendee lookup feature')
             # lookup attendee in Uber, dumps result to page.  intended for troubleshooting purposes
             attendee = shared_functions.lookup_attendee(badge, True)
             attendee = json.dumps(attendee, indent=2)
@@ -888,7 +892,6 @@ class Root:
                                    admin_list=admin_list,
                                    staffer_list=staffer_list,
                                    exempt_depts=exempt_depts,
-                                   dangerous=True,
                                    attendee=attendee,
                                    c=c,
                                    cfg=cfg)
@@ -900,7 +903,6 @@ class Root:
                                admin_list=admin_list,
                                staffer_list=staffer_list,
                                exempt_depts=exempt_depts,
-                               dangerous=dangerous,
                                c=c,
                                cfg=cfg)
 
@@ -911,8 +913,11 @@ class Root:
         For hidden buttons to do potentially very dangerous things
         """
         session = models.new_sesh()
+        session_info = get_session_info()
         
         if reset_dept_list:
+            if not session_info.is_super_admin:
+                raise HTTPRedirect('config&message=You must be super admin to reset the department list.')
             depts = session.query(Department).all()
             for dept in depts:
                 session.delete(dept)
@@ -920,6 +925,8 @@ class Root:
             shared_functions.load_departments()
         
         if reset_checkin_list:
+            if not session_info.is_super_admin:
+                raise HTTPRedirect('config&message=You must be super admin to reset the checkins log.')
             checkins = session.query(Checkin).all()
             for checkin in checkins:
                 session.delete(checkin)

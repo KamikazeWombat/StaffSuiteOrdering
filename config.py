@@ -66,6 +66,18 @@ class Config:
         except FileNotFoundError:
             pass
 
+        self.super_admins = list()
+        try:
+            sa_file = open('super_admins.cfg', 'r')
+            sa = sa_file.read()
+            sa_file.close()
+            sa_list = sa.split(',')
+            for super in sa_list:
+                super = super.strip()
+                self.super_admins.append(super)
+        except FileNotFoundError:
+            pass
+
     def __init__(self):
         """
         Load in config files and API keys (if files exist)
@@ -93,6 +105,7 @@ class Config:
         self.staffer_list = ''
         self.exempt_depts = ''
         self.food_managers = ''
+        self.super_admins = ''
         self.load_user_lists()
         
         self.api_endpoint = cdata['api_endpoint']
