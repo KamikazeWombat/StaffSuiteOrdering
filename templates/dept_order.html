@@ -5,7 +5,8 @@
 
 <div class="container">
   <h2 class="form-signin-heading">View/Edit Department Order Bundle for {{ meal.meal_name }} for {{ dept.name }}</h2>
-  <form role="form" style="border:1px solid; margin-top:5px; margin-bottom:5px;">
+  <div class="section-border">
+    <form role="form">
     <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
     <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
     <p>Slack Channel: <textarea name="slack_channel" cols="50" rows="1"
@@ -21,31 +22,31 @@
       {% if dept_order.completed %} disabled {% endif %}
     >{{ dept_order.other_contact }}</textarea></p>
     <p>The above contact info is for meal order bundle completion for this department, for only this meal.  </p>
-    <button style="width:5in;" class="btn btn-lg btn-primary btn-block" type="submit">Update Department's Contact Info for THIS order</button>
-  </form>
+    <button class="btn btn-lg btn-primary" type="submit">Update Department's Contact Info for THIS order</button>
+  </form></div>
 
-  <div style="border:1px solid; margin-top:5px; margin-bottom:5px;">
+  <div class="section-border">
     {% if no_contact %}
       <p style="color:red;">Please add default contact info for your department. </p>
     {% endif %}
     <p>This will be used if no other info is provided for meal bundles for your department</p>
-    <a style="width:5in;" class="btn btn-lg btn-primary btn-block" href="dept_contact?dept_id={{ dept_order.dept_id }}&original_location=dept_order%3Fmeal_id%3D{{ dept_order.meal_id }}%26dept_id%3D{{ dept_order.dept_id }}">Edit default contact info for {{ dept.name }}</a>
+    <a class="btn btn-lg btn-primary" href="dept_contact?dept_id={{ dept_order.dept_id }}&original_location=dept_order%3Fmeal_id%3D{{ dept_order.meal_id }}%26dept_id%3D{{ dept_order.dept_id }}">Edit default contact info for {{ dept.name }}</a>
   </div>
 
   {% if not session.is_food_manager or session.is_dh or session.is_admin %}
-    <form style="border:1px solid; margin-top:5px; margin-bottom:5px;">
+    <form class="section-border">
       <h3>Add someone as a Food Manager</h3>
       <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
       <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
       <br/>
       <label>Badge Number</label>
       <input type="text" name="food_manager">
-      <button style="width:2in;" class="btn btn-lg btn-primary btn-block" type="submit">Add Food Manager</button>
+      <button class="btn btn-lg btn-primary" type="submit">Add Food Manager</button>
     </form>
   {% endif %}
 
   {% if not dept_order.started %}
-    <div style="border:1px solid; margin-top:5px; margin-bottom:5px;">
+    <div  class="section-border">
     Create Meal Order for other attendee:
     <form>
       <table><tr>
@@ -55,7 +56,7 @@
           {{ macros.dropdown(field='order_department', options=departments, is_required=True) }}
         </td>
         <td>Badge Number: <input type="text" name="order_badge"/></td>
-        <td><button class="btn btn-lg btn-primary btn-block" type="submit">Create Order</button></td>
+        <td><button class="btn btn-lg btn-primary" type="submit">Create Order</button></td>
       </tr></table>
     </form>
       </div>
@@ -80,13 +81,13 @@
           </td>
           <td><label class="form-control">{{ order.attendee.full_name }} </label></td>
           {% if order.eligible == False and dept_order.started == False and order.overridden == False %}
-            <td><a class="btn btn-lg btn-primary btn-block" href="order_override?dept_id={{ dept_order.dept_id }}&meal_id={{ dept_order.meal_id }}&order_id={{ order.id }}">Override</a></td>
+            <td><a class="btn btn-lg btn-primary" href="order_override?dept_id={{ dept_order.dept_id }}&meal_id={{ dept_order.meal_id }}&order_id={{ order.id }}">Override</a></td>
           {% endif %}
           {% if order.overridden and dept_order.started == False %}
-            <td><a class="btn btn-lg btn-primary btn-block" href="order_override?dept_id={{ dept_order.dept_id }}&meal_id={{ dept_order.meal_id }}&order_id={{ order.id }}&remove_override=True">Remove Override</a></td>
+            <td><a class="btn btn-lg btn-primary" href="order_override?dept_id={{ dept_order.dept_id }}&meal_id={{ dept_order.meal_id }}&order_id={{ order.id }}&remove_override=True">Remove Override</a></td>
           {% endif %}
           {% if dept_order.started == False %}
-            <td><a class="btn btn-lg btn-primary btn-block" href="order_edit?dh_edit=True&order_id={{ order.id }}&badge_number={{ order.attendee.badge_num }}">Edit Order</a></td>
+            <td><a class="btn btn-lg btn-primary" href="order_edit?dh_edit=True&order_id={{ order.id }}&badge_number={{ order.attendee.badge_num }}">Edit Order</a></td>
           {% endif %}
         </tr>
       </table>

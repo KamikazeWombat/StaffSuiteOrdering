@@ -119,22 +119,23 @@ padding-bottom: 3px;
       
     </form>
     <div class="section-border">
-    Super Admin section
-    <a{% if not session.is_super_admin %} href="dangerous?reset_dept_list=True"{% endif %}>Reset Dept List</a><br/>
-    <a{% if not session.is_super_admin %} href="dangerous?reset_checkin_list=True"{% endif %}>Reset Checkins List</a><br/>
-    <form>
-      <input type="text" name="badge"/>
-      <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Lookup Attendee</button>
-      {{ attendee }}
-    </form>
-    <form>
-      <input type="text" name="delete_order">
-      <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Delete Order</button>
-    </form>
+      <p>Super Admin section</p>
+      <a{% if not session.is_super_admin %} href="dangerous?reset_dept_list=True"{% endif %}>Reset Dept List</a><br/>
+      <a{% if not session.is_super_admin %} href="dangerous?reset_checkin_list=True"{% endif %}>Reset Checkins List</a><br/>
+      <form>
+        <input type="text" name="badge"/>
+        <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Lookup Attendee</button>
+        {{ attendee }}
+      </form>
+      <form>
+        <input type="text" name="delete_order">
+        <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Delete Order</button>
+      </form>
     </div>
 
-    <br/><a href="create_checkin_csv">Create Checkin CSV</a>
+    <div class="section-border">
+    <a href="create_checkin_csv">Create Checkin CSV</a>
     <br/><a href="create_orders_csv">Create Orders CSV</a>
-
+    </div>
 </div>
 {% endblock content %}
