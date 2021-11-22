@@ -202,6 +202,9 @@ class Root:
     @cherrypy.expose
     @ss_staffer
     def checkin_badge(self, meal_id='', badge=''):
+        """
+        Processes checkin requests for walk-ins
+        """
         if badge[0] == "~":
             badge = shared_functions.barcode_to_badge(badge)
         else:
@@ -234,6 +237,7 @@ class Root:
             session.commit()
             
         if meal:
+            # check for existing carryout order for this meal period
             order = session.query(Order).filter(Order.attendee_id == attend.public_id,
                                                 Order.meal_id == meal.id).one_or_none()
             if order:
@@ -248,16 +252,22 @@ class Root:
                 else:
                     eligible = carryout_eligible(sorted_shifts, meal.start_time, meal.end_time)
                 
-                # if their order is eligible for carryout, they get kicked out
-                if eligible or user_exempt:
+                # if during meal period and order exists for this attendee and meal period
+                # their order is eligible for carryout, they get kicked out
+                if eligible or user_exempt or order.overridden:
                     session.close()
-                    return json.dumps({"success": False, "badge": badge, "reason": "Attendee {} has placed a delivery order for this meal.".format(badge)})
+                    return json.dumps({"success": False, "badge": badge, "reason": "Attendee has placed a delivery "
+                                                                                   "order for this meal.  Do they need "
+                                                                                   "to pick it up?".format(badge)})
         
-        allergy_msg = ""
+        has_allergy = False
         allergies = allergy_info(badge)
-        for allergy in allergies['standard_labels']:
-            allergy_msg += allergy+"<br>"
-        allergy_msg += allergies['freeform']
+        if len(allergies['standard_labels']) > 0:
+            has_allergy = True
+        if allergies['freeform']:
+            has_allergy = True
+
+        # checks for prior checkins this event, by current meal period if during meal period
         if meal:
             checkin = session.query(Checkin).filter(Checkin.attendee_id == attend.public_id, Checkin.meal_id == meal.id).all()
         else:
@@ -265,28 +275,41 @@ class Root:
                                                     Checkin.meal_id == None).all()
         if checkin and meal:
             session.close()
-            return json.dumps({"success": False, "badge": badge, "reason": "Badge is already checked in for this meal.", "allergies": allergy_msg})
+            return json.dumps({"success": True, "badge": badge,
+                               "reason": "Attendee is already checked in for this meal.",
+                               "has_allergy": has_allergy})
         
         if not shared_functions.ss_eligible(badge):
             session.close()
-            return json.dumps({"success": False, "badge": badge, "reason": "Badge is not eligible for food. Please see STOPS."})
+            return json.dumps({"success": False, "badge": badge,
+                               "reason": "Attendee is not eligible for Staff Suite by normal rules. "
+                                         "Are we letting people in anyway?",
+                               "has_allergy": has_allergy})
         
         if meal:
+            # if during a meal period and not already a checkin for this meal period
+            # checks for meal associated checkin above
             checkin = Checkin(attendee_id=attend.public_id, meal_id=meal.id)
         else:
             if checkin:
-                # if not meal, but checkin.  ie if attempting checkin not during meal AND this has one or more checkins.
+                # if not during meal period, and one or more checkins for this attendee this event.
                 for item in checkin:
                     delta = relativedelta(item.timestamp, datetime.utcnow())
-                    # if a previously received checkin NOT associated with a meal is with 2 hours of current non meal checkin
-                    if not item.meal_id and abs(delta.hours) <= 1 and abs(delta.days) == 0:
+                    if abs(delta.minutes) <= 15 and delta.hours == 0 and abs(delta.days) == 0:
+                        # if a previously received checkin
+                        # is withhin 15 minutes of current checkin, does not record as another checkin
                         session.close()
-                        return json.dumps({"success": True, "badge": badge, "reason": "", "allergies": allergy_msg})
+                        return json.dumps({"success": True, "badge": badge, "reason": "Checked in successfully!",
+                                           "has_allergy": has_allergy})
+            # if no existing checkin for this attendee overlaps current time, create new checkin
             checkin = Checkin(attendee_id=attend.public_id, meal_id=None)
+
+        # save new checkin record to DB
         session.add(checkin)
         session.commit()
         session.close()
-        return json.dumps({"success": True, "badge": badge, "reason": "", "allergies": allergy_msg})
+        return json.dumps({"success": True, "badge": badge, "reason": "Checked in successfully!",
+                           "has_allergy": has_allergy})
 
     @cherrypy.expose
     @admin_req
@@ -1426,10 +1449,11 @@ class Root:
     def dept_order_details(self, dept_order_id, **params):
         """
         Displays contact info details for a dept's order
+        Intended for use by fulfilment team
         :param dept_order_id:
         :return:
         """
-
+        # todo: fix this page to do smart load / save of contact details
         session_info = get_session_info()
 
         session = models.new_sesh()
