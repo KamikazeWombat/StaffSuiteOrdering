@@ -724,6 +724,13 @@ def is_dh(staff_id):
     return response['result'][0]['is_dept_head']
 
 
+def is_super_admin(staff_id):
+    if staff_id in cfg.super_admins:
+        return True
+    else:
+        return False
+
+
 def allergy_info(badge_num):
     """
     Performs API request to Uber/Reggie and returns allergy info
