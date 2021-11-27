@@ -26,7 +26,7 @@ from models.checkin import Checkin
 import shared_functions
 from shared_functions import api_login, HTTPRedirect, order_split, order_selections, allergy_info, \
                      meal_join, meal_split, meal_blank_toppings, department_split, create_dept_order, \
-                     ss_eligible, carryout_eligible, combine_shifts, return_selected_only, \
+                     ss_eligible, carryout_eligible, combine_shifts, return_selected_only, return_not_selected, \
                      con_tz, utc_tz, now_utc, now_contz, is_admin, is_ss_staffer, is_dh, is_super_admin, \
                      get_session_info
 import slack_bot
@@ -1481,8 +1481,7 @@ class Root:
             # save record
             dept_order.slack_contact = params['slack_contact']
             dept_order.slack_channel = params['slack_channel']
-            # todo: add sms and email to html then uncomment below
-            #dept_order.sms_contact = params['sms_contact']
+            dept_order.sms_contact = params['sms_contact']
             dept_order.email_contact = params['email_contact']
             dept_order.other_contact = params['other_contact']
             session.commit()
@@ -1524,7 +1523,7 @@ class Root:
             # save record
             dept.slack_contact = params['slack_contact']
             dept.slack_channel = params['slack_channel']
-            #dept.sms_contact = params['sms_contact']
+            dept.sms_contact = params['sms_contact']
             dept.email_contact = params['email_contact']
             dept.other_contact = params['other_contact']
             
