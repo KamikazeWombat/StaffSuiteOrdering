@@ -999,8 +999,7 @@ class Root:
     @dh_or_admin
     def dept_order(self, meal_id, dept_id, message="", **params):
         """
-        Usable by Department Heads and admins
-        list of orders for selected meal and department
+        list of orders for selected meal and department for Department Heads and admins
         Can override ones not already eligible
         Can edit existing ones if need be (usually shouldn't)
         Can create new orders for specified badge number

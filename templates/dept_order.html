@@ -9,19 +9,28 @@
     <form role="form">
     <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
     <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
-    <p>Slack Channel: <textarea name="slack_channel" cols="50" rows="1"
+
+    <p>Slack Channel   : <textarea name="slack_channel" cols="50" rows="1"
               placeholder="Where to send the Slack message"
       {% if dept_order.completed %} disabled {% endif %}
     >{{ dept_order.slack_channel }}</textarea><br/>Would you like us to post in a channel or DM, e.g. staffsuiteordering, #bottesting, @wombat3</p>
     <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"
-              placeholder="Who to ping in Slack?"
+              placeholder="Who to ping in Slack? (optional)"
       {% if dept_order.completed %} disabled {% endif %}
     >{{ dept_order.slack_contact }}</textarea><br/>Should we ping anyone in Slack?</p>
-    <p>Other Contact: <textarea name="other_contact" cols="50" rows="6"
-                     placeholder="How you else would like to be contacted for order pickup.  Text, email, phone call..."
+
+    <p>Email           : <textarea name="email_contact" cols="50" rows="4"
+              placeholder="Email addresses to send emails to, comma separated"
+      {% if dept_order.completed %} disabled {% endif %}
+    >{{ dept_order.email_contact }}</textarea><br/>Email addresses to send emails to, comma separated</p>
+
+    <p>Other Contact   : <textarea name="other_contact" cols="50" rows="6"
+                     placeholder="How you else would like to be contacted for order pickup.  Please remember that fulfilment staff are busy so automated contact options above are preferred."
       {% if dept_order.completed %} disabled {% endif %}
     >{{ dept_order.other_contact }}</textarea></p>
+
     <p>The above contact info is for meal order bundle completion for this department, for only this meal.  </p>
+    <p>All contact info sections are optional</p>
     <button class="btn btn-lg btn-primary" type="submit">Update Department's Contact Info for THIS order</button>
   </form></div>
 

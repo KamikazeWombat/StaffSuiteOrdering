@@ -12,6 +12,8 @@
   "schedule_tolerance": 45,
   "date_format": "%d-%m-%Y %H:%M",
   "ss_hours": 12,
+  "room_location": "Room 123456",
+  "location_url": "https://magfest.notion.site/Staff-Suite-Info-ecefbd963dca4b3282503642b9bfa9ae",
   "cherrypy": {
     "global": {
       "server.socket_host": "127.0.0.1",

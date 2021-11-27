@@ -12,6 +12,7 @@ def send_message(recipients, dept_name, meal_name):
     """
     Send message to list of emails using Amazon AWS
     """
+    print('----------------beginning AWS sending--------------------')
     SENDER = "noreply@food.magevent.net"
     SENDERNAME = "Staff Suite Orders"
     HOST = "email-smtp.us-east-1.amazonaws.com"
@@ -21,18 +22,18 @@ def send_message(recipients, dept_name, meal_name):
     BODY_TEXT = ("Your department's order bundle for " + str(meal_name) + " for " + str(dept_name)
                  + " is ready for pickup. \r\n"
                  "Please have someone come get it.  Thanks!\r\n \r\n"
-                 "Staff Suite for 2022 is in room \r\n"
-                 "For help finding Staff Suite or more information about it, please go to "
-                 "")
+                 "Staff Suite for 2022 is in " + cfg.room_location + " \r\n"
+                 "For help finding Staff Suite or more information about it, please go to " +
+                 cfg.location_url)
     BODY_HTML = """<html>
     <body>
         <h1>Your department's order bundle for {dept} for {meal} is ready for pickup.</h1>
         <p>Please have someone come get it.  Thanks!</p>
-        <p>Staff Suite for 2022 is in room </p>
+        <p>Staff Suite for 2022 is in {room}</p>
         <p>For help finding Staff Suite or more information about it, please go to 
-        <a href='notion.to'>Staff Suite Notion Page</a></p>
+        <a href="{url}">Staff Suite's Notion Page</a></p>
     </body>
-    </html>""".format(dept=dept_name, meal=meal_name)
+    </html>""".format(dept=dept_name, meal=meal_name, room=cfg.room_location, url=cfg.location_url)
 
     msg = MIMEMultipart('alternative')
     msg['Subject'] = SUBJECT
@@ -50,11 +51,11 @@ def send_message(recipients, dept_name, meal_name):
         server.login(cfg.aws_authuser, cfg.aws_authkey)
         try:
             for index, recipient in enumerate(recipients):
-                if index % 5 == 0:
+                if index % 5 == 4:
                     # every 5 emails waits 1 second, to avoid filling up the per-second sending limit for the AWS acct
                     time.sleep(1)
-                msg['To'] = email
-                server.sendmail(SENDER, email, msg.as_string())
+                msg['To'] = recipient
+                server.sendmail(SENDER, recipient, msg.as_string())
         except Exception as e:
             print(e)
             print(recipients)

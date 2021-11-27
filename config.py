@@ -113,6 +113,7 @@ class Config:
         self.slack_key_location = cdata['slack_key_location']
         self.aws_key_location = cdata['aws_key_location']
         self.twilio_key_location = cdata['twilio_key_location']
+
         self.database_location = cdata['database_location']
         self.local_print = int(cdata['local_print'])
         self.remote_print = int(cdata['remote_print'])
@@ -121,6 +122,8 @@ class Config:
         self.schedule_tolerance = int(cdata['schedule_tolerance'])
         self.date_format = cdata['date_format']
         self.ss_hours = int(cdata['ss_hours'])
+        self.room_location = str(cdata['room_location'])
+        self.location_url = str(cdata['location_url'])
         self.cherrypy = cdata['cherrypy']
         self.cherrypy['/']['tools.staticdir.root'] = os.path.abspath(os.getcwd())
 
@@ -185,6 +188,8 @@ class Config:
             'schedule_tolerance': self.schedule_tolerance,
             'date_format': self.date_format,
             'ss_hours': self.ss_hours,
+            'room_location': self.room_location,
+            'location_url': self.location_url,
             'cherrypy': self.cherrypy
         }
         

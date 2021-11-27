@@ -101,8 +101,9 @@ padding-bottom: 3px;
             <br/>Date display format for most things; go to <a href="http://strftime.org">strftime.org</a> for details
         </td></tr>
           <tr><td>Schedule Tolerance</td>
-        <td><input disabled type="text" name="schedule_tolerance" value="{{ cfg.schedule_tolerance }}"/>
-          <br/>Tolerance in minutes for amount of meal period not overlapped by shifts for carryout eligiblity</td></tr>
+        <td><input type="text" name="schedule_tolerance" value="{{ cfg.schedule_tolerance }}"/>
+          <br/>Tolerance for amount of meal period not overlapped by shifts
+          <br/>In minutes, for automatic carryout eligibility calculation</td></tr>
         <tr><td>Weighted Hours</td>
           <td><input type="text" name="ss_hours" value="{{ cfg.ss_hours }}"/>
             <br/>How many weighted hours are needed for base Staff Suite eligibilty</td></tr>
@@ -110,7 +111,15 @@ padding-bottom: 3px;
           <td><textarea name="exempt_depts" cols="50" rows="4"
           placeholder="Department IDs from Uber, CaSe SensiTive, comma separated list.  Whitespace will be cleared."
           >{{ exempt_depts }}</textarea>
-        </td>
+          </td></tr>
+        <tr><td>Room Location</td>
+          <td><input type="text" name="room_location" value="{{ cfg.room_location }}"/>
+          <br/>Room location, like "Room 2022"
+        </td></tr>
+        <tr><td>Room Location URL</td>
+          <td><input type="text" name="room_url" style="width:4in;" value="{{ cfg.location_url }}"/>
+          <br/>URL pointing to room location info
+        </td></tr>
       </table>
       
       <br/>
