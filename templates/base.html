@@ -116,7 +116,7 @@
     {% block top_of_body_additional %}
             <div id="floating_logo">
                 <img src={{ c.EVENT_URL_ROOT }}/static/theme/bg-logo.png/>
-                <a href="https://www.notion.so/magfest/Staff-Suite-Info-ecefbd963dca4b3282503642b9bfa9ae" target="_blank">Staff Suite Info & Allergies</a>
+                <a href="{{ cfg.ss_url }}" target="_blank">Staff Suite Info & Allergies</a>
                 <div style="text-align:center;"><h1>{{ c.EVENT_NAME }} Tuber Eats v 1.0.0</h1></div>
             </div>
     {% endblock %}
@@ -161,7 +161,7 @@
     {% endblock %}
     {% block footer %}
     <br/>
-    <p>For more information about Staff Suite please visit our Notion page <a href="https://www.notion.so/magfest/Staff-Suite-Info-ecefbd963dca4b3282503642b9bfa9ae">Here</a>
+    <p>For more information about Staff Suite please visit our Notion page <a href="{{ cfg.ss_url }}">Here</a>
     <br/>If you have questions or suggestions about this ordering system please let us know in Slack #StaffSuiteOrdering</p>
     {% endblock %}
 </body>

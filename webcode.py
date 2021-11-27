@@ -149,6 +149,7 @@ class Root:
                                zip_code=zip_code,
                                original_location=original_location,
                                c=c,
+                               cfg=cfg,
                                isdev=cfg.devenv)
 
     @cherrypy.expose
@@ -179,7 +180,8 @@ class Root:
         return template.render(messages=messages,
                                meallist=meallist,
                                session=session_info,
-                               c=c)
+                               c=c,
+                               cfg=cfg)
 
     @cherrypy.expose
     @ss_staffer
@@ -197,7 +199,7 @@ class Root:
 
         session_info = get_session_info()
 
-        return template.render(current_meal=current_meal, c=c, session=session_info)
+        return template.render(current_meal=current_meal, c=c, cfg=cfg, session=session_info)
 
     @cherrypy.expose
     @ss_staffer
@@ -400,7 +402,8 @@ class Root:
                                toggles3=toggles3,
                                messages=messages,
                                session=session_info,
-                               c=c)
+                               c=c,
+                               cfg=cfg)
 
     @restricted
     @cherrypy.expose
@@ -571,7 +574,8 @@ class Root:
                                    dh_edit=dh_edit,
                                    allergies=allergies,
                                    session=session_info,
-                                   c=c)
+                                   c=c,
+                                   cfg=cfg)
             
         if meal_id:
             # print('start meal_id')
@@ -674,7 +678,8 @@ class Root:
                                    dh_edit=dh_edit,
                                    allergies=allergies,
                                    session=session_info,
-                                   c=c)
+                                   c=c,
+                                   cfg=cfg)
         
         # if nothing else matched, not creating, loading, saving, or deleting.  therefore, error.
         raise HTTPRedirect('staffer_meal_list?message=You must specify a meal or order ID to create/edit an order.')
@@ -702,8 +707,8 @@ class Root:
         return template.render(
             order=thisorder,
             session=session_info,
-            c=c
-        )
+            c=c,
+            cfg=cfg)
 
     @cherrypy.expose
     @admin_req
@@ -732,8 +737,8 @@ class Root:
         return template.render(
             meal=thismeal,
             session=session_info,
-            c=c
-        )
+            c=c,
+            cfg=cfg)
 
     @cherrypy.expose
     @restricted
@@ -839,7 +844,8 @@ class Root:
                                allergies=allergies,
                                attendee=attendee,
                                session=session_info,
-                               c=c)
+                               c=c,
+                               cfg=cfg)
             
     @cherrypy.expose
     @admin_req
@@ -993,7 +999,8 @@ class Root:
                                meals=meal_list,
                                session=session_info,
                                messages=messages,
-                               c=c)
+                               c=c,
+                               cfg=cfg)
 
     @cherrypy.expose
     @dh_or_admin
@@ -1116,7 +1123,8 @@ class Root:
                                no_contact=no_contact,
                                messages=messages,
                                session=session_info,
-                               c=c)
+                               c=c,
+                               cfg=cfg)
         
     @cherrypy.expose
     @dh_or_admin
@@ -1181,7 +1189,8 @@ class Root:
         template = env.get_template('ssf_meal_list.html')
         return template.render(meallist=meal_list,
                                session=session_info,
-                               c=c)
+                               c=c,
+                               cfg=cfg)
 
     @cherrypy.expose
     @ss_staffer
@@ -1226,7 +1235,8 @@ class Root:
                                total=total_orders,
                                remaining=remaining_orders,
                                session=session_info,
-                               c=c)
+                               c=c,
+                               cfg=cfg)
         
         
     @cherrypy.expose
@@ -1344,7 +1354,8 @@ class Root:
                                meal=thismeal,
                                messages=messages,
                                session=session_info,
-                               c=c)
+                               c=c,
+                               cfg=cfg)
     
     @cherrypy.expose
     @ss_staffer
@@ -1479,7 +1490,8 @@ class Root:
                                meal=meal,
                                dept=dept.name,
                                session=session_info,
-                               c=c)
+                               c=c,
+                               cfg=cfg)
     
     @dh_or_staffer
     @cherrypy.expose
@@ -1518,7 +1530,8 @@ class Root:
                                original_location=original_location,
                                messages=messages,
                                session=session_info,
-                               c=c)
+                               c=c,
+                               cfg=cfg)
 
     @cherrypy.expose
     @admin_req

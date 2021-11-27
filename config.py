@@ -124,6 +124,7 @@ class Config:
         self.ss_hours = int(cdata['ss_hours'])
         self.room_location = str(cdata['room_location'])
         self.location_url = str(cdata['location_url'])
+        self.ss_url = str(cdata['ss_url'])
         self.cherrypy = cdata['cherrypy']
         self.cherrypy['/']['tools.staticdir.root'] = os.path.abspath(os.getcwd())
 
@@ -190,6 +191,7 @@ class Config:
             'ss_hours': self.ss_hours,
             'room_location': self.room_location,
             'location_url': self.location_url,
+            'ss_url': self.ss_url,
             'cherrypy': self.cherrypy
         }
         
