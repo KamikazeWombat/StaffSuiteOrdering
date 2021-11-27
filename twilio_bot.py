@@ -19,7 +19,7 @@ def send_message(phone_numbers, dept_name, meal_name):
         # remove hyphens and such from phone number
         phone = re.sub(r'[-,()\.\+a-zA-Z]', '', phone)
 
-        # if nor 1 for country code at beginning of number
+        # if not 1 for country code at beginning of number then add it
         # I think this should ignore if someone has given an international number, at least in most cases.
         if phone.len() == 10:
             phone = '1' + phone

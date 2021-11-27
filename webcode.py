@@ -1417,12 +1417,16 @@ class Root:
                           '  ' + dept_order.slack_contact
                 slack_bot.send_message(dept_order.slack_channel, message)
 
+            if contact_details.sms_contact:
+                sms_list = contact_details.sms_contact.split(',')
+                twilio_bot.send_message(sms_list, dept.name, meal.meal_name)
+
             if contact_details.email_contact:
-                emails1 = contact_details.email_contact.split(',')
+                emails_list = contact_details.email_contact.split(',')
                 emails = []
-                for email1 in emails1:
+                for email_list2 in emails_list:
                     # in case someone puts semicolons out of habit puts semicolons to separate emails
-                    emailsplit = email1.split(';')
+                    emailsplit = email_list2.split(';')
                     for email in emailsplit:
                         emails.append(email)
 

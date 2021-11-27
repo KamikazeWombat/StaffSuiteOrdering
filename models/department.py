@@ -12,7 +12,7 @@ class Department(dec_base):
     orders = relationship('Order')
     """below is the default contact info for this department.
     The system will bother DHs when they look at a department page reminding them to configure this
-    When the department order for a meal is created it will use these fields to populate the contact info"""
+    System uses default fields if order-specific contact fields are not filled out"""
     slack_channel = Column('slack_channel', String, default='')  # what channel bot should message
     slack_contact = Column('slack_contact', String, default='')  # who to ping
     sms_contact = Column('sms_contact', String, default='')  # who to text

@@ -17,14 +17,19 @@
     <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"
               placeholder="Who to ping in Slack? (optional)"
       {% if dept_order.completed %} disabled {% endif %}
-    >{{ dept_order.slack_contact }}</textarea><br/>Should we ping anyone in Slack?</p>
+    >{{ dept_order.slack_contact }}</textarea><br/>Should we ping anyone in Slack? (pings not required, will send message with or without if channel field is used)</p>
+
+    <p>SMS             : <textarea name="email_contact" cols="50" rows="4"
+              placeholder="Phone numbers to send SMS messages to, comma separated"
+      {% if dept_order.completed %} disabled {% endif %}
+    >{{ dept_order.sms_contact }}</textarea><br/>Phone numbers to send SMS messages to, comma separated</p>
 
     <p>Email           : <textarea name="email_contact" cols="50" rows="4"
               placeholder="Email addresses to send emails to, comma separated"
       {% if dept_order.completed %} disabled {% endif %}
     >{{ dept_order.email_contact }}</textarea><br/>Email addresses to send emails to, comma separated</p>
 
-    <p>Other Contact   : <textarea name="other_contact" cols="50" rows="6"
+    <p>Other Contact   : <textarea name="other_contact" cols="50" rows="4"
                      placeholder="How you else would like to be contacted for order pickup.  Please remember that fulfilment staff are busy so automated contact options above are preferred."
       {% if dept_order.completed %} disabled {% endif %}
     >{{ dept_order.other_contact }}</textarea></p>
