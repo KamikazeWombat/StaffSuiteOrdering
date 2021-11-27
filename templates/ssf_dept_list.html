@@ -5,7 +5,7 @@
 
 <div class="container">
   <h2 class="form-signin-heading">Department Order List</h2>
-  <a style="width:3in;" class="btn btn-lg btn-primary btn-block" href="ssf_meal_list">Back to Meals list</a>
+  <a class="btn btn-lg btn-primary " href="ssf_meal_list">Back to Meals list</a>
   <p>Total orders for all departments for this meal: {{ total }}</p>
   <p>Remaining for all departments for this meal: {{ remaining }}</p>
   {% for dept in depts %}
@@ -20,7 +20,7 @@
             <label class="form-control">{{ name }}</label>
           </td>
             <td><label class="form-control" title="This count may include orders that are not eligible, and therefore will not show in the actual orders list on the next screen.">{{ count }}</label></td>
-            <td><a class="btn btn-lg btn-primary btn-block" href="ssf_orders?meal_id={{ meal_id }}&dept_id={{ dept_id }}">View Dept Orders</a></td>
+            <td><a class="btn btn-lg btn-primary " href="ssf_orders?meal_id={{ meal_id }}&dept_id={{ dept_id }}">View Dept Orders</a></td>
         </tr>
       </table>
     </form>
@@ -39,7 +39,7 @@
             <label class="form-control">{{ name }}</label>
           </td>
             <td><label class="form-control" title="This count may include orders that are not eligible, and therefore will not show in the actual orders list on the next screen.">{{ count }}</label></td>
-            <td><a class="btn btn-lg btn-primary btn-block" href="ssf_orders?meal_id={{ meal_id }}&dept_id={{ dept_id }}">View Dept Orders</a></td>
+            <td><a class="btn btn-lg btn-primary " href="ssf_orders?meal_id={{ meal_id }}&dept_id={{ dept_id }}">View Dept Orders</a></td>
         </tr>
       </table>
     </form>

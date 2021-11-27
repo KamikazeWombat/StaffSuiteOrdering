@@ -1,0 +1,4 @@
+This is to give an example of how these files should be formatted.
+I like to make a folder named Secure to put things like auth keys in to keep them separated from less sensitive stuff.
+
+Other items like Slack API key are just a single item, so they are in a flat text file without any json

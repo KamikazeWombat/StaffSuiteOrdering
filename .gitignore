@@ -1,5 +1,11 @@
-uber_auth.cfg
 config.json
 admin_list.cfg
+food_managers.cfg
+eligibility_exempt_depts.cfg
+super_admins.cfg
 ss_staffer_list.cfg
 slack_auth.cfg
+secure/
+.idea/
+pdfs/
+*.db

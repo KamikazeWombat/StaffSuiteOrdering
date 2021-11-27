@@ -4,41 +4,63 @@
 {% block content %}
 
 <div class="container">
-  <h2 class="form-signin-heading">View/Edit Department Order for {{ meal.meal_name }} for {{ dept.name }}</h2>
-  <form role="form">
+  <h2 class="form-signin-heading">View/Edit Department Order Bundle for {{ meal.meal_name }} for {{ dept.name }}</h2>
+  <div class="section-border">
+    <form role="form">
     <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
     <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
-    <p>Slack Channel: <textarea name="slack_channel" cols="50" rows="1"
-              placeholder="Where to send the message"
+
+    <p>Slack Channel   : <textarea name="slack_channel" cols="50" rows="1"
+              placeholder="Where to send the Slack message"
       {% if dept_order.completed %} disabled {% endif %}
-    >{{ dept_order.slack_channel }}</textarea><br/>What channel or DM to post in, eg 'staffsuiteordering, #bottesting, @wombat3</p>
+    >{{ dept_order.slack_channel }}</textarea><br/>Would you like us to post in a channel or DM, e.g. staffsuiteordering, #bottesting, @wombat3</p>
     <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"
-              placeholder="Who to ping in Slack?"
+              placeholder="Who to ping in Slack? (optional)"
       {% if dept_order.completed %} disabled {% endif %}
-    >{{ dept_order.slack_contact }}</textarea><br/>Who to ping in Slack?</p>
-    <p>Other Contact: <textarea name="other_contact" cols="50" rows="6"
-                     placeholder="How you else would like to be contacted for order pickup.  Text, email, phone call..."
+    >{{ dept_order.slack_contact }}</textarea><br/>Should we ping anyone in Slack? (pings not required, will send message with or without if channel field is used)</p>
+
+    <p>SMS             : <textarea name="email_contact" cols="50" rows="4"
+              placeholder="Phone numbers to send SMS messages to, comma separated"
+      {% if dept_order.completed %} disabled {% endif %}
+    >{{ dept_order.sms_contact }}</textarea><br/>Phone numbers to send SMS messages to, comma separated</p>
+
+    <p>Email           : <textarea name="email_contact" cols="50" rows="4"
+              placeholder="Email addresses to send emails to, comma separated"
+      {% if dept_order.completed %} disabled {% endif %}
+    >{{ dept_order.email_contact }}</textarea><br/>Email addresses to send emails to, comma separated</p>
+
+    <p>Other Contact   : <textarea name="other_contact" cols="50" rows="4"
+                     placeholder="How you else would like to be contacted for order pickup.  Please remember that fulfilment staff are busy so automated contact options above are preferred."
       {% if dept_order.completed %} disabled {% endif %}
     >{{ dept_order.other_contact }}</textarea></p>
-    <p>The above contact info is for meal order bundle completion for this department, for only this meal!</p>
-    <button style="width:3.25in;" class="btn btn-lg btn-primary btn-block" type="submit">Update Department's Contact Info</button>
-  </form>
-  <a style="width:5in;" class="btn btn-lg btn-primary btn-block" href="dept_contact?dept_id={{ dept_order.dept_id }}&original_location=dept_order%3Fmeal_id%3D{{ dept_order.meal_id }}%26dept_id%3D{{ dept_order.dept_id }}">Edit default contact info for {{ dept.name }}</a>
-  {% if not session.is_food_manager %}
-  <form>
-    <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
-    <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
-    <br/>
-    -----------------------------<br/>
-    <label>Badge Number</label>
-    <input type="text" name="food_manager">
-    <button style="width:2in;" class="btn btn-lg btn-primary btn-block" type="submit">Add Food Manager</button>
-    <br/>-----------------------------
-  </form>
+
+    <p>The above contact info is for meal order bundle completion for this department, for only this meal.  </p>
+    <p>All contact info sections are optional</p>
+    <button class="btn btn-lg btn-primary" type="submit">Update Department's Contact Info for THIS order</button>
+  </form></div>
+
+  <div class="section-border">
+    {% if no_contact %}
+      <p style="color:red;">Please add default contact info for your department. </p>
+    {% endif %}
+    <p>This will be used if no other info is provided for meal bundles for your department</p>
+    <a class="btn btn-lg btn-primary" href="dept_contact?dept_id={{ dept_order.dept_id }}&original_location=dept_order%3Fmeal_id%3D{{ dept_order.meal_id }}%26dept_id%3D{{ dept_order.dept_id }}">Edit default contact info for {{ dept.name }}</a>
+  </div>
+
+  {% if not session.is_food_manager or session.is_dh or session.is_admin %}
+    <form class="section-border">
+      <h3>Add someone as a Food Manager</h3>
+      <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
+      <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
+      <br/>
+      <label>Badge Number</label>
+      <input type="text" name="food_manager">
+      <button class="btn btn-lg btn-primary" type="submit">Add Food Manager</button>
+    </form>
   {% endif %}
+
   {% if not dept_order.started %}
-    <br/>
-    -----------------------------<br/>
+    <div  class="section-border">
     Create Meal Order for other attendee:
     <form>
       <table><tr>
@@ -48,16 +70,18 @@
           {{ macros.dropdown(field='order_department', options=departments, is_required=True) }}
         </td>
         <td>Badge Number: <input type="text" name="order_badge"/></td>
-        <td><button class="btn btn-lg btn-primary btn-block" type="submit">Create Order</button></td>
+        <td><button class="btn btn-lg btn-primary" type="submit">Create Order</button></td>
       </tr></table>
     </form>
+      </div>
   {% endif %}
-  -----------------------------
   
   {% if dept_order.started %}<br/><h3 style="color:darkgreen;">Meal Prep Started: {{ dept_order.start_time }} </h3>{% endif %}
   {% if dept_order.completed %}<br/><h3 style="color:darkgreen;">Meal Prep Completed: {{ dept_order.completed_time }} </h3>{% endif %}
   
   <h3>Orders for this department's Bundle:</h3>
+  Orders labeled Not Eligible will not be made unless Overriden by a DH or Food Manager. <br/>
+  Nothing can be changed once meal prep has started for you department's order bundle.
   {% for order in orders %}
     <form role="form">
       <table>
@@ -71,13 +95,13 @@
           </td>
           <td><label class="form-control">{{ order.attendee.full_name }} </label></td>
           {% if order.eligible == False and dept_order.started == False and order.overridden == False %}
-            <td><a class="btn btn-lg btn-primary btn-block" href="order_override?dept_id={{ dept_order.dept_id }}&meal_id={{ dept_order.meal_id }}&order_id={{ order.id }}">Override</a></td>
+            <td><a class="btn btn-lg btn-primary" href="order_override?dept_id={{ dept_order.dept_id }}&meal_id={{ dept_order.meal_id }}&order_id={{ order.id }}">Override</a></td>
           {% endif %}
           {% if order.overridden and dept_order.started == False %}
-            <td><a class="btn btn-lg btn-primary btn-block" href="order_override?dept_id={{ dept_order.dept_id }}&meal_id={{ dept_order.meal_id }}&order_id={{ order.id }}&remove_override=True">Remove Override</a></td>
+            <td><a class="btn btn-lg btn-primary" href="order_override?dept_id={{ dept_order.dept_id }}&meal_id={{ dept_order.meal_id }}&order_id={{ order.id }}&remove_override=True">Remove Override</a></td>
           {% endif %}
           {% if dept_order.started == False %}
-            <td><a class="btn btn-lg btn-primary btn-block" href="order_edit?dh_edit=True&order_id={{ order.id }}&badge_number={{ order.attendee.badge_num }}">Edit Order</a></td>
+            <td><a class="btn btn-lg btn-primary" href="order_edit?dh_edit=True&order_id={{ order.id }}&badge_number={{ order.attendee.badge_num }}">Edit Order</a></td>
           {% endif %}
         </tr>
       </table>

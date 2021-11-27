@@ -4,8 +4,13 @@
 {% block content %}
 
 <div class="container">
+  <h2>{% if meal.id %}Edit Meal{% else %}Create Meal{% endif %}</h2>
+    <div class="section-border">
+      You can leave any of the toggle and multi-select fields blank if not needed.<br/>
+      More options can be added if desired, both more choices nuder a question and more questions.<br/>
+      Toggle lets the staffer choose only one of the options, Multi-Select gives a group of check boxes any combination of which can be checked.<br/>
+    </div>
   <form role="form">
-    <h2 class="form-signin-heading">{% if meal.id %}Edit Meal{% else %}Create Meal{% endif %}</h2>
     <table style="width:100%">
       <tr> <td> <input type="hidden" name="id" value ="{{ meal.id }}">Meal Name</td>
         <td> <input type="text" class="form-control" placeholder="Meal Name" name="meal_name" value="{{ meal.meal_name }}" required autofocus /> </td>
@@ -46,9 +51,11 @@
         <input type="text" class="form-control" placeholder="Multi-Select Title" name="toppings_title" value="{{ meal.toppings_title }}"/>
       </td></tr>
         {{ macros.textbox_list('toppings', toppings, 'Multiple Select Option') }}
-      <tr><td><button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button></td>
-      <td><button class="btn btn-lg btn-primary btn-block" onclick="window.location.href = 'meal_setup_list';">Cancel</button></td></tr>
-      <tr><td></td><td><a class="btn btn-lg btn-primary btn-block" href="meal_delete_confirm?meal_id={{ meal.id }}">Delete</a></td><td></td></tr>
+      <tr><td><button class="btn btn-lg btn-primary " type="submit">Submit</button>
+      <button class="btn btn-lg btn-primary " onclick="window.location.href = 'meal_setup_list';">Cancel</button>
+      {% if meal.id %}
+        <a class="btn btn-lg btn-primary" href="meal_delete_confirm?meal_id={{ meal.id }}">Delete</a></td></tr>
+      {% endif %}
     </table>
     
   </form>

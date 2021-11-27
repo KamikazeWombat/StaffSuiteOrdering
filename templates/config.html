@@ -1,5 +1,20 @@
 {% extends "base.html" %}{% set admin_area=True %}
 {% block title %}Settings Config{% endblock %}
+{% block page_styles %}
+<style>
+tr {
+  border: 1px solid;
+  border-radius: 5px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  }
+td {
+padding-left: 3px;
+padding-top: 3px;
+padding-bottom: 3px;
+}
+</style>
+{% endblock %}
 {% block backlink %}{% endblock %}
 {% block content %}
 <div class="container">
@@ -46,8 +61,8 @@
   <h2>{{ message }} <br/></h2>
   <h2 class="form-signin-heading">Settings Config</h2>
     <form role="form">
-      <table>
-        <tr><td>Admin Users list</td>
+      <table style="border-collaps: collapse;">
+        <tr><td>Admin Users list, Comma Separated</td>
           <td><textarea name="admin_list" cols="50" rows="4"
                         placeholder="Public IDs from Uber, comma separated list.  Whitespace will be cleared."
           >{{ admin_list }}</textarea>
@@ -82,38 +97,58 @@
         </td></tr>
         <tr><td>Date Format</td>
           <td><input type="text" name="date_format" value="{{ cfg.date_format }}"
-                     placeholder="Date format; go to strftime.org for details"/> Date display format for most things; go to <a href="http://strftime.org">strftime.org</a> for details
+                     placeholder="Date format; go to strftime.org for details"/>
+            <br/>Date display format for most things; go to <a href="http://strftime.org">strftime.org</a> for details
         </td></tr>
           <tr><td>Schedule Tolerance</td>
-        <td><input disabled type="text" name="schedule_tolerance" value="{{ cfg.schedule_tolerance }}"/> Tolerance in minutes for amount of meal period not overlapped by shifts for carryout eligiblity</td></tr>
+        <td><input type="text" name="schedule_tolerance" value="{{ cfg.schedule_tolerance }}"/>
+          <br/>Tolerance for amount of meal period not overlapped by shifts
+          <br/>In minutes, for automatic carryout eligibility calculation</td></tr>
         <tr><td>Weighted Hours</td>
-          <td><input type="text" name="ss_hours" value="{{ cfg.ss_hours }}"/> How many weighted hours are needed for base Staff Suite eligibilty</td></tr>
+          <td><input type="text" name="ss_hours" value="{{ cfg.ss_hours }}"/>
+            <br/>How many weighted hours are needed for base Staff Suite eligibilty</td></tr>
         <tr><td>Shiftless Departments</td>
           <td><textarea name="exempt_depts" cols="50" rows="4"
           placeholder="Department IDs from Uber, CaSe SensiTive, comma separated list.  Whitespace will be cleared."
           >{{ exempt_depts }}</textarea>
-        </td>
+          </td></tr>
+        <tr><td>Room Location</td>
+          <td><input type="text" name="room_location" value="{{ cfg.room_location }}"/>
+          <br/>Room location, like "Room 2022"
+        </td></tr>
+        <tr><td>Room Location URL</td>
+          <td><input type="text" name="room_url" style="width:4in;" value="{{ cfg.location_url }}"/>
+          <br/>URL pointing to room location info
+        </td></tr>
+        <tr><td>Staff Suite info URL</td>
+          <td><input type="text" name="room_url" style="width:4in;" value="{{ cfg.ss_url }}"/>
+          <br/>URL for general info on Staff Suite
+        </td></tr>
       </table>
       
       <br/>
-      <button style="width:2in;"  class="btn btn-lg btn-primary btn-block" type="submit">Submit</button>
-      <button style="width:4in;" class="btn btn-lg btn-primary btn-block" onclick="window.location.href = 'meal_setup_list';">Cancel</button>
+      <button class="btn btn-lg btn-primary " type="submit">Submit</button>
+      <button class="btn btn-lg btn-primary " onclick="window.location.href = 'meal_setup_list';">Cancel</button>
       
     </form>
-    {% if dangerous %}
-    <a href="dangerous?reset_dept_list=True">Reset Dept List</a><br/>
-    <a href="dangerous?reset_checkin_list=True">Reset Checkins List</a><br/>
-    <form>
-      <input type="text" name="badge"/>
-      <button type="submit">Lookup Attendee</button>
-      {{ attendee }}
-    </form>
-    <form>
-      <input type="text" name="delete_order">
-      <button type="submit">Delete Order</button>
-    </form>
-    {% endif %}
-    <br/><a href="create_checkin_csv">Create Checkin CSV</a>
+    <div class="section-border">
+      <p>Super Admin section</p>
+      <a{% if not session.is_super_admin %} href="dangerous?reset_dept_list=True"{% endif %}>Reset Dept List</a><br/>
+      <a{% if not session.is_super_admin %} href="dangerous?reset_checkin_list=True"{% endif %}>Reset Checkins List</a><br/>
+      <form>
+        <input type="text" name="badge"/>
+        <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Lookup Attendee</button>
+        {{ attendee }}
+      </form>
+      <form>
+        <input type="text" name="delete_order">
+        <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Delete Order</button>
+      </form>
+    </div>
+
+    <div class="section-border">
+    <a href="create_checkin_csv">Create Checkin CSV</a>
     <br/><a href="create_orders_csv">Create Orders CSV</a>
+    </div>
 </div>
 {% endblock content %}

@@ -1,0 +1,4 @@
+{
+  "aws_user": "SMTP User for AWS SES",
+  "aws_authkey": "Key / passwordfor SMTP"
+}

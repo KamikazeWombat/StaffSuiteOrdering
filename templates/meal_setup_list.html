@@ -6,10 +6,10 @@
 <div class="container">
   <h2>{{ message }} <br/></h2>
   <h2 class="form-signin-heading">Meal List</h2>
-  <a href="meal_edit" class="btn btn-lg btn-primary btn-block">Create Meal</a>
+  <a href="meal_edit" class="btn btn-lg btn-primary">Create Meal</a>
   <br/>
   {% for meal in meallist %}
-    <form role="form">
+    <form class="section-border" role="form">
       <table>
         <tr>
           <td>
@@ -20,7 +20,7 @@
             <label class="form-control">{{ meal.description }}</label>
           </td>
             <td><label class="form-control">{{ meal.start_time }}</label></td>
-            <td><button class="btn btn-lg btn-primary btn-block" type="submit">Edit Meal</button></td>
+            <td><button class="btn btn-lg btn-primary " type="submit">Edit Meal</button></td>
         </tr>
       </table>
     </form>

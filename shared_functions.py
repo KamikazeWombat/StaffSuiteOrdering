@@ -98,7 +98,7 @@ def parse_utc(date):
 
 
 def utc_tz(date):
-    """converts a datetime object OR a date string (assumed event local) to UTC TZ datetime object for storage"""
+    """converts a datetime object OR a date string from event local to UTC TZ datetime object for storage"""
     if isinstance(date, str):
         date = parse(date)
     
@@ -112,7 +112,7 @@ def utc_tz(date):
 
 
 def con_tz(date):
-    """converts a datetime object OR a date string (assumed UTC) to local TZ datetime object for display"""
+    """converts a datetime object OR a date string from UTC to local TZ datetime object for display"""
     if isinstance(date, str):
         date = parse_utc(date)
         
@@ -149,15 +149,12 @@ def api_login(first_name, last_name, email, zip_code):
     Performs login request against Uber API and returns resulting json data
     """
 
-    #runs API request
     REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
-    # data being sent to API
     request_data = {'method': 'attendee.login',
                     'params': [first_name.strip(), last_name.strip(), email.strip(), zip_code.strip()]}
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
     response = json.loads(request.text)
 
-    #print(response)
     return response
 
 
@@ -188,7 +185,7 @@ def add_access(badge, usertype=None):
         try:
             badge = int(badge)
         except ValueError:
-            raise HTTPRedirect("nNot a number?")
+            raise HTTPRedirect("Not a number?")
 
     if not badge:
         raise HTTPRedirect("config?message=Badge not found")
@@ -201,10 +198,11 @@ def add_access(badge, usertype=None):
         response = lookup_attendee(badge)
         if 'error' in response:
             session.close()
+            # admin or staff would be added using config page, Food Manager would be from dept_orders page
             if usertype == 'admin' or usertype == 'staff':
                 raise HTTPRedirect("config?message=Badge " + str(badge) + " is not found in Reggie")
             else:
-                raise HTTPRedirect("dept_order_selection?message=Badge " + str(badge) + "is not found in Reggie")
+                raise HTTPRedirect("dept_order_selection?message=Badge " + str(badge) + " is not found in Reggie")
         
         attend = models.attendee.Attendee()
         attend.badge_num = response['result']['badge_num']
@@ -218,6 +216,13 @@ def add_access(badge, usertype=None):
     if usertype == 'staff' and attend.public_id not in cfg.staffer_list:
         cfg.staffer_list.append(attend.public_id)
     if usertype == 'food_manager' and attend.public_id not in cfg.food_managers:
+        if is_dh(attend.public_id):
+            session.close()
+            raise HTTPRedirect("dept_order_selection?message=Badge " + str(badge) + "is already a Department Head")
+        if is_admin(attend.public_id):
+            session.close()
+            raise HTTPRedirect("dept_order_selection?message=Badge " + str(badge) + "is already a Tuber Eats Admin")
+
         cfg.food_managers.append(attend.public_id)
         manager_list = ',\n'.join(cfg.food_managers)
         managerfile = open('food_managers.cfg', 'w')
@@ -229,23 +234,19 @@ def add_access(badge, usertype=None):
     session.close()
     return False
 
+
 def load_departments():
     """
     Loads departments from connected Uber instance
     :return:
     """
     REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
-    
-    # data being sent to API
+
     request_data = {'method': 'dept.list'}
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
     response = json.loads(request.text)
     response = response['result'].items()
-    # print('----------------------------')
-    # print(response)
-    # print('----------------------------')
 
-    # print('loading departments')
     session = models.new_sesh()
     for dept in response:
         try:
@@ -268,8 +269,7 @@ def lookup_attendee(badge_num, full=False):
     Looks up an existing attendee by badge_num and returns the resulting json data
     """
     REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
-    
-    # data being sent to API
+
     if full:
         request_data = {'method': 'attendee.lookup',
                         'params': [badge_num, True]}
@@ -279,18 +279,6 @@ def lookup_attendee(badge_num, full=False):
         
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
     response = json.loads(request.text)
-    # todo: remove testing stuff here
-    """
-    date = response['result']['shifts'][0]['job']['start_time'] #date string
-    date = parse_utc(date) #convert to datetime object
-    
-    local_dt = con_tz(date)
-    fmt = '%Y-%m-%d %H:%M:%S %Z%z'
-    print(date.strftime(fmt))
-    print(date.tzinfo)
-    print(local_dt.strftime(fmt))
-    """
-    # end of testing stuff
 
     return response
 
@@ -336,9 +324,7 @@ def return_selected_only(session, choices, orders):
     mylist = order_split(session, choices, orders)
     selected = list()
     for item in mylist:
-        #print(item)
         if item[0] == 1:
-            #print('selecting', item)
             selected.append(item)
     
     return selected
@@ -380,13 +366,12 @@ def order_selections(field, params, is_toggle=False):
     
     for param in params:
         valuekey = field + str(count)
-        #print(field + ' ' + valuekey)
         # checks for relevant parameters and does stuff if found
         try:
             value = params[valuekey]
             
             if not value == '' and not value == 'None' and not value == 0:
-                # if checked loads id into result
+                # then field is checked so loads id into result
                 idkey = field + 'id' + str(count)
                 id = params[idkey]
                 result.append(str(id))
@@ -447,9 +432,9 @@ def meal_join(session, params, field):
                     if label == '' and desc == '':
                         count += 1
                         break
-                        
+
                     ing = session.query(Ingredient).filter_by(id=fieldid).one()
-                    # reduce unnecessary calls to DB
+                    # if changed saves to DB
                     if not (ing.label == label and ing.description == desc):
                         ing.label = label
                         ing.description = desc
@@ -475,7 +460,7 @@ def meal_split(session, toppings):
     try:
         id_list = sorted(toppings.split(','))
     except ValueError:
-        #this happens if no toppings in list
+        # this happens if no toppings in list
         return []
     
     ing_list = session.query(Ingredient).filter(Ingredient.id.in_(id_list)).all()
@@ -528,10 +513,7 @@ class Shift:
     Contains relevant info for a shift needed to do eligibility calculations.
     Times are python dateutil objects, optional weight is whatever the shift is weighted for
     """
-    #start_time = ''
-    #end_time = ''
-    #weight = ''
-    
+
     def __init__(self, start_time, end_time, extra_15=False):
         self.start = start_time
         self.extra_15 = extra_15
@@ -564,7 +546,7 @@ def ss_eligible(badge_num):
     
     attendee = response['result']
     
-    # people who signed up for no shifts but have worked
+    # people who signed up for no shifts but have worked required hours for eligibility
     if attendee['worked_hours'] >= cfg.ss_hours:
         return True
     # non-staff who are signed up for at least <current year's hours req> and have worked at least one shift
@@ -579,7 +561,7 @@ def ss_eligible(badge_num):
     for dept in attendee['assigned_depts_labels']:
         if dept in cfg.exempt_depts:
             return True
-    # Department Heads get access, period.
+    # Department Heads always get access
     if response['result']['is_dept_head']:
         return True
     # Staff who have signed up for at least <event required> hours.
@@ -597,20 +579,17 @@ def combine_shifts(badge_num, full=False, no_combine=False):
     Gets list of shifts, sorts it, then combines any that are close together based on settings for allowable gaps
     :param badge_num: Staffer's badge number
     :param full: whether or not to also return entire response
+    :param no_combine: skips combining shifts and merely returns unsorted shifts
     :return: returns sorted and merged list of shifts
     """
     
     response = lookup_attendee(badge_num, full=True)
     shift_list = []
-    # print('-------------------------------')
-    # print(response)
-    # print('-------------------------------')
+
     if 'error' in response:
         message = response['error']['message']
         print(message)
     else:
-        # print('-------------------------------')
-        # print(response)
         shifts = response['result']['shifts']
         for shift in shifts:
             item = Shift(parse(shift['job']['start_time']),
@@ -652,6 +631,7 @@ def combine_shifts(badge_num, full=False, no_combine=False):
             i += 1
             if i == (len(shifts)-1):
                 combined.append(shifts[i])  # adds last shift if last pair not being merged
+
     if full:
         return combined, response
     else:
@@ -671,7 +651,6 @@ def carryout_eligible(shifts, meal_start, meal_end):
     # AND ends within <<buffer>exc> before end of meal time or later
     
     # if there are no shifts, skip processing
-    
     if len(shifts) == 0:
         return False
     """code section for buffer, commented out cause not using buffer for Super 2020
@@ -691,14 +670,12 @@ def carryout_eligible(shifts, meal_start, meal_end):
             return True
     """
     # rd positive if first after second
+    # ss=shift start, se = shift end.  ms=meal start, me= meal end
     # if ss after ms AND before me then good
     # if se after ms AND before me then good
     # if ss before ms AND se after me then good
     # if the shift is more than a day before or after the meal days != 0
-    # print('-----------before loop--------------')
-    
     for shift in shifts:
-        # print('---------------start loop------------')
         ss_ms = relativedelta(meal_start, shift.start)
         ss_ms_delta = ss_ms.minutes + (ss_ms.hours * 60)
         ss_me = relativedelta(meal_end, shift.start)
@@ -718,7 +695,7 @@ def carryout_eligible(shifts, meal_start, meal_end):
         if ss_ms_delta >= 0 and se_me_delta <= 0 and ss_ms.days == 0:
             # print('if ss before ms AND se after me then good')
             return True
-    # print('none matched')
+
     # if none of the shifts match the meal period, return false.
     return False
 
@@ -731,16 +708,15 @@ def is_admin(staff_id):
 
 
 def is_ss_staffer(staff_id):
-    if staff_id in cfg.admin_list or staff_id in cfg.staffer_list:
+    if (staff_id in cfg.admin_list) or (staff_id in cfg.staffer_list):
         return True
     else:
         return False
 
 
 def is_dh(staff_id):
-    # runs API request
+    # queries Uber/Reggie to find out if attendee is marked as a DH
     REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
-    # data being sent to API
     request_data = {'method': 'attendee.search',
                     'params': [staff_id]}
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
@@ -752,7 +728,7 @@ def allergy_info(badge_num):
     """
     Performs API request to Uber/Reggie and returns allergy info
     :param badge_num:
-    :return:
+    :return:  returns tuple of allergy info, blank if none
     """
     response = lookup_attendee(badge_num, full=True)
     if response['result']['food_restrictions']:
@@ -765,6 +741,9 @@ def allergy_info(badge_num):
 
 
 def create_dept_order(dept_id, meal_id, session):
+    """
+    creates a new dept_order to track bundle for given department's orders for specified meal time
+    """
     dept = session.query(Department).filter_by(id=dept_id).one()
     dept_order = models.dept_order.DeptOrder()
     dept_order.dept_id = dept_id
@@ -772,7 +751,7 @@ def create_dept_order(dept_id, meal_id, session):
     dept_order.slack_contact = dept.slack_contact
     dept_order.slack_channel = dept.slack_channel
     dept_order.other_contact = dept.other_contact
-    dept_order.text_contact = dept.text_contact
+    dept_order.sms_contact = dept.sms_contact
     dept_order.email_contact = dept.email_contact
     
     session.add(dept_order)
@@ -784,7 +763,7 @@ def create_dept_order(dept_id, meal_id, session):
 def send_webhook(url, data):
     """
     Sends webhook request
-    :param url:
+    :param url:provided url for webhook
     :param data: JSON format data
     :return:
     """
@@ -796,13 +775,19 @@ def send_webhook(url, data):
 def dummy_data(count, startorder):
     """
     create dummy data for testing
+    :startorder: starting order is provided so some basic fields can be valid without having to be filled out.
     :return:
     """
+
+    # do not want to create dummy data in live DB!!!
+    print("-----------Tried to create dummy data but this server is marked as live!-----------")
+    if not cfg.devenv:
+        return
+
     session = models.new_sesh()
     count = int(count)
     depts = session.query(Department).all()
     meals = session.query(models.meal.Meal).all()
-    # attendees = session.query(models.attendee.Attendee).all()
     
     i = 0
     while i < count:
@@ -825,3 +810,40 @@ def dummy_data(count, startorder):
     session.commit()
     session.close()
     return
+
+
+def load_d_o_contact_details(dept_order, dept):
+    """
+    Returns best available contact details for the provided department order bundle
+    """
+    contact_details = models.department.Department()
+
+    # if someone has edited the contact details for this order bundle, use that.  otherwise use department defaults
+    if dept_order.slack_contact or dept_order.slack_channel or dept_order.sms_contact or dept_order.other_contact or \
+            dept_order.email_contact:
+        contact_details.slack_contact = dept_order.slack_contact
+        contact_details.slack_channel = dept_order.slack_channel
+        contact_details.email_contact = dept_order.email_contact
+        contact_details.sms_contact = dept_order.sms_contact
+        contact_details.other_contact = dept_order.other_contact
+    else:
+        contact_details.slack_contact = dept.slack_contact
+        contact_details.slack_channel = dept.slack_channel
+        contact_details.email_contact = dept.email_contact
+        contact_details.sms_contact = dept.sms_contact
+        contact_details.other_contact = dept.other_contact
+    
+    return contact_details
+    
+    
+def get_session_info():
+    """
+    Loads session info for use with Jinja templates
+    """
+    session = {
+        'is_dh': cherrypy.session['is_dh'],
+        'is_admin': cherrypy.session['is_admin'],
+        'is_ss_staffer': cherrypy.session['is_ss_staffer'],
+        'is_food_manager': cherrypy.session['is_food_manager']
+    }
+    return session
