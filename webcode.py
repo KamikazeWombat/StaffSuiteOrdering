@@ -97,9 +97,9 @@ class Root:
                     cherrypy.session['is_dh'] = False
 
                 if is_super_admin(cherrypy.session['staffer_id']):
-                    cherrypy.session['is_dh'] = True
+                    cherrypy.session['is_super_admin'] = True
                 else:
-                    cherrypy.session['is_dh'] = False
+                    cherrypy.session['is_super_admin'] = False
 
                 # food manager tag is for a person who only has this specific privilige, not DH or admin also.
                 # the only place this tag is used last I checked is to prevent a food manager from adding food managers
@@ -865,13 +865,13 @@ class Root:
         
         if delete_order:
             if not session_info.is_super_admin:
-                raise HTTPRedirect('config&message=You must be super admin to delete orders.')
+                raise HTTPRedirect('config?message=You must be super admin to delete orders.')
             session = models.new_sesh()
             thisorder = session.query(Order).filter_by(id=delete_order).one()
             session.delete(thisorder)
             session.commit()
             session.close()
-            raise HTTPRedirect('config&message=order ' + delete_order + ' deleted.')
+            raise HTTPRedirect('config?message=order ' + delete_order + ' deleted.')
         
         if 'radio_select_count' in params:
             # save config
@@ -916,7 +916,7 @@ class Root:
 
         if badge:
             if not session_info.is_super_admin:
-                raise HTTPRedirect('config&message=You must be super admin to use the attendee lookup feature')
+                raise HTTPRedirect('config?message=You must be super admin to use the attendee lookup feature')
             # lookup attendee in Uber, dumps result to page.  intended for troubleshooting purposes
             attendee = shared_functions.lookup_attendee(badge, True)
             attendee = json.dumps(attendee, indent=2)
@@ -947,11 +947,10 @@ class Root:
         For hidden buttons to do potentially very dangerous things
         """
         session = models.new_sesh()
-        session_info = get_session_info()
         
         if reset_dept_list:
-            if not session_info.is_super_admin:
-                raise HTTPRedirect('config&message=You must be super admin to reset the department list.')
+            if not cherrypy.session['is_super_admin']:
+                raise HTTPRedirect('config?message=You must be super admin to reset the department list.')
             depts = session.query(Department).all()
             for dept in depts:
                 session.delete(dept)
@@ -959,8 +958,8 @@ class Root:
             shared_functions.load_departments()
         
         if reset_checkin_list:
-            if not session_info.is_super_admin:
-                raise HTTPRedirect('config&message=You must be super admin to reset the checkins log.')
+            if not cherrypy.session['is_super_admin']:
+                raise HTTPRedirect('config?message=You must be super admin to reset the checkins log.')
             checkins = session.query(Checkin).all()
             for checkin in checkins:
                 session.delete(checkin)
@@ -1567,12 +1566,12 @@ class Root:
             export += checkin.timestamp.strftime(cfg.date_format)
             export += '\n'
         
-        exportfile = open('checkin_export.csv', 'w')
+        exportfile = open('pdfs/checkin_export.csv', 'w')
         exportfile.write(export)
         exportfile.close()
         
         session.close()
-        raise HTTPRedirect('config?message=Succesfully exported checkins csv')
+        raise HTTPRedirect('pdfs/checkin_export.csv')
 
     @cherrypy.expose
     @admin_req
@@ -1608,9 +1607,9 @@ class Root:
         print('minutes ' + str(rd.minutes))
         print('seconds ' + str(rd.seconds))
         
-        exportfile = open('order_export.csv', 'w', encoding='utf-8')
+        exportfile = open('pdfs/order_export.csv', 'w', encoding='utf-8')
         exportfile.write(export)
         exportfile.close()
 
         session.close()
-        raise HTTPRedirect('config?message=succesfully exported orders report')
+        raise HTTPRedirect('pdfs/order_export.csv')
