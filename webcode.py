@@ -27,7 +27,7 @@ import shared_functions
 from shared_functions import api_login, HTTPRedirect, order_split, order_selections, allergy_info, \
                      meal_join, meal_split, meal_blank_toppings, department_split, create_dept_order, \
                      ss_eligible, carryout_eligible, combine_shifts, return_selected_only, \
-                     con_tz, utc_tz, now_utc, now_contz, is_admin, is_ss_staffer, is_dh, return_not_selected, \
+                     con_tz, utc_tz, now_utc, now_contz, is_admin, is_ss_staffer, is_dh, is_super_admin, \
                      get_session_info
 import slack_bot
 import twilio_bot
@@ -95,7 +95,12 @@ class Root:
                     cherrypy.session['is_dh'] = True
                 else:
                     cherrypy.session['is_dh'] = False
-                    
+
+                if is_super_admin(cherrypy.session['staffer_id']):
+                    cherrypy.session['is_dh'] = True
+                else:
+                    cherrypy.session['is_dh'] = False
+
                 # food manager tag is for a person who only has this specific privilige, not DH or admin also.
                 # the only place this tag is used last I checked is to prevent a food manager from adding food managers
                 if cherrypy.session['staffer_id'] in cfg.food_managers and not cherrypy.session['is_dh'] \
