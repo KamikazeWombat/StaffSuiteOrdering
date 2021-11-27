@@ -852,5 +852,6 @@ def get_session_info():
         'is_admin': cherrypy.session['is_admin'],
         'is_ss_staffer': cherrypy.session['is_ss_staffer'],
         'is_food_manager': cherrypy.session['is_food_manager']
+        'is_admin': cherrypy.session['is_super_admin'],
     }
     return session
