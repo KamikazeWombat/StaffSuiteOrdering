@@ -9,36 +9,36 @@
     <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
     <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
     <div class="section-border">
-      <p>Slack Channel   : <textarea name="slack_channel" cols="50" rows="1"
+      <p>Slack Channel   : <textarea name="slack_channel" cols="50" rows="1"{% if not session.is_admin %} disabled {% endif %}
                 placeholder="What channel to post in, eg 'staffsuiteordering, #bottesting'"
         {% if dept_order.completed %} disabled {% endif %}
       >{{ dept_order.slack_channel }}</textarea><br/>What channel to post in, eg 'staffsuiteordering, #bottesting'</p>
 
-      <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"
+      <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"{% if not session.is_admin %} disabled {% endif %}
                 placeholder="Who to ping in Slack?"
         {% if dept_order.completed %} disabled {% endif %}
       >{{ dept_order.slack_contact }}</textarea><br/>Who to ping in Slack?</p>
     </div>
      <div class="section-border">
-      <p>SMS             : <textarea name="sms_contact" cols="50" rows="4"
+      <p>SMS             : <textarea name="sms_contact" cols="50" rows="4"{% if not session.is_admin %} disabled {% endif %}
                 placeholder="Phone numbers to send SMS messages to"
         {% if dept_order.completed %} disabled {% endif %}
       >{{ dept_order.sms_contact }}</textarea><br/>Phone numbers to send SMS messages to</p>
     </div>
     <div class="section-border">
-      <p>Email           : <textarea name="email_contact" cols="50" rows="4"
+      <p>Email           : <textarea name="email_contact" cols="50" rows="4"{% if not session.is_admin %} disabled {% endif %}
                 placeholder="Email addresses to send emails to"
         {% if dept_order.completed %} disabled {% endif %}
       >{{ dept_order.email_contact }}</textarea><br/>Email addresses to send emails to</p>
     </div>
     <div class="section-border">
-      <p>Other Contact   : <textarea name="other_contact" cols="50" rows="6"
+      <p>Other Contact   : <textarea name="other_contact" cols="50" rows="6"{% if not session.is_admin %} disabled {% endif %}
                        placeholder="Other ways you would like to be contacted for order pickup.  Text, phone call..."
         {% if dept_order.completed %} disabled {% endif %}
       >{{ dept_order.other_contact }}</textarea></p>
     </div>
     <p>The above contact info is for meal order bundle completion for this department, for only this meal!</p>
-    <button class="btn btn-lg btn-primary " type="submit">Update Department's Contact Info</button>
+    <button class="btn btn-lg btn-primary " type="submit"{% if not session.is_admin %} disabled{% endif %}>Update Department's Contact Info</button>
   </form>
   <a href="ssf_orders?meal_id={{ dept_order.meal_id }}&dept_id={{ dept_order.dept_id }}" class="btn btn-lg btn-primary ">Done contacting, back to Orders page</a>
 </div>
