@@ -147,6 +147,10 @@ class Root:
 
         # if not an active login attempt, load login page
         template = env.get_template('login.html')
+        if not cfg.env == "prod":
+            isdev = True
+        else:
+            isdev = False
         return template.render(messages=messages,
                                first_name=first_name,
                                last_name=last_name,
@@ -155,7 +159,7 @@ class Root:
                                original_location=original_location,
                                c=c,
                                cfg=cfg,
-                               isdev=cfg.devenv)
+                               isdev=isdev)
 
     @cherrypy.expose
     @admin_req
@@ -1326,8 +1330,8 @@ class Root:
                 dept_name.replace('/', '-')
                 dept_name.replace('\\', '-')
 
-                if cfg.devenv:  # todo: change this to detect OS instead
-                    # for some reason the silly system decided to not find it automatically anymore
+                if cfg.env == "dev":  # Windows todo: change this to detect OS instead
+                    # for some reason the silly system decided to not find wkhtmltopdf automatically anymore
                     path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
                     config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
                     
@@ -1339,9 +1343,9 @@ class Root:
                                        'pdfs\\' + dept_name + '.pdf',
                                        options=options,
                                        configuration=config)
-                else:
-                    #path_wkhtmltopdf = r'/usr/local/bin/wkhtmltopdf'
-                    #config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+                else:   # Linux
+                    # path_wkhtmltopdf = r'/usr/local/bin/wkhtmltopdf'
+                    # config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
                     pdfkit.from_string(labels.render(orders=order_list,
                                                      meal=thismeal,
                                                      dept_name=dept_name),

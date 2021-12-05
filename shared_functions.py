@@ -792,8 +792,9 @@ def dummy_data(count, startorder):
     """
 
     # do not want to create dummy data in live DB!!!
-    print("-----------Tried to create dummy data but this server is marked as live!-----------")
-    if not cfg.devenv:
+
+    if cfg.env == "prod":
+        print("-----------Tried to create dummy data but this server is marked as live!-----------")
         return
 
     session = models.new_sesh()
