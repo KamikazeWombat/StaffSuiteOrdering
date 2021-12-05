@@ -546,24 +546,29 @@ def ss_eligible(badge_num):
     
     attendee = response['result']
     
-    # people who signed up for no shifts but have worked required hours for eligibility
+    # attendees who have have already worked required hours for eligibility
     if attendee['worked_hours'] >= cfg.ss_hours:
         return True
+
     # non-staff who are signed up for at least <current year's hours req> and have worked at least one shift
     if attendee['badge_type_label'] == "Attendee":
         if attendee['weighted_hours'] >= cfg.ss_hours:
             if attendee['worked_hours'] > 0:
                 return True
+
     # Guests and Contractors automatically get access
     if attendee['badge_type_label'] in ["Guest", "Contractor"]:
         return True
+
     # shiftless departments are exempt from eligibility requirements
     for dept in attendee['assigned_depts_labels']:
         if dept in cfg.exempt_depts:
             return True
+
     # Department Heads always get access
     if response['result']['is_dept_head']:
         return True
+
     # Staff who have signed up for at least <event required> hours.
     # Having already worked a shift this event not required for people with Staff status
     if attendee['badge_type_label'] == "Staff":
