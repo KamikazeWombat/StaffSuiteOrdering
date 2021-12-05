@@ -21,7 +21,7 @@ def send_message(phone_numbers, dept_name, meal_name):
 
         # if not 1 for country code at beginning of number then add it
         # I think this should ignore if someone has given an international number, at least in most cases.
-        if phone.len() == 10:
+        if len(phone) == 10:
             phone = '1' + phone
 
         # Twilio wants there to be a plus at the beginning of the phone number

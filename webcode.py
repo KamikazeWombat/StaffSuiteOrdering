@@ -915,7 +915,7 @@ class Root:
         exempt_depts = ',\n'.join(cfg.exempt_depts)
 
         if badge:
-            if not session_info.is_super_admin:
+            if not session_info['is_super_admin']:
                 raise HTTPRedirect('config?message=You must be super admin to use the attendee lookup feature')
             # lookup attendee in Uber, dumps result to page.  intended for troubleshooting purposes
             attendee = shared_functions.lookup_attendee(badge, True)

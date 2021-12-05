@@ -156,6 +156,7 @@ class Config:
             twiliodata = json.load(twilio_authfile)
             self.twilio_sid = twiliodata['twilio_sid'].strip()
             self.twilio_authkey = twiliodata['twilio_authkey'].strip()
+            self.twilio_sendfrom = twiliodata['twilio_sendfrom'].strip()
             twilio_authfile.close()
         except FileNotFoundError:
             pass
