@@ -19,7 +19,7 @@
       {% if dept_order.completed %} disabled {% endif %}
     >{{ dept_order.slack_contact }}</textarea><br/>Should we ping anyone in Slack? (pings not required, will send message with or without if channel field is used)</p>
 
-    <p>SMS             : <textarea name="email_contact" cols="50" rows="4"
+    <p>SMS             : <textarea name="sms_contact" cols="50" rows="4"
               placeholder="Phone numbers to send SMS messages to, comma separated"
       {% if dept_order.completed %} disabled {% endif %}
     >{{ dept_order.sms_contact }}</textarea><br/>Phone numbers to send SMS messages to, comma separated</p>

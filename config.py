@@ -85,14 +85,14 @@ class Config:
         for arg in argv:
             if arg == '-dev':
                 filename = 'devconfig.json'
-                self.devenv = True
+                self.env = "dev"
                 break
-            elif arg == '-test':
+            elif arg == '-testing':
                 filename = 'testingserver.json'
-                self.devenv = True
+                self.env = "testing"
                 break
             elif arg == '-prod':
-                self.devenv = False
+                self.env = "prod"
                 filename = 'config.json'
             else:
                 filename = 'invalid commandline args.  choices are -dev, -test, and -prod.'
@@ -156,6 +156,7 @@ class Config:
             twiliodata = json.load(twilio_authfile)
             self.twilio_sid = twiliodata['twilio_sid'].strip()
             self.twilio_authkey = twiliodata['twilio_authkey'].strip()
+            self.twilio_sendfrom = twiliodata['twilio_sendfrom'].strip()
             twilio_authfile.close()
         except FileNotFoundError:
             pass
