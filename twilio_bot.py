@@ -2,6 +2,7 @@ import time
 import re
 
 from twilio.rest import Client
+from twilio.base.exceptions import TwilioRestException
 
 import slack_bot
 from config import cfg
@@ -11,7 +12,7 @@ def send_message(phone_numbers, dept_name, meal_name):
     """
     Sends message to list of phone numbers
     """
-    client = Client(cfg.twilio_sid, cfg.twilio_authkey)
+    client = Client(cfg.twilio_authkey, cfg.twilio_authsecret, cfg.twilio_account_sid)
 
     for index, phone in enumerate(phone_numbers):
         if index % 5 == 0:
@@ -26,16 +27,19 @@ def send_message(phone_numbers, dept_name, meal_name):
 
         # Twilio wants there to be a plus at the beginning of the phone number
         phone = '+' + phone
+        try:
+            message = client.messages \
+                            .create(
+                                 body="Your department's order bundle for " + str(meal_name) + " for " + str(dept_name)
+                                 + " is ready for pickup",
+                                 from_=cfg.twilio_sendfrom,
+                                 to=phone
+                             )
 
-        message = client.messages \
-                        .create(
-                             body="Your department's order bundle for " + str(meal_name) + " for " + str(dept_name)
-                             + " is ready for pickup",
-                             from_=cfg.twilio_sendfrom,
-                             to=phone
-                         )
-        if 'error' in message:
-            print(message)
-            slack_bot.send_message('bottesting', 'Error sending SMS message to ' + phone + '\r\n' + str(message))
+        except TwilioRestException as e:
+            print("-----------twilio exception processing--------------")
+            print(e)
+            slack_bot.send_message('bottesting', 'Error sending SMS message to ' + phone + '\r\n')
+            print("-----------end twilio exception processing--------------")
 
     return
