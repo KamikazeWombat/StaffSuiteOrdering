@@ -95,7 +95,7 @@ class Config:
                 self.env = "prod"
                 filename = 'config.json'
             else:
-                filename = 'invalid commandline args.  choices are -dev, -test, and -prod.'
+                filename = 'invalid commandline args.  choices are -dev, -testing, and -prod.'
             
         configfile = open(filename, 'r')
         cdata = json.load(configfile)
@@ -154,8 +154,9 @@ class Config:
         try:
             twilio_authfile = open(self.twilio_key_location, 'r')
             twiliodata = json.load(twilio_authfile)
-            self.twilio_sid = twiliodata['twilio_sid'].strip()
+            self.twilio_account_sid = twiliodata['twilio_account_sid'].strip()
             self.twilio_authkey = twiliodata['twilio_authkey'].strip()
+            self.twilio_authsecret = twiliodata['twilio_authsecret'].strip()
             self.twilio_sendfrom = twiliodata['twilio_sendfrom'].strip()
             twilio_authfile.close()
         except FileNotFoundError:
