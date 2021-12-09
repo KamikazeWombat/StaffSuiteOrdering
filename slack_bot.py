@@ -14,7 +14,7 @@ def send_message(channel, message):
 
     channel_list = channel.split(',')
     for chan in channel_list:
-        chan.strip()
+        chan = chan.strip()
         if chan[0] == '@':
             open_channel = {'token': cfg.slack_authkey,
                             'users': chan}
