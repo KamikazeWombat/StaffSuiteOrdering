@@ -1331,7 +1331,7 @@ class Root:
                 dept_name.replace('\\', '-')
 
                 if cfg.env == "dev":  # Windows todo: change this to detect OS instead
-                    # for some reason the silly system decided to not find wkhtmltopdf automatically anymore
+                    # for some reason the silly system decided to not find wkhtmltopdf automatically anymore on Windows
                     path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
                     config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
                     
@@ -1343,7 +1343,7 @@ class Root:
                                        'pdfs\\' + dept_name + '.pdf',
                                        options=options,
                                        configuration=config)
-                else:   # Linux
+                else:   # Linux seems to find the package automatically
                     # path_wkhtmltopdf = r'/usr/local/bin/wkhtmltopdf'
                     # config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
                     pdfkit.from_string(labels.render(orders=order_list,

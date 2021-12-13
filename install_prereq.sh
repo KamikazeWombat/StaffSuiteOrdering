@@ -1,7 +1,8 @@
 apt-get install -y python3
 apt install -y python3-pip
-wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.buster_amd64.deb
-sudo apt install -y ./wkhtmltox_0.12.6-1.buster_amd64.deb
+apt install -y libjpeg-turbo
+wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb
+sudo apt install -y ./wkhtmltox_0.12.6-1.focal_amd64.deb
 pip3 install cherrypy
 pip3 install python-dateutil
 pip3 install jinja2
