@@ -1,0 +1,79 @@
+{% extends "base.html" %}{% set admin_area=True %}
+{% block title %}Dine-In Check-In{% endblock %}
+{% block backlink %}{% endblock %}
+{% block content %}
+<script type="text/javascript">
+    function actually_update_list(response) {
+        vips = response.vips;
+        document.getElementById("vip_list").size = vips.length;
+
+        for (let i=0; i < vips.length; i++){
+            option = document.createElement("option");
+            option.text = vips[i];
+            document.getElementById("vip_list").options.add(option, i);
+        };
+        return;
+    }
+
+    function update_list(response = "") {
+        page_list = document.getElementById("vip_list").options;
+        for (let i=page_list.length; i > 0; i--){
+            document.getElementById("vip_list").options.remove(i);
+        };
+
+        if (response == ""){
+            response = fetch("add_vip?firstload=true", {credentials: "include"}, ).then((response) => {
+            return response.json();
+            }).then((response) => {actually_update_list(response)});
+
+        } else {
+            actually_update_list(response);
+        }
+        return;
+    }
+
+    function add_vip() {
+        barcode = document.getElementById("barcode");
+        console.log("Adding " + barcode.value + " to VIPs list");
+        message = document.getElementById("message");
+        message.innerHTML = "Loading...";
+
+        fetch("add_vip?badge=" + barcode.value, {credentials: "include"}, ).then((response) => {
+            return response.json();
+        }).then((response) => {
+            barcode.value = "";
+            barcode.focus();
+            if (response.success) {
+                message.innerHTML = "<h2 style=\"color:green;\">Badge " + response.badge + ": " + response.reason + "</h2>";
+            } else {
+                message.innerHTML = "<h2 style=\"color:red;\">Failed to add badge " + response.badge + ": " + response.reason + "</h2>";
+            }
+            update_list(response);
+
+        });
+        barcode.focus();
+        return false;
+    }
+</script>
+<div class="container">
+
+  <h2>Manage VIPs</h2>
+  <p>VIPs are people who do not have access to Staff Suite through normal meals, but should be allowed to come in to get food.</p>
+  <p>This does NOT give them access to have orders pre-made for pickup, if you want to do that you will need to get them
+    to create an order then override it (or just create one for them)</p>
+
+  <form onsubmit="return add_vip()">
+    <input id="barcode" type="text" name="barcode" autofocus>
+    <button type="submit" class="btn btn-primary">Add VIP</button>
+  </form>
+
+  <div id="message"></div>
+  <form onsubmit="return remove_vip()" onkeydown="return event.key != 'Enter';">
+    <select id="vip_list" name="vip_list"></select>
+    <button type="submit" class="btn btn-primary">Remove selected VIP</button>
+  </form>
+</div>
+<script type="text/javascript">
+    update_list("");
+</script>
+{% endblock content %}

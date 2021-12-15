@@ -861,3 +861,32 @@ def get_session_info():
         'is_super_admin': cherrypy.session['is_super_admin']
     }
     return session
+
+
+def get_vip_list():
+    """
+    Returns list of VIPs formated as "badge_num, full_name" string
+    """
+    session = models.new_sesh()
+
+    vips = session.query(models.attendee.Attendee).filter_by(is_vip=True).order_by(models.attendee.Attendee.badge_num).all()
+
+    vip_list = list()
+
+    for vip in vips:
+        vip_list.append(str(vip.badge_num) + ", " + vip.full_name)
+
+    return vip_list
+
+
+def is_vip(badge):
+    """
+    Checks if provided badge is in VIP list
+    """
+    session = models.new_sesh()
+    vip_list = session.query(models.attendee.Attendee).filter_by(is_vip=True).all()
+    for vip in vip_list:
+        if badge == vip.badge_num:
+            return True
+
+    return False

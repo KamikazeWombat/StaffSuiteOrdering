@@ -28,7 +28,7 @@ from shared_functions import api_login, HTTPRedirect, order_split, order_selecti
                      meal_join, meal_split, meal_blank_toppings, department_split, create_dept_order, \
                      ss_eligible, carryout_eligible, combine_shifts, return_selected_only, return_not_selected, \
                      con_tz, utc_tz, now_utc, now_contz, is_admin, is_ss_staffer, is_dh, is_super_admin, \
-                     get_session_info
+                     get_session_info, get_vip_list, is_vip
 import slack_bot
 import twilio_bot
 
@@ -208,7 +208,10 @@ class Root:
 
         session_info = get_session_info()
 
-        return template.render(current_meal=current_meal, c=c, cfg=cfg, session=session_info)
+        return template.render(current_meal=current_meal,
+                               c=c,
+                               cfg=cfg,
+                               session=session_info)
 
     @cherrypy.expose
     @ss_staffer
@@ -234,7 +237,7 @@ class Root:
 
         try:
             attend = session.query(Attendee).filter_by(badge_num=badge).one()
-            #
+            # checks if attendee already in DB
         except sqlalchemy.orm.exc.NoResultFound:
             response = shared_functions.lookup_attendee(badge)
             if 'error' in response:
@@ -280,17 +283,19 @@ class Root:
 
         # checks for prior checkins this event, by current meal period if during meal period
         if meal:
-            checkin = session.query(Checkin).filter(Checkin.attendee_id == attend.public_id, Checkin.meal_id == meal.id).all()
+            checkin = session.query(Checkin).filter(Checkin.attendee_id == attend.public_id,
+                                                    Checkin.meal_id == meal.id).all()
         else:
             checkin = session.query(Checkin).filter(Checkin.attendee_id == attend.public_id,
                                                     Checkin.meal_id == None).all()
         if checkin and meal:
+            # ie if there is a checkin for this meal period (meal is blank if not during meal period)
             session.close()
             return json.dumps({"success": True, "badge": badge,
                                "reason": "Attendee is already checked in for this meal.",
                                "has_allergy": has_allergy})
         
-        if not shared_functions.ss_eligible(badge):
+        if not shared_functions.ss_eligible(badge) and not is_vip(badge):
             session.close()
             return json.dumps({"success": False, "badge": badge,
                                "reason": "Attendee is not eligible for Staff Suite by normal rules. "
@@ -299,7 +304,7 @@ class Root:
         
         if meal:
             # if during a meal period and not already a checkin for this meal period
-            # checks for meal associated checkin above
+            # checks if there is an existing meal associated checkin above
             checkin = Checkin(attendee_id=attend.public_id, meal_id=meal.id)
         else:
             if checkin:
@@ -308,9 +313,9 @@ class Root:
                     delta = relativedelta(item.timestamp, datetime.utcnow())
                     if abs(delta.minutes) <= 15 and delta.hours == 0 and abs(delta.days) == 0:
                         # if a previously received checkin
-                        # is withhin 15 minutes of current checkin, does not record as another checkin
+                        # is within 15 minutes of current checkin, does not record as another checkin
                         session.close()
-                        return json.dumps({"success": True, "badge": badge, "reason": "Checked in successfully!",
+                        return json.dumps({"success": True, "badge": badge, "reason": "Attendee is already checked in.",
                                            "has_allergy": has_allergy})
             # if no existing checkin for this attendee overlaps current time, create new checkin
             checkin = Checkin(attendee_id=attend.public_id, meal_id=None)
@@ -321,6 +326,90 @@ class Root:
         session.close()
         return json.dumps({"success": True, "badge": badge, "reason": "Checked in successfully!",
                            "has_allergy": has_allergy})
+
+    @cherrypy.expose
+    @admin_req
+    def manage_vip(self, vip_list=False):
+        """
+        Displays VIP list, allows adding new VIPs
+        """
+
+        if vip_list:
+            parts = vip_list.split(',')
+            session = models.new_sesh()
+
+            vip = session.query(models.attendee.Attendee).filter_by(badge_num=parts[0]).one()
+            vip.is_vip = False
+            session.commit()
+            session.close()
+
+        session_info = get_session_info()
+
+        template = env.get_template("manage_vip.html")
+        return template.render(vips=get_vip_list(),
+                               session=session_info,
+                               c=c,
+                               cfg=cfg)
+
+    @cherrypy.expose
+    @admin_req
+    def add_vip(self, badge='', firstload=False):
+        """
+        Attempts to add badge# or barcode to VIPs list
+        """
+        if firstload:
+            return json.dumps({"success": True, "badge": badge,
+                               "reason": "Loading VIPs list",
+                               "vips": get_vip_list()})
+        if badge[0] == "~":
+            badge = shared_functions.barcode_to_badge(badge)
+        else:
+            try:
+                badge = int(badge)
+            except ValueError:
+                return json.dumps({"success": False, "badge": badge, "reason": "Not a number?",
+                                   "vips": get_vip_list()})
+
+        if not badge:
+            return json.dumps({"success": False, "badge": badge, "reason": "Could not locate badge.",
+                               "vips": get_vip_list()})
+
+        session = models.new_sesh()
+
+        try:
+            attend = session.query(Attendee).filter_by(badge_num=badge).one()
+            # checks if attendee already in DB
+        except sqlalchemy.orm.exc.NoResultFound:
+            response = shared_functions.lookup_attendee(badge)
+            if 'error' in response:
+                session.close()
+                return json.dumps(
+                    {"success": False, "badge": badge, "reason": "Badge # {} is not found in Uber".format(badge),
+                     "vips": get_vip_list()})
+            attend = Attendee()
+            attend.badge_num = response['result']['badge_num']
+            attend.public_id = response['result']['public_id']
+            attend.full_name = response['result']['full_name']
+            attend.is_vip = True
+            session.add(attend)
+            session.commit()
+            return json.dumps(
+                {"success": True, "badge": badge,
+                 "reason": "Badge # {} successfully added to VIPs list".format(badge),
+                 "vips": get_vip_list()})
+
+        if attend.is_vip:
+            session.close()
+            return json.dumps({"success": True, "badge": badge,
+                               "reason": "Badge # {} already added to VIPs list".format(badge),
+                               "vips": get_vip_list()})
+        else:
+            attend.is_vip = True
+            session.commit()
+            session.close()
+            return json.dumps({"success": True, "badge": badge,
+                               "reason": "Badge # {} successfully added to VIPs list".format(badge),
+                               "vips": get_vip_list()})
 
     @cherrypy.expose
     @admin_req
@@ -425,11 +514,7 @@ class Root:
             text = message
             messages.append(text)
 
-        session_info = {
-            'is_dh': cherrypy.session['is_dh'],
-            'is_admin': cherrypy.session['is_admin'],
-            'is_ss_staffer': cherrypy.session['is_ss_staffer']
-        }
+        session_info = get_session_info()
         
         thisorder = ''
         thismeal = ''
@@ -1331,7 +1416,7 @@ class Root:
                 dept_name.replace('\\', '-')
 
                 if cfg.env == "dev":  # Windows todo: change this to detect OS instead
-                    # for some reason the silly system decided to not find wkhtmltopdf automatically anymore
+                    # for some reason the silly system decided to not find wkhtmltopdf automatically anymore on Windows
                     path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
                     config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
                     
@@ -1343,7 +1428,7 @@ class Root:
                                        'pdfs\\' + dept_name + '.pdf',
                                        options=options,
                                        configuration=config)
-                else:   # Linux
+                else:   # Linux seems to find the package automatically
                     # path_wkhtmltopdf = r'/usr/local/bin/wkhtmltopdf'
                     # config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
                     pdfkit.from_string(labels.render(orders=order_list,
