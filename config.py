@@ -82,20 +82,25 @@ class Config:
         """
         Load in config files and API keys (if files exist)
         """
-        for arg in argv:
-            if arg == '-dev':
-                filename = 'devconfig.json'
+        i = 0
+        self.env = False
+        filename = False
+        while i < len(argv):
+            if argv[i] == '-dev':
                 self.env = "dev"
-                break
-            elif arg == '-testing':
-                filename = 'testingserver.json'
+            elif argv[i] == '-testing':
                 self.env = "testing"
-                break
-            elif arg == '-prod':
+            elif argv[i] == '-prod':
                 self.env = "prod"
-                filename = 'config.json'
-            else:
-                filename = 'invalid commandline args.  choices are -dev, -testing, and -prod.'
+            elif argv[i] == '-config':
+                i += 1
+                filename = argv[i]
+                print(filename)
+            i += 1
+
+        if not self.env or not filename:
+            filename = 'Invalid commandline args.  Mode choices are -dev, -testing, and -prod.  ' \
+                       'Must specify config file, ie -config devconfig.json'
             
         configfile = open(filename, 'r')
         cdata = json.load(configfile)
