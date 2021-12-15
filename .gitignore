@@ -11,3 +11,4 @@ secure/
 .idea/
 pdfs/
 *.db
+*.csv
