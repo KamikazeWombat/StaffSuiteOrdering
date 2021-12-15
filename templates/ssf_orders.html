@@ -5,31 +5,35 @@
 
 <div class="container">
   <h2>{{ message }} <br/></h2>
-  <a style="width:3in;" class="btn btn-lg btn-primary btn-block" href="ssf_dept_list?meal_id={{ meal.id }}">Back to Department List</a>
+  <a class="btn btn-lg btn-primary " href="ssf_dept_list?meal_id={{ meal.id }}">Back to Department List</a> <br/>
   {% if dept_order.started %}
-  <h3>Orders locked!</h3><a style="width:3in;" class="btn btn-lg btn-primary btn-block" href="ssf_lock_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}&unlock_order=True">Un-Lock orders for department</a> <br/>
+  <h3>Orders locked!</h3><a class="btn btn-lg btn-primary " href="ssf_lock_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}&unlock_order=True"{% if dept_order.completed %} disabled{% endif %}>Un-Lock orders for department</a> <br/>
   {% else %}
-  <a style="width:3in;" class="btn btn-lg btn-primary btn-block" href="ssf_lock_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}">Lock orders for department</a> <br/>
+  <a class="btn btn-lg btn-primary " href="ssf_lock_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}">Lock orders for department</a> <br/>
   {% endif %}
   {% if dept_order.started %}
-  <a class="btn btn-lg btn-primary btn-block" href="pdfs/{{ dept_name }}.pdf" target="_blank">Print Labels</a> <br/>
+  <br/>
+  <div class="section-border">
+    <a class="btn btn-lg btn-primary " href="pdfs/{{ dept_name }}.pdf" target="_blank">Print Labels</a> <br/>
+  </div>
   {% else %}
-  You must start this bundle before you can print labels!
+  You must start this bundle by clicking Lock Orders before you can print labels!<br/>
   {% endif %}
   {% if dept_order.completed %}
-  <a style="width:3in;" class="btn btn-lg btn-primary btn-block" href="ssf_complete_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}&uncomplete_order=True">Un-Mark Bundle Complete</a><br/>
+  <br/><a class="btn btn-lg btn-primary " href="ssf_complete_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}&uncomplete_order=True">Un-Mark Bundle Complete</a><br/>
   {% else %}
-  <a style="width:3in;" class="btn btn-lg btn-primary btn-block" href="ssf_complete_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}">Mark Bundle Complete</a>
-  <p>Marking bundle complete will send out any configured notifications to the department.</p>
+  <br/><a class="btn btn-lg btn-primary " href="ssf_complete_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}"{% if not dept_order.started %} disabled{% endif %}>Mark Bundle Complete</a>
+  <p>Marking bundle complete will send out any configured notifications to the department.<br/>
+  Because of this it may take a minute, please be patient!</p>
   {% endif %}
-  <a style="width:4in;" class="btn btn-lg btn-primary btn-block" href="dept_order_details?dept_order_id={{ dept_order.id }}">See Dept's Contact Info for this Bundle</a>
+  <a class="btn btn-lg btn-primary " href="dept_order_details?dept_order_id={{ dept_order.id }}">See Dept's Contact Info for this Bundle</a>
   <br/>
   {% if dept_order.started %}<br/>Bundle Prep Started: {{ dept_order.start_time }} {% endif %}
   {% if dept_order.completed %}<br/>Bundle Prep Completed: {{ dept_order.completed_time }} {% endif %}
   <h2 class="form-signin-heading">{{ dept_name }} Order List for {{ meal.meal_name }}</h2>
   {% for order in order_list %}
-  ---------------------------------------------------
-    <form role="form">
+
+    <form class="section-border" role="form">
       <table>
         <tr>
           <td>

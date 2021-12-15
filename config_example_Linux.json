@@ -1,0 +1,41 @@
+{
+  "api_endpoint": "https://staging-super.reggie.magfest.org/jsonrpc/",
+  "uber_key_location": "./secure/uber_auth_staging.key",
+  "slack_key_location": "./secure/slack_api.key",
+  "aws_key_location": "./secure/aws_auth.json",
+  "twilio_key_location": "./secure/twilio_auth.json",
+  "database_location": "sqlite:///testdb.db",
+  "local_print": true,
+  "remote_print": false,
+  "multi_select_count": 5,
+  "radio_select_count": 3,
+  "schedule_tolerance": 45,
+  "date_format": "%d-%m-%Y %H:%M",
+  "ss_hours": 12,
+  "room_location": "Room 123456",
+  "location_url": "https://url to page explaining how to find the food room",
+  "ss_url": "https://url to page with general information about provided food, etc",
+  "cherrypy": {
+    "global": {
+      "server.socket_host": "test.domain.com",
+      "server.socket_port": 443,
+      "server.ssl_module": "builtin",
+      "server.ssl_certificate": "/etc/letsencrypt/live/test.domain.com/cert.pem",
+      "server.ssl_private_key": "/etc/letsencrypt/live/test.domain.com/privkey.pem",
+      "server.ssl_certificate_chain": "/etc/letsencrypt/live/live/test.domain.com/chain.pem",
+      "tools.force_tls.on": true
+    },
+    "/": {
+      "tools.sessions.on": true,
+      "tools.staticdir.root": "/root/StaffSuiteOrdering"
+    },
+    "/pdfs": {
+      "tools.staticdir.on": true,
+      "tools.staticdir.dir": "./pdfs"
+    },
+    "/static": {
+      "tools.staticdir.on": true,
+      "tools.staticdir.dir": "./static"
+    }
+  }
+}

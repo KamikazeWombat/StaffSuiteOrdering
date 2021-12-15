@@ -1,4 +1,11 @@
-/*copied from https://github.com/magfest/ubersystem/blob/98cd41d3fabd29d2bad2bf475ab743841d27b6dc/uber/static/deps/combined.min.css*/
+.section-border {
+border: 1px solid;
+border-radius: 5px;
+margin-top: 5px;
+margin-bottom: 5px;
+padding: 5px;
+}
+/*below copied from https://github.com/magfest/ubersystem/blob/98cd41d3fabd29d2bad2bf475ab743841d27b6dc/uber/static/deps/combined.min.css*/
 span.jq-dte{display:inline-block;position:relative;padding:2px;margin:1px;background-color:#fff;border:1px solid #666;border-radius:3px}span.jq-dte-inner{border:none;padding:1px;margin:1px;white-space:nowrap;background-color:transparent}span.jq-dte input{border:none;background-color:transparent;text-align:center;margin:0;padding:0;outline:0;vertical-align:middle}span.jq-dte input.error{background-color:#f99;color:#000}span.jq-dte.readonly,span.jq-dte.readonly input,span.jq-dte.readonly span.jq-dte-inner{background-color:#f2f2f2;color:#666}span.jq-dte input.hint{color:#999}span.jq-dte span.separator{color:#999}span.jq-dte span.jq-dte-tooltip{display:inline-block;font-family:sans-serif;font-size:14px;background-color:#f5f5b5;border:1px solid #666;margin:0;padding:1px 3px;line-height:125%;z-index:99}span.jq-dte span.jq-dte-errorbox{display:inline-block;font-family:sans-serif;font-size:14px;background-color:#f99;border:1px solid #666;margin:0;padding:1px 3px;line-height:125%;white-space:nowrap}/*!
  * Bootstrap v3.2.0 (http://getbootstrap.com)
  * Copyright 2011-2014 Twitter, Inc.

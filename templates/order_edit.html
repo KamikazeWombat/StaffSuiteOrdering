@@ -5,70 +5,76 @@
 
 <div class="container">
   <form role="form">
-    <h2 class="form-signin-heading">Create/Edit Order for: {{ attendee.badge_num }} {{ attendee.full_name }}
+    <div class="section-border">
+    <h2 class="form-signin-heading">Create/Edit Order for: {{ attendee.badge_num }} {{ attendee.full_name }}<br/>
       {% if dh_edit %}<input type="text" class="form-control" placeholder="Attendee Badge Number" name="badge_number"
                              value="{{ attendee.badge_num }}"/>
-        <input type="hidden" name="dh_edit" value="True"/>
+        <input type="hidden" name="dh_edit" value="True"/> <br/>
       {% endif %}
     </h2>
-    {% if order.locked %}<h2>This order is locked for fulfilment, only Staff Suite admins can change it</h2>{% endif %}
-    <table style="width:100%">
-      <tr>My Allergy info: {{ macros.display_allergies(allergies) }}</tr>
-      <tr> <td> <input type="hidden" name="order_id" value="{{ order.id }}"/>
-        <input type="hidden" name="save_order" value="{{ meal.id }}"/>
-      </td>
-        <td> <input type="text" class="form-control" placeholder="Meal Name" name="meal_name" value="{{ meal.meal_name }}" disabled /> </td>
-      </tr>
-      <tr> <td>Start Time</td>
-        <td> <input type="datetime-local" class="form-control" placeholder="Start Time" name="start_time"
-                    {% if meal.start_time %}value="{{ meal.start_time.isoformat() }}"{% endif %} disabled/> </td>
-      </tr>
-      <tr><td>End Time</td>
-      <td> <input type="datetime-local" class="form-control" placeholder="End Time" name="end_time"
-                  {% if meal.end_time %}value="{{ meal.end_time.isoformat() }}"{% endif %}} disabled/></td>
-      </tr>
-      <tr><td>Order Cutoff Time</td>
-      <td>
-        <input type="datetime-local" class="form-control" placeholder="Cutoff time for ordering" name="cutoff"
-                 {% if meal.cutoff %} value="{{ meal.cutoff.isoformat() }}"{% endif %} disabled/></td>
-        <td>Staff Suite will begin making orders at this time.  You can still edit/submit orders up until they begin your departments order though.</td>
-      </tr>
-      <tr><td>Meal Description</td>
-        <td><input type="text" class="form-control" placeholder="Description" name="description" value="{{ meal.description }}" disabled /></td>
-      </tr>
-      <tr><td>Department who will be picking up</td>
-        <td>
-          {{ macros.dropdown(field='department', options=departments, is_required=True, is_readonly=order.locked) }}
-      </td></tr>
-      {% if not meal.toggle1_title == '' %}
-        <tr><td><h3>{{ meal.toggle1_title }}</h3></td></tr>
+    {% if order.locked %}<h2>This order is locked for fulfilment, only Staff Suite admins can change it</h2> <br/>{% endif %}
+    </div>
+    <div class="section-border>"My Allergy info: {{ macros.display_allergies(allergies) }}</div>
+    <input type="hidden" name="order_id" value="{{ order.id }}"/>
+    <input type="hidden" name="save_order" value="{{ meal.id }}"/>
+    <br/>
+    <input type="text" class="form-control" placeholder="Meal Name" name="meal_name" value="{{ meal.meal_name }}" disabled />
+    <br/>
+    Meal Start Time
+    <input type="datetime-local" placeholder="Start Time" name="start_time"
+                {% if meal.start_time %}value="{{ meal.start_time.isoformat() }}"{% endif %} disabled/>
+    <br/>
+    Meal End Time
+    <input type="datetime-local" placeholder="End Time" name="end_time"
+               {% if meal.end_time %}value="{{ meal.end_time.isoformat() }}"{% endif %}} disabled/>
+    <br/>
+    Order Cutoff Time
+    <input type="datetime-local" placeholder="Cutoff time for ordering" name="cutoff"
+             {% if meal.cutoff %} value="{{ meal.cutoff.isoformat() }}"{% endif %} disabled/>
+    Staff Suite will begin making orders at this time.  You can still edit/submit orders up until they begin your department's order though.
+    <br/>
+    Meal Description
+    <input type="text" placeholder="Description" name="description" value="{{ meal.description }}" disabled/>
+    <br/>
+    Department that will be picking up<br/>
+    {{ macros.dropdown(field='department', options=departments, is_required=True, is_readonly=order.locked) }}
+    <br/>
+    {% if not meal.toggle1_title == '' %}
+      <div class="section-border">
+        <h4>{{ meal.toggle1_title }}</h4>
         {{ macros.button_radio_opts('toggle1', toggles1, is_required=True, is_readonly=order.locked) }}
-      {% endif %}
-      {% if not meal.toggle2_title == '' %}
-        <tr><td><h3>{{ meal.toggle2_title }}</h3></td></tr>
+      </div>
+    {% endif %}
+
+    {% if not meal.toggle2_title == '' %}
+      <div class="section-border">
+        <h4>{{ meal.toggle2_title }}</h4>
         {{ macros.button_radio_opts('toggle2', toggles2, is_required=True, is_readonly=order.locked) }}
-      {% endif %}
-      {% if not meal.toggle3_title == '' %}
-        <tr><td><h3>{{ meal.toggle3_title }}</h3></td></tr>
+      </div>
+    {% endif %}
+
+    {% if not meal.toggle3_title == '' %}
+      <div class="section-border">
+        <h4>{{ meal.toggle3_title }}</h4>
         {{ macros.button_radio_opts('toggle3', toggles3, is_required=True, is_readonly=order.locked) }}
-      {% endif %}
-      {% if not meal.toppings_title == '' %}
-        <tr><td><h3>{{ meal.toppings_title }}</h3></td></tr>
+      </div>
+    {% endif %}
+
+    {% if not meal.toppings_title == '' %}
+      <div class="section-border">
+        <h4>{{ meal.toppings_title }}</h4>
         {{ macros.checkgroup_opts('toppings', toppings, is_readonly=order.locked) }}
-      {% endif %}
-     <tr><td>Notes</td>
-       <td>
-         <textarea name="notes" cols="50" rows="4" {% if order.locked %} disabled{% endif %}
-                   placeholder="Notes/requests. No guarantees that requests will be honored, please be aware of your own allergies."
-           >{{ order.notes }}</textarea>
-       </td>
-       
-     </tr>
-      <tr><td><button class="btn btn-lg btn-primary btn-block" type="submit"{% if order.locked %} disabled{% endif %}>Submit</button>  </td>
-      <td><a class="btn btn-lg btn-primary btn-block" href="staffer_meal_list">Cancel</a>  </td>
-      <td><a class="btn btn-lg btn-primary btn-block" href="order_delete_confirm?order_id={{ order.id }}">Delete</a></td></tr>
-    </table>
-    
+      </div>
+    {% endif %}
+
+    Notes
+    <textarea name="notes" cols="50" rows="4" maxlength="150"{% if order.locked %} disabled{% endif %}
+              placeholder="Notes/requests. No guarantees that requests will be honored due to lack of time and staff for order processing, please be aware of your own allergies."
+    >{{ order.notes }}</textarea>
+    <br/>
+    <button class="btn btn-lg btn-primary " type="submit"{% if order.locked %} disabled{% endif %}>Submit</button>
+    <a class="btn btn-lg btn-primary " href="staffer_meal_list">Cancel</a>
+    <a class="btn btn-lg btn-primary " href="order_delete_confirm?order_id={{ order.id }}{% if order.locked %} disabled{% endif %}">Delete</a>
   </form>
 </div>
 {% endblock content %}

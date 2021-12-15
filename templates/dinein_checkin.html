@@ -1,0 +1,43 @@
+{% extends "base.html" %}{% set admin_area=True %}
+{% block title %}Dine-In Check-In{% endblock %}
+{% block backlink %}{% endblock %}
+{% block content %}
+
+<div class="container">
+
+  <h2>Check in diners for {% if current_meal %}{{ current_meal.meal_name }}{% else %}non-mealtime period{% endif %}</h2>
+  <script type="text/javascript">
+    function checkin() {
+        barcode = document.getElementById("barcode");
+        console.log("Checking in " + barcode.value);
+        message = document.getElementById("message");
+        message.innerHTML = "Loading...";
+        allergy.innerHTML = "";
+        fetch("checkin_badge?meal_id={% if current_meal %}{{ current_meal.id }}{% else %}None{% endif %}&badge=" + barcode.value, {credentials: "include"}, ).then((response) => {
+            return response.json();
+        }).then((response) => {
+            barcode.value = "";
+            barcode.focus();
+            if (response.success) {
+                message.innerHTML = "<h2 style=\"color:green;\">Badge " + response.badge + ": " + response.reason + "</h2>";
+            } else {
+                message.innerHTML = "<h2 style=\"color:red;\">Failed to check in badge " + response.badge + ": " + response.reason + "</h2>";
+            }
+
+            if (response.has_allergy) {
+            allergy.innerHTML = "<h2 style=\"color:purple;\">Attendee indicated they have one or more allergies when registering, please offer them allergen info</h2>";
+            }
+        });
+        barcode.focus();
+        return false;
+    }
+  </script>
+  <form onsubmit="return checkin()">
+      <input id="barcode" type="text" name="barcode" autofocus>
+      <button type="submit" class="btn btn-lg btn-primary">Checkin Badge</button>
+  </form>
+  <div id="message"></div>
+  <div id="allergy"></div>
+  
+</div>
+{% endblock content %}

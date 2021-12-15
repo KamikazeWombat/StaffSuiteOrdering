@@ -1,0 +1,6 @@
+{
+  "twilio_account_sid": "ACxxxxxxxxxxxxxxxx",
+  "twilio_authkey": "SKxxxxxxxxxxxxxxxxx",
+  "twilio_authsecret": "",
+  "twilio_sendfrom": "+16693457443"
+}
