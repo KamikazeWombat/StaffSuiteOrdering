@@ -13,16 +13,16 @@
   "date_format": "%d-%m-%Y %H:%M",
   "ss_hours": 12,
   "room_location": "Room 123456",
-  "location_url": "https://magfest.notion.site/Staff-Suite-Info-ecefbd963dca4b3282503642b9bfa9ae",
-  "ss_url": "https://magfest.notion.site/Staff-Suite-Info-ecefbd963dca4b3282503642b9bfa9ae",
+  "location_url": "https://url to page explaining how to find the food room",
+  "ss_url": "https://url to page with general information about provided food, etc",
   "cherrypy": {
     "global": {
-      "server.socket_host": "127.0.0.1",
+      "server.socket_host": "test.domain.com",
       "server.socket_port": 443,
       "server.ssl_module": "builtin",
-      "server.ssl_certificate": "./secure/letsencrypt/live/tet.codewombat.software/cert.pem",
-      "server.ssl_private_key": "./secure/letsencrypt/live/tet.codewombat.software/privkey.pem",
-      "server.ssl_certificate_chain": "./secure/letsencrypt/live/tet.codewombat.software/chain.pem",
+      "server.ssl_certificate": "./secure/letsencrypt/live/test.domain.com/cert.pem",
+      "server.ssl_private_key": "./secure/letsencrypt/live/test.domain.com/privkey.pem",
+      "server.ssl_certificate_chain": "./secure/letsencrypt/live/test.domain.com/chain.pem",
       "tools.force_tls.on": true
     },
     "/": {
