@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer
+from sqlalchemy import Column, String, Integer, Boolean
 from sqlalchemy.orm import relationship
 
 
@@ -12,5 +12,6 @@ class Attendee(dec_base):
     full_name = Column('full_name', String)
     webhook_url = Column('webhook_url', String, default='')
     webhook_data = Column('webhook_data', String, default='')
+    is_vip = Column('is_vip', Boolean, default=False)
     orders = relationship('Order')
     checkins = relationship('Checkin')
