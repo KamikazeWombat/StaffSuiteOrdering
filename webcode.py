@@ -1564,9 +1564,11 @@ class Root:
         session_info = get_session_info()
 
         session = models.new_sesh()
+        print('------------dept_order_id ' + dept_order_id + ' -------------')
         dept_order = session.query(DeptOrder).filter_by(id=dept_order_id).one()
 
-        if 'slack_channel' in params:
+        if 'slack_channel' in params or 'slack_contact' in params or 'sms_contact' in params or \
+                'email_contact' in params or 'other_contact' in params:
             # save record
             dept_order.slack_contact = params['slack_contact']
             dept_order.slack_channel = params['slack_channel']
