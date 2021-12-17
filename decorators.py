@@ -37,7 +37,7 @@ def admin_req(func):
         try:
             staff_id = cherrypy.session['staffer_id']
         except KeyError:
-            raise HTTPRedirect('login?message=You+are+not+logged+in - admin page', save_location=True)
+            raise HTTPRedirect('login?message=You+are+not+logged+in - admin page', save_location=False)
         
         if cherrypy.session['is_admin']:
             pass
@@ -85,7 +85,7 @@ def dh_or_admin(func):
         try:
             staff_id = cherrypy.session['staffer_id']
         except KeyError:
-            raise HTTPRedirect('login?message=You+are+not+logged+in - DH or admin page', save_location=True)
+            raise HTTPRedirect('login?message=You+are+not+logged+in - DH or admin page', save_location=False)
         allowed = False
         if cherrypy.session['is_dh'] or cherrypy.session['is_admin']:
             allowed = True
