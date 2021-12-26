@@ -60,13 +60,19 @@
       </div>
     {% endif %}
 
-    {% if not meal.toppings_title == '' %}
+    {% if not meal.toppings1_title == '' %}
       <div class="section-border">
-        <h4>{{ meal.toppings_title }}</h4>
-        {{ macros.checkgroup_opts('toppings', toppings, is_readonly=order.locked) }}
+        <h4>{{ meal.toppings1_title }}</h4>
+        {{ macros.checkgroup_opts('toppings1', toppings1, is_readonly=order.locked) }}
       </div>
     {% endif %}
-
+    {% if not meal.toppings2_title == '' %}
+      <div class="section-border">
+        <h4>{{ meal.toppings2_title }}</h4>
+        {{ macros.checkgroup_opts('toppings2', toppings2, is_readonly=order.locked) }}
+      </div>
+    {% endif %}
+    <br/>
     Notes
     <textarea name="notes" cols="50" rows="4" maxlength="150"{% if order.locked %} disabled{% endif %}
               placeholder="Notes/requests. No guarantees that requests will be honored due to lack of time and staff for order processing, please be aware of your own allergies."

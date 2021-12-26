@@ -48,12 +48,19 @@
       </td></tr>
       <tr><td>
         <p>------------</p>
-        <input type="text" class="form-control" placeholder="Multi-Select Title" name="toppings_title" value="{{ meal.toppings_title }}"/>
+        <input type="text" class="form-control" placeholder="Multi-Select 1 Title" name="toppings1_title" value="{{ meal.toppings1_title }}"/>
       </td></tr>
-        {{ macros.textbox_list('toppings', toppings, 'Multiple Select Option') }}
+        {{ macros.textbox_list('toppings1', toppings1, 'Multiple Select 1 Option') }}
+      <tr><td>
+        <p>------------</p>
+        <input type="text" class="form-control" placeholder="Multi-Select 2 Title" name="toppings2_title" value="{{ meal.toppings2_title }}"/>
+      </td></tr>
+        {{ macros.textbox_list('toppings2', toppings2, 'Multiple Select 2 Option') }}
       <tr><td><button class="btn btn-lg btn-primary " type="submit">Submit</button>
+        ----
       <button class="btn btn-lg btn-primary " onclick="window.location.href = 'meal_setup_list';">Cancel</button>
       {% if meal.id %}
+        ----
         <a class="btn btn-lg btn-primary" href="meal_delete_confirm?meal_id={{ meal.id }}">Delete</a></td></tr>
       {% endif %}
     </table>

@@ -32,8 +32,13 @@
         </td>
       </tr>
       <tr>
-        {% if not meal.toppings_title == "" %}
-          {{ macros.toppings_list(order.toppings) }}
+        {% if not meal.toppings1_title == "" %}
+          {{ macros.toppings_list(order.toppings1) }}
+        {% endif %}
+      </tr>
+      <tr>
+        {% if not meal.toppings2_title == "" %}
+          {{ macros.toppings_list(order.toppings2) }}
         {% endif %}
       </tr>
       {% if not order.notes == "" %}
