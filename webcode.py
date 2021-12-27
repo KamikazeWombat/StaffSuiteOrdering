@@ -257,8 +257,9 @@ class Root:
             if order:
                 sorted_shifts, response = combine_shifts(attend.badge_num, full=True, no_combine=True)
                 user_exempt = False
-                for dept in response['result']['assigned_depts_labels']:
-                    if dept in cfg.exempt_depts:
+                depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
+                for dept in depts:
+                    if dept.name in response['result']['assigned_depts_labels']:
                         user_exempt = True
 
                 if cherrypy.session['is_dh'] or user_exempt:
@@ -896,8 +897,9 @@ class Root:
 
         # Below loop checks if user is part of a department that is exempt from shift time based requirements
         user_exempt = False
-        for dept in response['result']['assigned_depts_labels']:
-            if dept in cfg.exempt_depts:
+        depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
+        for dept in depts:
+            if dept.name in response['result']['assigned_depts_labels']:
                 user_exempt = True
             
         now = datetime.utcnow()
@@ -980,7 +982,6 @@ class Root:
             
             admin_list = params['admin_list']
             staffer_list = params['staffer_list']
-            exempt_depts = params['exempt_depts']
             
             if 'local_print' in params:
                 cfg.local_print = True
@@ -1007,14 +1008,13 @@ class Root:
                 admin_list = ',\n'.join(cfg.admin_list)
             manager_list = ',\n'.join(cfg.food_managers)
                 
-            cfg.save(admin_list, staffer_list, exempt_depts, manager_list)
+            cfg.save(admin_list, staffer_list, manager_list)
             
             raise HTTPRedirect('config?message=Successfully saved config settings')
 
         # load lists into plain string for display in webpage
         admin_list = ',\n'.join(cfg.admin_list)
         staffer_list = ',\n'.join(cfg.staffer_list)
-        exempt_depts = ',\n'.join(cfg.exempt_depts)
 
         if badge:
             if not session_info['is_super_admin']:
@@ -1027,7 +1027,6 @@ class Root:
                                    session=session_info,
                                    admin_list=admin_list,
                                    staffer_list=staffer_list,
-                                   exempt_depts=exempt_depts,
                                    attendee=attendee,
                                    c=c,
                                    cfg=cfg)
@@ -1038,7 +1037,6 @@ class Root:
                                session=session_info,
                                admin_list=admin_list,
                                staffer_list=staffer_list,
-                               exempt_depts=exempt_depts,
                                c=c,
                                cfg=cfg)
 
@@ -1376,9 +1374,10 @@ class Root:
         
         dept = session.query(Department).filter_by(id=dept_id).one()
         dept_name = dept.name
-        
+
+        depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
         session.close()  # this has to be before the order loop below or you get errors
-        
+
         order_list = list()
         for order in orders:
             sorted_shifts, response = combine_shifts(order.attendee.badge_num, full=True, no_combine=True)
@@ -1387,9 +1386,10 @@ class Root:
             if response['result']['is_dept_head']:
                 order.eligible = True
             else:
-                for dept in response['result']['assigned_depts_labels']:
-                    if dept in cfg.exempt_depts:
+                for dept in depts:
+                    if dept.name in response['result']['assigned_depts_labels']:
                         order.eligible = True
+
                 if not order.eligible:  # checks for exempt dept first, then if not exempt checks shifts
                     order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
             # if not eligible and not overridden, remove from list for display/printing

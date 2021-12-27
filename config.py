@@ -54,18 +54,6 @@ class Config:
         except FileNotFoundError:
             pass
 
-        self.exempt_depts = list()
-        try:
-            deptfile = open('eligibility_exempt_depts.cfg', 'r')
-            depts = deptfile.read()
-            deptfile.close()
-            dept_list = depts.split(',')
-            for dept in dept_list:
-                dept = dept.strip()
-                self.exempt_depts.append(dept)
-        except FileNotFoundError:
-            pass
-
         self.super_admins = list()
         try:
             sa_file = open('super_admins.cfg', 'r')
@@ -108,7 +96,6 @@ class Config:
         
         self.admin_list = ''
         self.staffer_list = ''
-        self.exempt_depts = ''
         self.food_managers = ''
         self.super_admins = ''
         self.load_user_lists()
@@ -183,7 +170,7 @@ class Config:
         else:
             return False
         
-    def save(self, admin_list, staffer_list, exempt_depts, manager_list):
+    def save(self, admin_list, staffer_list, manager_list):
         cdata = {
             'api_endpoint': self.api_endpoint,
             'uber_key_location': self.uber_key_location,
@@ -213,11 +200,7 @@ class Config:
         stafferfile = open('ss_staffer_list.cfg', 'w')
         stafferfile.write(staffer_list)
         stafferfile.close()
-        
-        deptfile = open('exempt_depts.cfg', 'w')
-        deptfile.write(exempt_depts)
-        deptfile.close()
-        
+
         managerfile = open('food_managers.cfg', 'w')
         managerfile.write(manager_list)
         managerfile.close()
