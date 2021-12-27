@@ -966,7 +966,7 @@ class Root:
         session_info = get_session_info()
         
         if delete_order:
-            if not session_info.is_super_admin:
+            if not session_info['is_super_admin']:
                 raise HTTPRedirect('config?message=You must be super admin to delete orders.')
             session = models.new_sesh()
             thisorder = session.query(Order).filter_by(id=delete_order).one()
@@ -1398,8 +1398,8 @@ class Root:
             order.toggle1 = return_selected_only(session, choices=thismeal.toggle1, orders=order.toggle1)
             order.toggle2 = return_selected_only(session, choices=thismeal.toggle2, orders=order.toggle2)
             order.toggle3 = return_selected_only(session, choices=thismeal.toggle3, orders=order.toggle3)
-            order.toppings1 = return_not_selected(session, choices=thismeal.toppings1, orders=order.toppings1)
-            order.toppings2 = return_not_selected(session, choices=thismeal.toppings2, orders=order.toppings2)
+            order.toppings1 = return_selected_only(session, choices=thismeal.toppings1, orders=order.toppings1)
+            order.toppings2 = return_selected_only(session, choices=thismeal.toppings2, orders=order.toppings2)
 
             if response['result']['food_restrictions']:
                 order.allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
@@ -1436,7 +1436,8 @@ class Root:
                     
                     rendered_labels = labels.render(orders=order_list,
                                                     meal=thismeal,
-                                                    dept_name=dept_name)
+                                                    dept_name=dept_name,
+                                                    date=thismeal.start_time.strftime("%d-%m-%Y"))
                     
                     pdfkit.from_string(rendered_labels,
                                        'pdfs\\' + dept_name + '.pdf',
@@ -1447,7 +1448,8 @@ class Root:
                     # config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
                     pdfkit.from_string(labels.render(orders=order_list,
                                                      meal=thismeal,
-                                                     dept_name=dept_name),
+                                                     dept_name=dept_name,
+                                                     date=thismeal.start_time.strftime("%d-%m-%Y")),
                                        'pdfs/' + dept_name + '.pdf',
                                        options=options)
         if dept_order.completed:
