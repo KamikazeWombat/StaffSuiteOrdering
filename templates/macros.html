@@ -14,6 +14,7 @@
 
 {% macro display_allergies(allergies, view_only=False, color=True) %}
     {% for allergy in allergies.standard_labels %}
+      {% if loop.first %}<br/>{% endif %}
       <label {% if color %}style="color:red; font-size:20px;"{% endif %}>{{ allergy }}{% if not loop.last %}, {% endif %}</label>
     {% endfor %}
     {% if allergies.freeform %}
@@ -139,7 +140,7 @@
   <td>
     {% for box in textboxes %}
       {% set name = box.1 %}
-      <label>no {{ name }}{% if not loop.last %}, {% endif %}</label>
+      <label>{{ name }}{% if not loop.last %}, {% endif %}</label>
     {% endfor %}
   </td>
 {% endmacro %}

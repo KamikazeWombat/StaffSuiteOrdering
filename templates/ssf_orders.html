@@ -42,7 +42,7 @@
               {{ macros.display_allergies(order.allergies, view_only=True) }}
             {% endif %}
             <input type="hidden" name="order_id" value ="{{ order.id }}">
-            
+            <br/>
             {% if not meal.toggle1_title == "" %}
               <label>{{ order.toggle1[0][1] }}</label><br/>
             {% endif %}
@@ -55,8 +55,13 @@
           </td>
         </tr>
         <tr>
-          {% if not meal.toppings_title == "" %}
-            {{ macros.toppings_list(order.toppings) }}
+          {% if not meal.toppings1_title == "" %}
+            {{ macros.toppings_list(order.toppings1) }}
+          {% endif %}
+        </tr>
+        <tr>
+          {% if not meal.toppings2_title == "" %}
+            {{ macros.toppings_list(order.toppings2) }}
           {% endif %}
         </tr>
         {% if not order.notes == "" %}

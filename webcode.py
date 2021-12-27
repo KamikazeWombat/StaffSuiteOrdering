@@ -441,14 +441,17 @@ class Root:
             thismeal.end_time = utc_tz(params['end_time'])
             thismeal.cutoff = utc_tz(params['cutoff'])
             thismeal.description = params['description']
-            thismeal.toppings_title = params['toppings_title']
-            thismeal.toppings = meal_join(session, params, field='toppings')
+
             thismeal.toggle1_title = params['toggle1_title']
             thismeal.toggle1 = meal_join(session, params, field='toggle1')
             thismeal.toggle2_title = params['toggle2_title']
             thismeal.toggle2 = meal_join(session, params, field='toggle2')
             thismeal.toggle3_title = params['toggle3_title']
             thismeal.toggle3 = meal_join(session, params, field='toggle3')
+            thismeal.toppings1_title = params['toppings1_title']
+            thismeal.toppings1 = meal_join(session, params, field='toppings1')
+            thismeal.toppings2_title = params['toppings2_title']
+            thismeal.toppings2 = meal_join(session, params, field='toppings2')
             # thismeal.detail_link = params['detail_link']
 
             session.add(thismeal)
@@ -465,10 +468,11 @@ class Root:
                 thismeal.end_time = con_tz(thismeal.end_time)
                 thismeal.cutoff = con_tz(thismeal.cutoff)
                 # loads list of existing toppings, adds blank toppings to list up to configured quantity
-                toppings = meal_blank_toppings(meal_split(session, thismeal.toppings), cfg.multi_select_count)
                 toggles1 = meal_blank_toppings(meal_split(session, thismeal.toggle1), cfg.radio_select_count)
                 toggles2 = meal_blank_toppings(meal_split(session, thismeal.toggle2), cfg.radio_select_count)
                 toggles3 = meal_blank_toppings(meal_split(session, thismeal.toggle3), cfg.radio_select_count)
+                toppings1 = meal_blank_toppings(meal_split(session, thismeal.toppings1), cfg.multi_select_count)
+                toppings2 = meal_blank_toppings(meal_split(session, thismeal.toppings2), cfg.multi_select_count)
             except sqlalchemy.orm.exc.NoResultFound:
                 message = 'Requested Meal ID '+meal_id+' not found'
                 session.close()
@@ -480,24 +484,27 @@ class Root:
             thismeal = Meal()
             thismeal.meal_name = ''
             thismeal.description = ''
-            thismeal.toppings_title = ''
+            thismeal.toppings1_title = ''
+            thismeal.toppings2_title = ''
             thismeal.toggle1_title = ''
             thismeal.toggle2_title = ''
             thismeal.toggle3_title = ''
             # make blank boxes for new meal.
-            toppings = meal_blank_toppings([], cfg.multi_select_count)
             toggles1 = meal_blank_toppings([], cfg.radio_select_count)
             toggles2 = meal_blank_toppings([], cfg.radio_select_count)
             toggles3 = meal_blank_toppings([], cfg.radio_select_count)
+            toppings1 = meal_blank_toppings([], cfg.multi_select_count)
+            toppings2 = meal_blank_toppings([], cfg.multi_select_count)
 
         session_info = get_session_info()
         
         template = env.get_template("meal_edit.html")
         return template.render(meal=thismeal,
-                               toppings=toppings,
                                toggles1=toggles1,
                                toggles2=toggles2,
                                toggles3=toggles3,
+                               toppings1=toppings1,
+                               toppings2=toppings2,
                                messages=messages,
                                session=session_info,
                                c=c,
@@ -600,7 +607,8 @@ class Root:
             thisorder.toggle1 = order_selections(field='toggle1', params=params, is_toggle=True)
             thisorder.toggle2 = order_selections(field='toggle2', params=params, is_toggle=True)
             thisorder.toggle3 = order_selections(field='toggle3', params=params, is_toggle=True)
-            thisorder.toppings = order_selections(field='toppings', params=params)
+            thisorder.toppings1 = order_selections(field='toppings1', params=params)
+            thisorder.toppings2 = order_selections(field='toppings2', params=params)
             thisorder.notes = notes
             
             if dh_edit:  # if the order is being created by the DH Edit method, mark overridden so it will be made.
@@ -649,20 +657,22 @@ class Root:
             thismeal.start_time = con_tz(thismeal.start_time)
             thismeal.end_time = con_tz(thismeal.end_time)
             thismeal.cutoff = con_tz(thismeal.cutoff)
-            toppings = order_split(session, choices=thismeal.toppings, orders=thisorder.toppings)
             toggles1 = order_split(session, choices=thismeal.toggle1, orders=thisorder.toggle1)
             toggles2 = order_split(session, choices=thismeal.toggle2, orders=thisorder.toggle2)
             toggles3 = order_split(session, choices=thismeal.toggle3, orders=thisorder.toggle3)
+            toppings1 = order_split(session, choices=thismeal.toppings1, orders=thisorder.toppings1)
+            toppings2 = order_split(session, choices=thismeal.toppings2, orders=thisorder.toppings2)
             departments = department_split(session, thisorder.department_id)
             
             template = env.get_template('order_edit.html')
             return template.render(order=thisorder,
                                    meal=thismeal,
                                    attendee=attend,
-                                   toppings=toppings,
                                    toggles1=toggles1,
                                    toggles2=toggles2,
                                    toggles3=toggles3,
+                                   toppings1=toppings1,
+                                   toppings2=toppings2,
                                    departments=departments,
                                    messages=messages,
                                    dh_edit=dh_edit,
@@ -749,10 +759,12 @@ class Root:
             thismeal.cutoff = con_tz(thismeal.cutoff)
             thisorder = Order()
             thisorder.attendee_id = cherrypy.session['staffer_id']
-            toppings = order_split(session, thismeal.toppings)
             toggles1 = order_split(session, thismeal.toggle1)
             toggles2 = order_split(session, thismeal.toggle2)
             toggles3 = order_split(session, thismeal.toggle3)
+            toppings1 = order_split(session, thismeal.toppings1)
+            toppings2 = order_split(session, thismeal.toppings2)
+
             if 'department' in params:
                 departments = department_split(session, params['department'])
             else:
@@ -763,10 +775,11 @@ class Root:
             return template.render(order=thisorder,
                                    meal=thismeal,
                                    attendee=attend,
-                                   toppings=toppings,
                                    toggles1=toggles1,
                                    toggles2=toggles2,
                                    toggles3=toggles3,
+                                   toppings1=toppings1,
+                                   toppings2=toppings2,
                                    departments=departments,
                                    messages=message,
                                    dh_edit=dh_edit,
@@ -953,7 +966,7 @@ class Root:
         session_info = get_session_info()
         
         if delete_order:
-            if not session_info.is_super_admin:
+            if not session_info['is_super_admin']:
                 raise HTTPRedirect('config?message=You must be super admin to delete orders.')
             session = models.new_sesh()
             thisorder = session.query(Order).filter_by(id=delete_order).one()
@@ -1385,7 +1398,8 @@ class Root:
             order.toggle1 = return_selected_only(session, choices=thismeal.toggle1, orders=order.toggle1)
             order.toggle2 = return_selected_only(session, choices=thismeal.toggle2, orders=order.toggle2)
             order.toggle3 = return_selected_only(session, choices=thismeal.toggle3, orders=order.toggle3)
-            order.toppings = return_not_selected(session, choices=thismeal.toppings, orders=order.toppings)
+            order.toppings1 = return_selected_only(session, choices=thismeal.toppings1, orders=order.toppings1)
+            order.toppings2 = return_selected_only(session, choices=thismeal.toppings2, orders=order.toppings2)
 
             if response['result']['food_restrictions']:
                 order.allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
@@ -1422,7 +1436,8 @@ class Root:
                     
                     rendered_labels = labels.render(orders=order_list,
                                                     meal=thismeal,
-                                                    dept_name=dept_name)
+                                                    dept_name=dept_name,
+                                                    date=thismeal.start_time.strftime("%d-%m-%Y"))
                     
                     pdfkit.from_string(rendered_labels,
                                        'pdfs\\' + dept_name + '.pdf',
@@ -1433,7 +1448,8 @@ class Root:
                     # config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
                     pdfkit.from_string(labels.render(orders=order_list,
                                                      meal=thismeal,
-                                                     dept_name=dept_name),
+                                                     dept_name=dept_name,
+                                                     date=thismeal.start_time.strftime("%d-%m-%Y")),
                                        'pdfs/' + dept_name + '.pdf',
                                        options=options)
         if dept_order.completed:

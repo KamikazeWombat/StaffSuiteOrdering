@@ -19,7 +19,8 @@ class Order(dec_base):
     toggle1 = Column('toggle1', String)
     toggle2 = Column('toggle2', String)
     toggle3 = Column('toggle3', String)
-    toppings = Column('toppings', String)
+    toppings1 = Column('toppings1', String)
+    toppings2 = Column('toppings2', String)
     notes = Column('notes', String(120))  # todo: figure out how long the limit should be
 
     eligible = False
