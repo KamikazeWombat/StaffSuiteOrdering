@@ -19,45 +19,27 @@ padding-bottom: 3px;
 {% block content %}
 <div class="container">
   <script type="text/javascript">
-    function add_badge_to_staff() {
-        staff_barcode = document.getElementById("barcode");
-        console.log("Adding " + barcode.value + " to Staff list);
-        message = document.getElementById("message");
-        message.innerHTML = "Loading...";
-        fetch("add_badge_to_staff?badge="+staff_barcode.value, {credentials: "include"}, ).then((response) => {
-            return response.json();
+    function export_meals() {
+        msg = document.getElementByID("msg");
+        msg.innerHTML = "mark1";
+        fetch("export_meals", {credentials: "include"}, ).then((response) => {
+            return response;
         }).then((response) => {
-            staff_barcode.value = "";
-            staff_barcode.focus();
-            if (response.success) {
-                message.innerHTML = "Badge " + response.badge + " added to list successfully.";
-            } else {
-                message.innerHTML = "Failed to add badge " + response.badge + " to list : " + response.reason;
-            }
+        msg.innerHTML = "mark2";
+            var element = document.createElement('a');
+            element.setAttribute('href','data:application/json;charset=utf-8, ' + encodeURIComponent(response));
+            element.setAttribute('download', meals_export.json);
+            msg.innerHTML = "mark3";
+            document.body.appendChild(element);
+            msg.innerHTML = "mark4";
+            element.click();
+            msg.innerHTML = "mark5";
+            document.body.removeChild(element);
         });
-        staff_barcode.focus();
-        return false;
-    }
-    function add_badge_to_admin() {
-        admin_barcode = document.getElementById("barcode");
-        console.log("Adding " + barcode.value + " to Staff list);
-        message = document.getElementById("message");
-        message.innerHTML = "Loading...";
-        fetch("add_badge_to_staff?badge="+staff_barcode.value, {credentials: "include"}, ).then((response) => {
-            return response.json();
-        }).then((response) => {
-            staff_barcode.value = "";
-            staff_barcode.focus();
-            if (response.success) {
-                message.innerHTML = "Badge " + response.badge + " added to list successfully.";
-            } else {
-                message.innerHTML = "Failed to add badge " + response.badge + " to list : " + response.reason;
-            }
-        });
-        staff_barcode.focus();
         return false;
     }
   </script>
+
   <h2>{{ message }} <br/></h2>
   <h2 class="form-signin-heading">Settings Config</h2>
     <form role="form">
@@ -147,8 +129,13 @@ padding-bottom: 3px;
     </div>
 
     <div class="section-border">
-    <a href="create_checkin_csv">Create Checkin CSV</a>
-    <br/><a href="create_orders_csv">Create Orders CSV</a>
+      <form onsubmit="return export_meals()">
+      <div id="msg">empty</div>
+        <input type="text" name="junk"/>
+      <a href="create_checkin_csv">Create Checkin CSV</a>
+      <br/><a href="create_orders_csv">Create Orders CSV</a>
+      <br/><button type="submit">Export Meals to JSON</button>
+        </form>
     </div>
 </div>
 {% endblock content %}

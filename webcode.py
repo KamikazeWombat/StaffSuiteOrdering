@@ -1719,3 +1719,40 @@ class Root:
 
         session.close()
         raise HTTPRedirect('pdfs/order_export.csv')
+
+    @cherrypy.expose
+    @admin_req
+    def export_meals(self):
+        """
+        Creates a JSON file with meals list, that can be imported into a server instance
+        """
+        session = models.new_sesh()
+        export = {}
+        meals = session.query(models.meal.Meal).all()
+        for meal in meals:
+            export[meal.meal_name] = {}
+            export[meal.meal_name]['start_time'] = meal.start_time.strftime(cfg.date_format)
+            export[meal.meal_name]['end_time'] = meal.end_time.strftime(cfg.date_format)
+            export[meal.meal_name]['cutoff'] = meal.cutoff.strftime(cfg.date_format)
+            export[meal.meal_name]['locked'] = meal.locked
+            export[meal.meal_name]['description'] = meal.description
+            export[meal.meal_name]['detail_link'] = meal.detail_link
+
+            export[meal.meal_name]['toggle1'] = meal.toggle1
+            export[meal.meal_name]['toggle1_title'] = meal.toggle1_title
+            export[meal.meal_name]['toggle2'] = meal.toggle2
+            export[meal.meal_name]['toggle2_title'] = meal.toggle2_title
+            export[meal.meal_name]['toggle3'] = meal.toggle3
+            export[meal.meal_name]['toggle3_title'] = meal.toggle3_title
+
+            export[meal.meal_name]['toppings1'] = meal.toppings1
+            export[meal.meal_name]['toppings1_title'] = meal.toppings1_title
+            export[meal.meal_name]['toppings2'] = meal.toppings2
+            export[meal.meal_name]['toppings2_title'] = meal.toppings2_title
+
+            # exportfile = open('pdfs/meals_export.json', 'w', encoding='utf-8')
+            # json.dump(export, exportfile)
+            # exportfile.close()
+
+        session.close()
+        return json.dumps(export, indent=2)
