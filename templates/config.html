@@ -103,14 +103,15 @@ padding-bottom: 3px;
   </div>
 
   <div class="section-border">
-    <div id="msg">empty</div>
-    <input type="text" name="junk"/>
+    <p>Exports</p>
     <a href="create_checkin_csv">Create Checkin CSV</a>
     <br/><a href="create_orders_csv">Create Orders CSV</a>
     <br/><a href="export_meals" target="_blank">Export Meals to JSON</a>
   </div>
   <div class="section-border">
     <form>
+      <p>Import previously exported meals</p>
+      <p>Just paste JSON data into the text field, it will fit.</p>
       <input type="text" name="meals_import">
       <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Import Meals</button>
     </form>
