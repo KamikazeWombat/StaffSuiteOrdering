@@ -1750,9 +1750,5 @@ class Root:
             export[meal.meal_name]['toppings2'] = meal.toppings2
             export[meal.meal_name]['toppings2_title'] = meal.toppings2_title
 
-            # exportfile = open('pdfs/meals_export.json', 'w', encoding='utf-8')
-            # json.dump(export, exportfile)
-            # exportfile.close()
-
         session.close()
         return json.dumps(export, indent=2)
