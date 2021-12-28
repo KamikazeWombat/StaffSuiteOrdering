@@ -251,13 +251,24 @@ def load_departments():
     for dept in response:
         try:
             mydept = session.query(Department).filter_by(id=dept[0]).one()
+
             if not mydept.name == dept[1]:
                 mydept.name = dept[1]
+
         except sqlalchemy.orm.exc.NoResultFound:
             mydept = Department()
             mydept.id = dept[0]
             mydept.name = dept[1]
             session.add(mydept)
+
+        request_data = {'method': 'dept.jobs', "params": {"department_id": dept[0]}}
+        request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
+        dept_details = json.loads(request.text)
+
+        # this checks if changed before updating because my memory tells me
+        # fewer changed records makes the SQL commit faster
+        if not mydept.is_shiftless == dept_details['result']['is_shiftless']:
+            mydept.is_shiftless = dept_details['result']['is_shiftless']
             
     session.commit()
     session.close()
@@ -537,7 +548,7 @@ def ss_eligible(badge_num):
     :param badge_num: attendee's badge number for lookup
     :return: returns True or False
     """
-    
+    session = models.new_sesh()
     response = lookup_attendee(badge_num, full=True)
     
     if "error" in response:
@@ -561,8 +572,9 @@ def ss_eligible(badge_num):
         return True
 
     # shiftless departments are exempt from eligibility requirements
-    for dept in attendee['assigned_depts_labels']:
-        if dept in cfg.exempt_depts:
+    depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
+    for dept in depts:
+        if dept.name in attendee['assigned_depts_labels']:
             return True
 
     # Department Heads always get access
