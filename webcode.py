@@ -111,14 +111,14 @@ class Root:
                     cherrypy.session['is_food_manager'] = False
                     
                 # check if orders open
-                if not cfg.orders_open():
+                """if not cfg.orders_open():
                     if not cherrypy.session['is_ss_staffer']:
                         if not cherrypy.session['is_admin']:
                             if not cherrypy.session['is_dh']:
                                 if not cherrypy.session['is_food_manager']:
                                     raise HTTPRedirect('login?message=Orders are not yet open.  You can login beginning at '
                                                        + con_tz(c.EPOCH).strftime(cfg.date_format) + ' ID: ' +
-                                                       str(cherrypy.session['staffer_id']))
+                                                       str(cherrypy.session['staffer_id']))"""
 
                 session = models.new_sesh()
                 # add or update attendee record in DB
@@ -955,7 +955,7 @@ class Root:
                                session=session_info,
                                c=c,
                                cfg=cfg)
-            
+
     @cherrypy.expose
     @admin_req
     def config(self, badge='', message=[], delete_order='', **params):
@@ -1030,6 +1030,9 @@ class Root:
                                    attendee=attendee,
                                    c=c,
                                    cfg=cfg)
+
+        if "meals_import" in params:
+            self.import_meals(params['meals_import'])
 
         # if no other functions happening, display current settings
         template = env.get_template('config.html')
@@ -1729,26 +1732,95 @@ class Root:
         session = models.new_sesh()
         export = {}
         meals = session.query(models.meal.Meal).all()
-        for meal in meals:
-            export[meal.meal_name] = {}
-            export[meal.meal_name]['start_time'] = meal.start_time.strftime(cfg.date_format)
-            export[meal.meal_name]['end_time'] = meal.end_time.strftime(cfg.date_format)
-            export[meal.meal_name]['cutoff'] = meal.cutoff.strftime(cfg.date_format)
-            export[meal.meal_name]['locked'] = meal.locked
-            export[meal.meal_name]['description'] = meal.description
-            export[meal.meal_name]['detail_link'] = meal.detail_link
+        toppings = session.query(models.ingredient.Ingredient).all()
 
-            export[meal.meal_name]['toggle1'] = meal.toggle1
-            export[meal.meal_name]['toggle1_title'] = meal.toggle1_title
-            export[meal.meal_name]['toggle2'] = meal.toggle2
-            export[meal.meal_name]['toggle2_title'] = meal.toggle2_title
-            export[meal.meal_name]['toggle3'] = meal.toggle3
-            export[meal.meal_name]['toggle3_title'] = meal.toggle3_title
+        export['meals'] = list()
+        for index, meal in enumerate(meals):
+            export['meals'].append({})
+            # export['meals'][index] = {}
+            export['meals'][index]['meal_name'] = meal.meal_name
+            export['meals'][index]['start_time'] = meal.start_time.strftime(cfg.date_format)
+            export['meals'][index]['end_time'] = meal.end_time.strftime(cfg.date_format)
+            export['meals'][index]['cutoff'] = meal.cutoff.strftime(cfg.date_format)
+            export['meals'][index]['locked'] = meal.locked
+            export['meals'][index]['description'] = meal.description
+            export['meals'][index]['detail_link'] = meal.detail_link
 
-            export[meal.meal_name]['toppings1'] = meal.toppings1
-            export[meal.meal_name]['toppings1_title'] = meal.toppings1_title
-            export[meal.meal_name]['toppings2'] = meal.toppings2
-            export[meal.meal_name]['toppings2_title'] = meal.toppings2_title
+            export['meals'][index]['toggle1'] = meal.toggle1
+            export['meals'][index]['toggle1_title'] = meal.toggle1_title
+            export['meals'][index]['toggle2'] = meal.toggle2
+            export['meals'][index]['toggle2_title'] = meal.toggle2_title
+            export['meals'][index]['toggle3'] = meal.toggle3
+            export['meals'][index]['toggle3_title'] = meal.toggle3_title
 
+            export['meals'][index]['toppings1'] = meal.toppings1
+            export['meals'][index]['toppings1_title'] = meal.toppings1_title
+            export['meals'][index]['toppings2'] = meal.toppings2
+            export['meals'][index]['toppings2_title'] = meal.toppings2_title
+
+        export['ingredients'] = list()
+        for index, topping in enumerate(toppings):
+            export['ingredients'].append({})
+            # export['ingredients'][index] = {}
+            export['ingredients'][index]['id'] = topping.id
+            export['ingredients'][index]['label'] = topping.label
+            export['ingredients'][index]['description'] = topping.description
+
+
+        session.close()
+        return json.dumps(export, indent=2)
+
+
+    @admin_req
+    def import_meals(self, jsondata):
+        """
+        Loads meals in from JSON list
+        ERASES ALL EXISTING MEALS AND ORDERS
+        """
+        session = models.new_sesh()
+
+        meals = session.query(models.meal.Meal).delete()
+        toppings = session.query(models.ingredient.Ingredient).delete()
+        orders = session.query(models.order.Order).delete()
+        print("deleted " + str(meals) + " meals from database")
+        print("deleted " + str(toppings) + " ingredients from database")
+        print("deleted " + str(orders) + " orders from database")
+        try:
+            importdata = json.loads(jsondata)
+        except json.decoder.JSONDecodeError:
+            raise HTTPRedirect("config?message=Invalid JSON format")
+
+        for index, export in enumerate(importdata['meals']):
+            meal = Meal()
+            print(export)
+            meal.meal_name = export['meal_name']
+            meal.start_time = shared_functions.parse_utc(export['start_time'])
+            meal.end_time = shared_functions.parse_utc(export['end_time'])
+            meal.cutoff = shared_functions.parse_utc(export['cutoff'])
+            meal.locked = export['locked']
+            meal.description = export['description']
+            meal.detail_link = export['detail_link']
+
+            meal.toggle1 = export['toggle1']
+            meal.toggle1_title = export['toggle1_title']
+            meal.toggle2 = export['toggle2']
+            meal.toggle2_title = export['toggle2_title']
+            meal.toggle3 = export['toggle3']
+            meal.toggle3_title = export['toggle3_title']
+
+            meal.toppings1 = export['toppings1']
+            meal.toppings1_title = export['toppings1_title']
+            meal.toppings2 = export['toppings2']
+            meal.toppings2_title = export['toppings2_title']
+            session.add(meal)
+
+        for index, export in enumerate(importdata['ingredients']):
+            topping = models.ingredient.Ingredient()
+            topping.id = export['id']
+            topping.label = export['label']
+            topping.description = export['description']
+            session.add(topping)
+
+        session.commit()
         session.close()
         return json.dumps(export, indent=2)
