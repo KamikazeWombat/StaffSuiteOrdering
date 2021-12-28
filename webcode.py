@@ -868,7 +868,8 @@ class Root:
         eligible = ss_eligible(cherrypy.session['badge_num'])
         
         if not eligible:
-            messages.append('You are not scheduled for enough volunteer hours to be eligible for Staff Suite.  '
+            messages.append('You are not scheduled for enough volunteer hours to be eligible for Staff Suite, '
+                            'or you have not had your first shift marked as Worked.  '
                             'You will need to get a Department Head to authorize any orders you place.  '
                             'If you work in a non-shift capacity, please click the "Show all meals" button below '
                             'to submit a carryout order.  You will need to have a DH Override your order '
@@ -1635,7 +1636,7 @@ class Root:
             dept.slack_channel = params['slack_channel']
             dept.sms_contact = params['sms_contact']
             dept.email_contact = params['email_contact']
-            dept.other_contact = params['other_contact']
+            # dept.other_contact = params['other_contact']
             
             session.commit()
             session.close()
