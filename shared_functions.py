@@ -581,6 +581,9 @@ def ss_eligible(badge_num):
         if attendee["weighted_hours"] >= cfg.ss_hours:
             return True
 
+    if response['result']['public_id'] in cfg.food_managers:
+        return True
+
     session = models.new_sesh()
 
     if is_vip(attendee['badge_num'], session):
@@ -721,6 +724,9 @@ def carryout_eligible(shifts, response, meal_start, meal_end):
                 return True
 
     if response['result']['is_dept_head']:
+        return True
+
+    if response['result']['public_id'] in cfg.food_managers:
         return True
 
     session = models.new_sesh()
