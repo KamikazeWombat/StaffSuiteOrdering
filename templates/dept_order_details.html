@@ -32,12 +32,12 @@
         {% if dept_order.completed %} disabled {% endif %}
       >{{ dept_order.email_contact }}</textarea><br/>Email addresses to send emails to</p>
     </div>
-    <div class="section-border">
+    <!--<div class="section-border">
       <p>Other Contact   : <textarea name="other_contact" cols="50" rows="6"{% if not session.is_admin %} disabled {% endif %}
                        placeholder="Other ways you would like to be contacted for order pickup.  Text, phone call..."
         {% if dept_order.completed %} disabled {% endif %}
       >{{ dept_order.other_contact }}</textarea></p>
-    </div>
+    </div>-->
     <p>The above contact info is for meal order bundle completion for this department, for only this meal!</p>
     <button class="btn btn-lg btn-primary " type="submit"{% if not session.is_admin %} disabled{% endif %}>Update Department's Contact Info</button>
   </form>
