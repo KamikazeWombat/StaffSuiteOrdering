@@ -256,20 +256,11 @@ class Root:
                                                 Order.meal_id == meal.id).one_or_none()
             if order:
                 sorted_shifts, response = combine_shifts(attend.badge_num, full=True, no_combine=True)
-                user_exempt = False
-                depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
-                for dept in depts:
-                    if dept.name in response['result']['assigned_depts_labels']:
-                        user_exempt = True
-
-                if cherrypy.session['is_dh'] or user_exempt:
-                    eligible = True
-                else:
-                    eligible = carryout_eligible(sorted_shifts, meal.start_time, meal.end_time)
+                eligible = carryout_eligible(sorted_shifts, response, meal.start_time, meal.end_time)
                 
                 # if during meal period and order exists for this attendee and meal period
                 # their order is eligible for carryout, they get kicked out
-                if eligible or user_exempt or order.overridden:
+                if eligible or order.overridden:
                     session.close()
                     return json.dumps({"success": False, "badge": badge, "reason": "Attendee has placed a delivery "
                                                                                    "order for this meal.  Do they need "
@@ -296,7 +287,7 @@ class Root:
                                "reason": "Attendee is already checked in for this meal.",
                                "has_allergy": has_allergy})
         
-        if not shared_functions.ss_eligible(badge) and not is_vip(badge):
+        if not shared_functions.ss_eligible(badge):
             session.close()
             return json.dumps({"success": False, "badge": badge,
                                "reason": "Attendee is not eligible for Staff Suite by normal rules. "
@@ -850,7 +841,7 @@ class Root:
 
     @cherrypy.expose
     @restricted
-    def staffer_meal_list(self, message=[], meal_id='', display_all=False, **params):
+    def staffer_meal_list(self, message=[], display_all=False, **params):
         """
         Display list of meals staffer is eligible for or has already created an order for, unless requested to show all
         """
@@ -886,23 +877,15 @@ class Root:
                 session.commit()
                 shared_functions.send_webhook(params['webhook_url'], params['webhook_data'])
                 # below gets SQLAlchemy to reload attendee from database since needed for page display
-                junk = attendee.badge_num
         
         meals = session.query(Meal).all()
         sorted_shifts, response = combine_shifts(cherrypy.session['badge_num'], no_combine=True, full=True)
-        allergies = allergy_info(cherrypy.session['badge_num'])
+        allergies = allergy_info(cherrypy.session['badge_num'], response)
 
         meal_display = list()
         
         session.close()
 
-        # Below loop checks if user is part of a department that is exempt from shift time based requirements
-        user_exempt = False
-        depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
-        for dept in depts:
-            if dept.name in response['result']['assigned_depts_labels']:
-                user_exempt = True
-            
         now = datetime.utcnow()
 
         for thismeal in meals:
@@ -923,10 +906,7 @@ class Root:
 
         for meal in meals:
             # determining whether user is automatically eligible for a specific meal
-            if cherrypy.session['is_dh'] or user_exempt:
-                meal.eligible = True
-            else:
-                meal.eligible = carryout_eligible(sorted_shifts, meal.start_time, meal.end_time)
+            meal.eligible = carryout_eligible(sorted_shifts, response, meal.start_time, meal.end_time)
 
             # if eligible, or the user has an order AND meal not in past then add to display
             # if display of all was requested then add regardless
@@ -1200,11 +1180,8 @@ class Root:
             subqueryload(Order.attendee)).all()
 
         for order in order_list:
-            sorted_shifts = combine_shifts(order.attendee.badge_num, no_combine=True)
-            if is_dh(order.attendee_id):
-                order.eligible = True
-            else:
-                order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
+            sorted_shifts, response = combine_shifts(order.attendee.badge_num, no_combine=True, full=True)
+            order.eligible = carryout_eligible(sorted_shifts, response, thismeal.start_time, thismeal.end_time)
             
         if len(order_list) == 0:
             messages.append('Your department does not have any orders for this meal.')
@@ -1379,23 +1356,13 @@ class Root:
         dept = session.query(Department).filter_by(id=dept_id).one()
         dept_name = dept.name
 
-        depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
         session.close()  # this has to be before the order loop below or you get errors
 
         order_list = list()
         for order in orders:
             sorted_shifts, response = combine_shifts(order.attendee.badge_num, full=True, no_combine=True)
 
-            # checks for order eligibility for carryout
-            if response['result']['is_dept_head']:
-                order.eligible = True
-            else:
-                for dept in depts:
-                    if dept.name in response['result']['assigned_depts_labels']:
-                        order.eligible = True
-
-                if not order.eligible:  # checks for exempt dept first, then if not exempt checks shifts
-                    order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
+            order.eligible = carryout_eligible(sorted_shifts, response, thismeal.start_time, thismeal.end_time)
             # if not eligible and not overridden, remove from list for display/printing
             # todo: maybe add notification that one or more orders placed are not eligible and therefore not in list?
             
@@ -1429,9 +1396,11 @@ class Root:
                     'dpi': '203'
                 }
                 
-                # / or \ in name confuses the pdf creator when it tries to save the file
-                dept_name.replace('/', '-')
-                dept_name.replace('\\', '-')
+                # remove invalid filename characters for when the PDF creator saves the file
+                replacement_list = ['/', '\\', ':', '*', '?', '"', '<', '>', '|']
+                for char in replacement_list:
+                    dept_name.replace(char, '-')
+
 
                 if cfg.env == "dev":  # Windows todo: change this to detect OS instead
                     # for some reason the silly system decided to not find wkhtmltopdf automatically anymore on Windows
@@ -1705,8 +1674,8 @@ class Root:
             export += ','
             export += str(order.overridden)
             export += ','
-            shifts = combine_shifts(order.attendee.badge_num, no_combine=True)
-            export += str(shared_functions.carryout_eligible(shifts, order.meal.start_time, order.meal.end_time))
+            shifts, response = combine_shifts(order.attendee.badge_num, no_combine=True, full=True)
+            export += str(shared_functions.carryout_eligible(shifts, response, order.meal.start_time, order.meal.end_time))
             export += ','
             export += order.notes
             export += '\n'

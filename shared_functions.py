@@ -548,7 +548,7 @@ def ss_eligible(badge_num):
     :param badge_num: attendee's badge number for lookup
     :return: returns True or False
     """
-    session = models.new_sesh()
+
     response = lookup_attendee(badge_num, full=True)
     
     if "error" in response:
@@ -571,12 +571,6 @@ def ss_eligible(badge_num):
     if attendee['badge_type_label'] in ["Guest", "Contractor"]:
         return True
 
-    # shiftless departments are exempt from eligibility requirements
-    depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
-    for dept in depts:
-        if dept.name in attendee['assigned_depts_labels']:
-            return True
-
     # Department Heads always get access
     if response['result']['is_dept_head']:
         return True
@@ -586,6 +580,18 @@ def ss_eligible(badge_num):
     if attendee['badge_type_label'] == "Staff":
         if attendee["weighted_hours"] >= cfg.ss_hours:
             return True
+
+    session = models.new_sesh()
+
+    if is_vip(attendee['badge_num'], session):
+        return True
+
+    # shiftless departments are exempt from eligibility requirements
+    depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
+    for dept in depts:
+        if dept.name in attendee['assigned_depts_labels']:
+            return True
+
     # if nothing above matches, not eligible.
     return False
 
@@ -655,21 +661,19 @@ def combine_shifts(badge_num, full=False, no_combine=False):
         return combined
 
 
-def carryout_eligible(shifts, meal_start, meal_end):
+def carryout_eligible(shifts, response, meal_start, meal_end):
     """
     Takes a list of shifts and checks if they overlap the given meal period
     Uses rules for allowable gaps configured in system
     :param shifts: List of shift objects. Concurrent shifts must already be merged or this will not work correctly!
+    :param response : full response from attendee lookup from Uber API
     :param meal_start : date object for the meal start in python dateutil datetime format
     :param meal_end : date object for the meal end in python dateutil datetime format
     :return: returns True or False
     """
     # need to check combined if shift starts within <<buffer>> after start of meal time or earlier
     # AND ends within <<buffer>exc> before end of meal time or later
-    
-    # if there are no shifts, skip processing
-    if len(shifts) == 0:
-        return False
+
     """code section for buffer, commented out cause not using buffer for Super 2020
     meal_buffer = relativedelta(minutes=cfg.schedule_tolerance)
     # print("Meal start: {} Meal End {}".format(str(meal_start),str(meal_end)))
@@ -692,28 +696,46 @@ def carryout_eligible(shifts, meal_start, meal_end):
     # if se after ms AND before me then good
     # if ss before ms AND se after me then good
     # if the shift is more than a day before or after the meal days != 0
-    for shift in shifts:
-        ss_ms = relativedelta(meal_start, shift.start)
-        ss_ms_delta = ss_ms.minutes + (ss_ms.hours * 60)
-        ss_me = relativedelta(meal_end, shift.start)
-        ss_me_delta = ss_me.minutes + (ss_me.hours * 60)
-        if ss_ms_delta <= 0 and ss_me_delta >= 0 and ss_ms.days == 0:
-            # print('ss after ms AND before me then good')
+
+    # if there are no shifts, skip processing
+    if len(shifts) != 0:
+        for shift in shifts:
+            ss_ms = relativedelta(meal_start, shift.start)
+            ss_ms_delta = ss_ms.minutes + (ss_ms.hours * 60)
+            ss_me = relativedelta(meal_end, shift.start)
+            ss_me_delta = ss_me.minutes + (ss_me.hours * 60)
+            if ss_ms_delta <= 0 and ss_me_delta >= 0 and ss_ms.days == 0:
+                # print('ss after ms AND before me then good')
+                return True
+
+            se_ms = relativedelta(meal_start, shift.end)
+            se_ms_delta = se_ms.minutes + (se_ms.hours * 60)
+            se_me = relativedelta(meal_end, shift.end)
+            se_me_delta = se_me.minutes + (se_me.hours * 60)
+            if se_ms_delta <= 0 and se_me_delta >= 0 and ss_ms.days == 0:
+                # print('se after ms AND before me then good')
+                return True
+
+            if ss_ms_delta >= 0 and se_me_delta <= 0 and ss_ms.days == 0:
+                # print('if ss before ms AND se after me then good')
+                return True
+
+    if response['result']['is_dept_head']:
+        return True
+
+    session = models.new_sesh()
+
+    if is_vip(response['result']['badge_num'], session):
+        return True
+
+    shiftless_depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
+    for dept in shiftless_depts:
+        if dept.name in response['result']['assigned_depts_labels']:
+            session.close()
             return True
 
-        se_ms = relativedelta(meal_start, shift.end)
-        se_ms_delta = se_ms.minutes + (se_ms.hours * 60)
-        se_me = relativedelta(meal_end, shift.end)
-        se_me_delta = se_me.minutes + (se_me.hours * 60)
-        if se_ms_delta <= 0 and se_me_delta >= 0 and ss_ms.days == 0:
-            # print('se after ms AND before me then good')
-            return True
-        
-        if ss_ms_delta >= 0 and se_me_delta <= 0 and ss_ms.days == 0:
-            # print('if ss before ms AND se after me then good')
-            return True
-
-    # if none of the shifts match the meal period, return false.
+    session.close()
+    # if none of the shifts match the meal period and attendee is not exempt, return false.
     return False
 
 
@@ -748,13 +770,14 @@ def is_super_admin(staff_id):
         return False
 
 
-def allergy_info(badge_num):
+def allergy_info(badge_num, response=None):
     """
     Performs API request to Uber/Reggie and returns allergy info
     :param badge_num:
     :return:  returns tuple of allergy info, blank if none
     """
-    response = lookup_attendee(badge_num, full=True)
+    if not response:
+        response = lookup_attendee(badge_num, full=True)
     if response['result']['food_restrictions']:
         allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
                      'freeform': response['result']['food_restrictions']['freeform']}
@@ -891,11 +914,13 @@ def get_vip_list():
     return vip_list
 
 
-def is_vip(badge):
+def is_vip(badge, session=None):
     """
     Checks if provided badge is in VIP list
     """
-    session = models.new_sesh()
+    if not session:
+        session = models.new_sesh()
+
     vip_list = session.query(models.attendee.Attendee).filter_by(is_vip=True).all()
     for vip in vip_list:
         if badge == vip.badge_num:
