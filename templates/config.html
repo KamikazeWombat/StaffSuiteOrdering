@@ -92,12 +92,12 @@ padding-bottom: 3px;
     <a{% if session.is_super_admin %} href="dangerous?reset_dept_list=True"{% endif %}>Reset Dept List</a><br/>
     <a{% if session.is_super_admin %} href="dangerous?reset_checkin_list=True"{% endif %}>Reset Checkins List</a><br/>
     <form>
-      <input type="text" name="badge"/>
+      <input type="text" name="badge"{% if not session.is_super_admin %} disabled {% endif %}/>
       <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Lookup Attendee</button>
       {{ attendee }}
     </form>
     <form>
-      <input type="text" name="delete_order">
+      <input type="text" name="delete_order"{% if not session.is_super_admin %} disabled {% endif %}>
       <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Delete Order</button>
     </form>
   </div>
