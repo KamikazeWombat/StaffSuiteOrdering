@@ -18,137 +18,103 @@ padding-bottom: 3px;
 {% block backlink %}{% endblock %}
 {% block content %}
 <div class="container">
-  <script type="text/javascript">
-    function add_badge_to_staff() {
-        staff_barcode = document.getElementById("barcode");
-        console.log("Adding " + barcode.value + " to Staff list);
-        message = document.getElementById("message");
-        message.innerHTML = "Loading...";
-        fetch("add_badge_to_staff?badge="+staff_barcode.value, {credentials: "include"}, ).then((response) => {
-            return response.json();
-        }).then((response) => {
-            staff_barcode.value = "";
-            staff_barcode.focus();
-            if (response.success) {
-                message.innerHTML = "Badge " + response.badge + " added to list successfully.";
-            } else {
-                message.innerHTML = "Failed to add badge " + response.badge + " to list : " + response.reason;
-            }
-        });
-        staff_barcode.focus();
-        return false;
-    }
-    function add_badge_to_admin() {
-        admin_barcode = document.getElementById("barcode");
-        console.log("Adding " + barcode.value + " to Staff list);
-        message = document.getElementById("message");
-        message.innerHTML = "Loading...";
-        fetch("add_badge_to_staff?badge="+staff_barcode.value, {credentials: "include"}, ).then((response) => {
-            return response.json();
-        }).then((response) => {
-            staff_barcode.value = "";
-            staff_barcode.focus();
-            if (response.success) {
-                message.innerHTML = "Badge " + response.badge + " added to list successfully.";
-            } else {
-                message.innerHTML = "Failed to add badge " + response.badge + " to list : " + response.reason;
-            }
-        });
-        staff_barcode.focus();
-        return false;
-    }
-  </script>
   <h2>{{ message }} <br/></h2>
   <h2 class="form-signin-heading">Settings Config</h2>
-    <form role="form">
-      <table style="border-collaps: collapse;">
-        <tr><td>Admin Users list, Comma Separated</td>
-          <td><textarea name="admin_list" cols="50" rows="4"
-                        placeholder="Public IDs from Uber, comma separated list.  Whitespace will be cleared."
-          >{{ admin_list }}</textarea>
-        </td>
-        <td>
-          <label>Badge/Barcode</label>
-          <input id="admin_barcode" type="text" name="admin_barcode">
-          <button type="submit">Add</button>
-        </td></tr>
-        <tr><td>Staff Suite Staffers list</td>
-          <td><textarea name="staffer_list" cols="50" rows="4"
-          placeholder="Public IDs from Uber, comma separated list.  Whitespace will be cleared."
-          >{{ staffer_list }}</textarea>
-        </td>
-        <td>
-          <label>Badge/Barcode</label>
-          <input id="staff_barcode" type="text" name="staff_barcode">
-          <button type="submit">Add</button>
-          <div id="staff_message"></div>
-        </td></tr>
-        <tr><td>Printing Setup - select one :</td>
-          <td><label class="checkbox-label">Local Printer </label><input type="checkbox" name="local_print"{% if cfg.local_print %} checked{% endif %}>
-          <label class="checkbox-label">Remote Printer </label><input type="checkbox" name="remote_print"{% if cfg.remote_print %} checked{% endif %}></td>
-        </tr>
-        <tr><td>Toggle Select row count</td>
-          <td><input type="number" name="radio_select_count" value="{{ cfg.radio_select_count }}"
-          placeholder="How many rows to make available when creating meal"/>
-        </td></tr>
-        <tr><td>Multi Select row count</td>
-          <td><input type="number" name="multi_select_count" value="{{ cfg.multi_select_count }}"
-          placeholder="How many rows to make available when creating meal"/>
-        </td></tr>
-        <tr><td>Date Format</td>
-          <td><input type="text" name="date_format" value="{{ cfg.date_format }}"
-                     placeholder="Date format; go to strftime.org for details"/>
-            <br/>Date display format for most things; go to <a href="http://strftime.org">strftime.org</a> for details
-        </td></tr>
-          <tr><td>Schedule Tolerance</td>
-        <td><input type="text" name="schedule_tolerance" value="{{ cfg.schedule_tolerance }}"/>
-          <br/>Tolerance for amount of meal period not overlapped by shifts
-          <br/>In minutes, for automatic carryout eligibility calculation</td></tr>
-        <tr><td>Weighted Hours</td>
-          <td><input type="text" name="ss_hours" value="{{ cfg.ss_hours }}"/>
-            <br/>How many weighted hours are needed for base Staff Suite eligibilty</td></tr>
-        <tr><td>Shiftless Departments</td>
-          <td><textarea name="exempt_depts" cols="50" rows="4"
-          placeholder="Department IDs from Uber, CaSe SensiTive, comma separated list.  Whitespace will be cleared."
-          >{{ exempt_depts }}</textarea>
-          </td></tr>
-        <tr><td>Room Location</td>
-          <td><input type="text" name="room_location" value="{{ cfg.room_location }}"/>
-          <br/>Room location, like "Room 2022"
-        </td></tr>
-        <tr><td>Room Location URL</td>
-          <td><input type="text" name="room_url" style="width:4in;" value="{{ cfg.location_url }}"/>
-          <br/>URL pointing to room location info
-        </td></tr>
-        <tr><td>Staff Suite info URL</td>
-          <td><input type="text" name="room_url" style="width:4in;" value="{{ cfg.ss_url }}"/>
-          <br/>URL for general info on Staff Suite
-        </td></tr>
-      </table>
-      
-      <br/>
-      <button class="btn btn-lg btn-primary " type="submit">Submit</button>
-      <button class="btn btn-lg btn-primary " onclick="window.location.href = 'meal_setup_list';">Cancel</button>
-      
-    </form>
-    <div class="section-border">
-      <p>Super Admin section</p>
-      <a{% if not session.is_super_admin %} href="dangerous?reset_dept_list=True"{% endif %}>Reset Dept List</a><br/>
-      <a{% if not session.is_super_admin %} href="dangerous?reset_checkin_list=True"{% endif %}>Reset Checkins List</a><br/>
-      <form>
-        <input type="text" name="badge"/>
-        <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Lookup Attendee</button>
-        {{ attendee }}
-      </form>
-      <form>
-        <input type="text" name="delete_order">
-        <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Delete Order</button>
-      </form>
-    </div>
+  <form role="form">
+    <table style="border-collaps: collapse;">
+      <tr><td>Admin Users list, Comma Separated</td>
+        <td><textarea name="admin_list" cols="50" rows="4"
+                      placeholder="Public IDs from Uber, comma separated list.  Whitespace will be cleared."
+        >{{ admin_list }}</textarea>
+      </td>
+      <td>
+        <label>Badge/Barcode</label>
+        <input id="admin_barcode" type="text" name="admin_barcode">
+        <button type="submit">Add</button>
+      </td></tr>
+      <tr><td>Staff Suite Staffers list</td>
+        <td><textarea name="staffer_list" cols="50" rows="4"
+        placeholder="Public IDs from Uber, comma separated list.  Whitespace will be cleared."
+        >{{ staffer_list }}</textarea>
+      </td>
+      <td>
+        <label>Badge/Barcode</label>
+        <input id="staff_barcode" type="text" name="staff_barcode">
+        <button type="submit">Add</button>
+        <div id="staff_message"></div>
+      </td></tr>
+      <tr><td>Printing Setup - select one :</td>
+        <td><label class="checkbox-label">Local Printer </label><input type="checkbox" name="local_print"{% if cfg.local_print %} checked{% endif %}>
+        <label class="checkbox-label">Remote Printer </label><input type="checkbox" name="remote_print"{% if cfg.remote_print %} checked{% endif %}></td>
+      </tr>
+      <tr><td>Toggle Select row count</td>
+        <td><input type="number" name="radio_select_count" value="{{ cfg.radio_select_count }}"
+        placeholder="How many rows to make available when creating meal"/>
+      </td></tr>
+      <tr><td>Multi Select row count</td>
+        <td><input type="number" name="multi_select_count" value="{{ cfg.multi_select_count }}"
+        placeholder="How many rows to make available when creating meal"/>
+      </td></tr>
+      <tr><td>Date Format</td>
+        <td><input type="text" name="date_format" value="{{ cfg.date_format }}"
+                   placeholder="Date format; go to strftime.org for details"/>
+          <br/>Date display format for most things; go to <a href="http://strftime.org">strftime.org</a> for details
+      </td></tr>
+        <tr><td>Schedule Tolerance</td>
+      <td><input type="text" name="schedule_tolerance" value="{{ cfg.schedule_tolerance }}"/>
+        <br/>Tolerance for amount of meal period not overlapped by shifts
+        <br/>In minutes, for automatic carryout eligibility calculation</td></tr>
+      <tr><td>Weighted Hours</td>
+        <td><input type="text" name="ss_hours" value="{{ cfg.ss_hours }}"/>
+          <br/>How many weighted hours are needed for base Staff Suite eligibilty</td></tr>
 
-    <div class="section-border">
+      <tr><td>Room Location</td>
+        <td><input type="text" name="room_location" value="{{ cfg.room_location }}"/>
+        <br/>Room location, like "Room 2022"
+      </td></tr>
+      <tr><td>Room Location URL</td>
+        <td><input type="text" name="room_url" style="width:4in;" value="{{ cfg.location_url }}"/>
+        <br/>URL pointing to room location info
+      </td></tr>
+      <tr><td>Staff Suite info URL</td>
+        <td><input type="text" name="room_url" style="width:4in;" value="{{ cfg.ss_url }}"/>
+        <br/>URL for general info on Staff Suite
+      </td></tr>
+    </table>
+
+    <br/>
+    <button class="btn btn-lg btn-primary " type="submit">Submit</button>
+    <button class="btn btn-lg btn-primary " onclick="window.location.href = 'meal_setup_list';">Cancel</button>
+
+  </form>
+  <div class="section-border">
+    <p>Super Admin section</p>
+    <a{% if not session.is_super_admin %} href="dangerous?reset_dept_list=True"{% endif %}>Reset Dept List</a><br/>
+    <a{% if not session.is_super_admin %} href="dangerous?reset_checkin_list=True"{% endif %}>Reset Checkins List</a><br/>
+    <form>
+      <input type="text" name="badge"/>
+      <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Lookup Attendee</button>
+      {{ attendee }}
+    </form>
+    <form>
+      <input type="text" name="delete_order">
+      <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Delete Order</button>
+    </form>
+  </div>
+
+  <div class="section-border">
+    <p>Exports</p>
     <a href="create_checkin_csv">Create Checkin CSV</a>
     <br/><a href="create_orders_csv">Create Orders CSV</a>
-    </div>
+    <br/><a href="export_meals" target="_blank">Export Meals to JSON</a>
+  </div>
+  <div class="section-border">
+    <form>
+      <p>Import previously exported meals</p>
+      <p>Just paste JSON data into the text field, it will fit.</p>
+      <input type="text" name="meals_import">
+      <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Import Meals</button>
+    </form>
+  </div>
 </div>
 {% endblock content %}

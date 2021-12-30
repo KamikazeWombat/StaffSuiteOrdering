@@ -111,14 +111,14 @@ class Root:
                     cherrypy.session['is_food_manager'] = False
                     
                 # check if orders open
-                if not cfg.orders_open():
+                """if not cfg.orders_open():
                     if not cherrypy.session['is_ss_staffer']:
                         if not cherrypy.session['is_admin']:
                             if not cherrypy.session['is_dh']:
                                 if not cherrypy.session['is_food_manager']:
                                     raise HTTPRedirect('login?message=Orders are not yet open.  You can login beginning at '
                                                        + con_tz(c.EPOCH).strftime(cfg.date_format) + ' ID: ' +
-                                                       str(cherrypy.session['staffer_id']))
+                                                       str(cherrypy.session['staffer_id']))"""
 
                 session = models.new_sesh()
                 # add or update attendee record in DB
@@ -257,8 +257,9 @@ class Root:
             if order:
                 sorted_shifts, response = combine_shifts(attend.badge_num, full=True, no_combine=True)
                 user_exempt = False
-                for dept in response['result']['assigned_depts_labels']:
-                    if dept in cfg.exempt_depts:
+                depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
+                for dept in depts:
+                    if dept.name in response['result']['assigned_depts_labels']:
                         user_exempt = True
 
                 if cherrypy.session['is_dh'] or user_exempt:
@@ -441,14 +442,17 @@ class Root:
             thismeal.end_time = utc_tz(params['end_time'])
             thismeal.cutoff = utc_tz(params['cutoff'])
             thismeal.description = params['description']
-            thismeal.toppings_title = params['toppings_title']
-            thismeal.toppings = meal_join(session, params, field='toppings')
+
             thismeal.toggle1_title = params['toggle1_title']
             thismeal.toggle1 = meal_join(session, params, field='toggle1')
             thismeal.toggle2_title = params['toggle2_title']
             thismeal.toggle2 = meal_join(session, params, field='toggle2')
             thismeal.toggle3_title = params['toggle3_title']
             thismeal.toggle3 = meal_join(session, params, field='toggle3')
+            thismeal.toppings1_title = params['toppings1_title']
+            thismeal.toppings1 = meal_join(session, params, field='toppings1')
+            thismeal.toppings2_title = params['toppings2_title']
+            thismeal.toppings2 = meal_join(session, params, field='toppings2')
             # thismeal.detail_link = params['detail_link']
 
             session.add(thismeal)
@@ -465,10 +469,11 @@ class Root:
                 thismeal.end_time = con_tz(thismeal.end_time)
                 thismeal.cutoff = con_tz(thismeal.cutoff)
                 # loads list of existing toppings, adds blank toppings to list up to configured quantity
-                toppings = meal_blank_toppings(meal_split(session, thismeal.toppings), cfg.multi_select_count)
                 toggles1 = meal_blank_toppings(meal_split(session, thismeal.toggle1), cfg.radio_select_count)
                 toggles2 = meal_blank_toppings(meal_split(session, thismeal.toggle2), cfg.radio_select_count)
                 toggles3 = meal_blank_toppings(meal_split(session, thismeal.toggle3), cfg.radio_select_count)
+                toppings1 = meal_blank_toppings(meal_split(session, thismeal.toppings1), cfg.multi_select_count)
+                toppings2 = meal_blank_toppings(meal_split(session, thismeal.toppings2), cfg.multi_select_count)
             except sqlalchemy.orm.exc.NoResultFound:
                 message = 'Requested Meal ID '+meal_id+' not found'
                 session.close()
@@ -480,24 +485,27 @@ class Root:
             thismeal = Meal()
             thismeal.meal_name = ''
             thismeal.description = ''
-            thismeal.toppings_title = ''
+            thismeal.toppings1_title = ''
+            thismeal.toppings2_title = ''
             thismeal.toggle1_title = ''
             thismeal.toggle2_title = ''
             thismeal.toggle3_title = ''
             # make blank boxes for new meal.
-            toppings = meal_blank_toppings([], cfg.multi_select_count)
             toggles1 = meal_blank_toppings([], cfg.radio_select_count)
             toggles2 = meal_blank_toppings([], cfg.radio_select_count)
             toggles3 = meal_blank_toppings([], cfg.radio_select_count)
+            toppings1 = meal_blank_toppings([], cfg.multi_select_count)
+            toppings2 = meal_blank_toppings([], cfg.multi_select_count)
 
         session_info = get_session_info()
         
         template = env.get_template("meal_edit.html")
         return template.render(meal=thismeal,
-                               toppings=toppings,
                                toggles1=toggles1,
                                toggles2=toggles2,
                                toggles3=toggles3,
+                               toppings1=toppings1,
+                               toppings2=toppings2,
                                messages=messages,
                                session=session_info,
                                c=c,
@@ -600,7 +608,8 @@ class Root:
             thisorder.toggle1 = order_selections(field='toggle1', params=params, is_toggle=True)
             thisorder.toggle2 = order_selections(field='toggle2', params=params, is_toggle=True)
             thisorder.toggle3 = order_selections(field='toggle3', params=params, is_toggle=True)
-            thisorder.toppings = order_selections(field='toppings', params=params)
+            thisorder.toppings1 = order_selections(field='toppings1', params=params)
+            thisorder.toppings2 = order_selections(field='toppings2', params=params)
             thisorder.notes = notes
             
             if dh_edit:  # if the order is being created by the DH Edit method, mark overridden so it will be made.
@@ -649,20 +658,22 @@ class Root:
             thismeal.start_time = con_tz(thismeal.start_time)
             thismeal.end_time = con_tz(thismeal.end_time)
             thismeal.cutoff = con_tz(thismeal.cutoff)
-            toppings = order_split(session, choices=thismeal.toppings, orders=thisorder.toppings)
             toggles1 = order_split(session, choices=thismeal.toggle1, orders=thisorder.toggle1)
             toggles2 = order_split(session, choices=thismeal.toggle2, orders=thisorder.toggle2)
             toggles3 = order_split(session, choices=thismeal.toggle3, orders=thisorder.toggle3)
+            toppings1 = order_split(session, choices=thismeal.toppings1, orders=thisorder.toppings1)
+            toppings2 = order_split(session, choices=thismeal.toppings2, orders=thisorder.toppings2)
             departments = department_split(session, thisorder.department_id)
             
             template = env.get_template('order_edit.html')
             return template.render(order=thisorder,
                                    meal=thismeal,
                                    attendee=attend,
-                                   toppings=toppings,
                                    toggles1=toggles1,
                                    toggles2=toggles2,
                                    toggles3=toggles3,
+                                   toppings1=toppings1,
+                                   toppings2=toppings2,
                                    departments=departments,
                                    messages=messages,
                                    dh_edit=dh_edit,
@@ -749,10 +760,12 @@ class Root:
             thismeal.cutoff = con_tz(thismeal.cutoff)
             thisorder = Order()
             thisorder.attendee_id = cherrypy.session['staffer_id']
-            toppings = order_split(session, thismeal.toppings)
             toggles1 = order_split(session, thismeal.toggle1)
             toggles2 = order_split(session, thismeal.toggle2)
             toggles3 = order_split(session, thismeal.toggle3)
+            toppings1 = order_split(session, thismeal.toppings1)
+            toppings2 = order_split(session, thismeal.toppings2)
+
             if 'department' in params:
                 departments = department_split(session, params['department'])
             else:
@@ -763,10 +776,11 @@ class Root:
             return template.render(order=thisorder,
                                    meal=thismeal,
                                    attendee=attend,
-                                   toppings=toppings,
                                    toggles1=toggles1,
                                    toggles2=toggles2,
                                    toggles3=toggles3,
+                                   toppings1=toppings1,
+                                   toppings2=toppings2,
                                    departments=departments,
                                    messages=message,
                                    dh_edit=dh_edit,
@@ -883,8 +897,9 @@ class Root:
 
         # Below loop checks if user is part of a department that is exempt from shift time based requirements
         user_exempt = False
-        for dept in response['result']['assigned_depts_labels']:
-            if dept in cfg.exempt_depts:
+        depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
+        for dept in depts:
+            if dept.name in response['result']['assigned_depts_labels']:
                 user_exempt = True
             
         now = datetime.utcnow()
@@ -940,7 +955,7 @@ class Root:
                                session=session_info,
                                c=c,
                                cfg=cfg)
-            
+
     @cherrypy.expose
     @admin_req
     def config(self, badge='', message=[], delete_order='', **params):
@@ -953,7 +968,7 @@ class Root:
         session_info = get_session_info()
         
         if delete_order:
-            if not session_info.is_super_admin:
+            if not session_info['is_super_admin']:
                 raise HTTPRedirect('config?message=You must be super admin to delete orders.')
             session = models.new_sesh()
             thisorder = session.query(Order).filter_by(id=delete_order).one()
@@ -967,7 +982,6 @@ class Root:
             
             admin_list = params['admin_list']
             staffer_list = params['staffer_list']
-            exempt_depts = params['exempt_depts']
             
             if 'local_print' in params:
                 cfg.local_print = True
@@ -994,14 +1008,13 @@ class Root:
                 admin_list = ',\n'.join(cfg.admin_list)
             manager_list = ',\n'.join(cfg.food_managers)
                 
-            cfg.save(admin_list, staffer_list, exempt_depts, manager_list)
+            cfg.save(admin_list, staffer_list, manager_list)
             
             raise HTTPRedirect('config?message=Successfully saved config settings')
 
         # load lists into plain string for display in webpage
         admin_list = ',\n'.join(cfg.admin_list)
         staffer_list = ',\n'.join(cfg.staffer_list)
-        exempt_depts = ',\n'.join(cfg.exempt_depts)
 
         if badge:
             if not session_info['is_super_admin']:
@@ -1014,10 +1027,12 @@ class Root:
                                    session=session_info,
                                    admin_list=admin_list,
                                    staffer_list=staffer_list,
-                                   exempt_depts=exempt_depts,
                                    attendee=attendee,
                                    c=c,
                                    cfg=cfg)
+
+        if "meals_import" in params:
+            self.import_meals(params['meals_import'])
 
         # if no other functions happening, display current settings
         template = env.get_template('config.html')
@@ -1025,7 +1040,6 @@ class Root:
                                session=session_info,
                                admin_list=admin_list,
                                staffer_list=staffer_list,
-                               exempt_depts=exempt_depts,
                                c=c,
                                cfg=cfg)
 
@@ -1363,9 +1377,10 @@ class Root:
         
         dept = session.query(Department).filter_by(id=dept_id).one()
         dept_name = dept.name
-        
+
+        depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
         session.close()  # this has to be before the order loop below or you get errors
-        
+
         order_list = list()
         for order in orders:
             sorted_shifts, response = combine_shifts(order.attendee.badge_num, full=True, no_combine=True)
@@ -1374,9 +1389,10 @@ class Root:
             if response['result']['is_dept_head']:
                 order.eligible = True
             else:
-                for dept in response['result']['assigned_depts_labels']:
-                    if dept in cfg.exempt_depts:
+                for dept in depts:
+                    if dept.name in response['result']['assigned_depts_labels']:
                         order.eligible = True
+
                 if not order.eligible:  # checks for exempt dept first, then if not exempt checks shifts
                     order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
             # if not eligible and not overridden, remove from list for display/printing
@@ -1385,7 +1401,8 @@ class Root:
             order.toggle1 = return_selected_only(session, choices=thismeal.toggle1, orders=order.toggle1)
             order.toggle2 = return_selected_only(session, choices=thismeal.toggle2, orders=order.toggle2)
             order.toggle3 = return_selected_only(session, choices=thismeal.toggle3, orders=order.toggle3)
-            order.toppings = return_not_selected(session, choices=thismeal.toppings, orders=order.toppings)
+            order.toppings1 = return_selected_only(session, choices=thismeal.toppings1, orders=order.toppings1)
+            order.toppings2 = return_selected_only(session, choices=thismeal.toppings2, orders=order.toppings2)
 
             if response['result']['food_restrictions']:
                 order.allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
@@ -1422,7 +1439,8 @@ class Root:
                     
                     rendered_labels = labels.render(orders=order_list,
                                                     meal=thismeal,
-                                                    dept_name=dept_name)
+                                                    dept_name=dept_name,
+                                                    date=thismeal.start_time.strftime("%d-%m-%Y"))
                     
                     pdfkit.from_string(rendered_labels,
                                        'pdfs\\' + dept_name + '.pdf',
@@ -1433,7 +1451,8 @@ class Root:
                     # config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
                     pdfkit.from_string(labels.render(orders=order_list,
                                                      meal=thismeal,
-                                                     dept_name=dept_name),
+                                                     dept_name=dept_name,
+                                                     date=thismeal.start_time.strftime("%d-%m-%Y")),
                                        'pdfs/' + dept_name + '.pdf',
                                        options=options)
         if dept_order.completed:
@@ -1564,9 +1583,11 @@ class Root:
         session_info = get_session_info()
 
         session = models.new_sesh()
+        print('------------dept_order_id ' + dept_order_id + ' -------------')
         dept_order = session.query(DeptOrder).filter_by(id=dept_order_id).one()
 
-        if 'slack_channel' in params:
+        if 'slack_channel' in params or 'slack_contact' in params or 'sms_contact' in params or \
+                'email_contact' in params or 'other_contact' in params:
             # save record
             dept_order.slack_contact = params['slack_contact']
             dept_order.slack_channel = params['slack_channel']
@@ -1701,3 +1722,105 @@ class Root:
 
         session.close()
         raise HTTPRedirect('pdfs/order_export.csv')
+
+    @cherrypy.expose
+    @admin_req
+    def export_meals(self):
+        """
+        Creates a JSON file with meals list, that can be imported into a server instance
+        """
+        session = models.new_sesh()
+        export = {}
+        meals = session.query(models.meal.Meal).all()
+        toppings = session.query(models.ingredient.Ingredient).all()
+
+        export['meals'] = list()
+        for index, meal in enumerate(meals):
+            export['meals'].append({})
+            # export['meals'][index] = {}
+            export['meals'][index]['meal_name'] = meal.meal_name
+            export['meals'][index]['start_time'] = meal.start_time.strftime(cfg.date_format)
+            export['meals'][index]['end_time'] = meal.end_time.strftime(cfg.date_format)
+            export['meals'][index]['cutoff'] = meal.cutoff.strftime(cfg.date_format)
+            export['meals'][index]['locked'] = meal.locked
+            export['meals'][index]['description'] = meal.description
+            export['meals'][index]['detail_link'] = meal.detail_link
+
+            export['meals'][index]['toggle1'] = meal.toggle1
+            export['meals'][index]['toggle1_title'] = meal.toggle1_title
+            export['meals'][index]['toggle2'] = meal.toggle2
+            export['meals'][index]['toggle2_title'] = meal.toggle2_title
+            export['meals'][index]['toggle3'] = meal.toggle3
+            export['meals'][index]['toggle3_title'] = meal.toggle3_title
+
+            export['meals'][index]['toppings1'] = meal.toppings1
+            export['meals'][index]['toppings1_title'] = meal.toppings1_title
+            export['meals'][index]['toppings2'] = meal.toppings2
+            export['meals'][index]['toppings2_title'] = meal.toppings2_title
+
+        export['ingredients'] = list()
+        for index, topping in enumerate(toppings):
+            export['ingredients'].append({})
+            # export['ingredients'][index] = {}
+            export['ingredients'][index]['id'] = topping.id
+            export['ingredients'][index]['label'] = topping.label
+            export['ingredients'][index]['description'] = topping.description
+
+
+        session.close()
+        return json.dumps(export, indent=2)
+
+
+    @admin_req
+    def import_meals(self, jsondata):
+        """
+        Loads meals in from JSON list
+        ERASES ALL EXISTING MEALS AND ORDERS
+        """
+        session = models.new_sesh()
+
+        meals = session.query(models.meal.Meal).delete()
+        toppings = session.query(models.ingredient.Ingredient).delete()
+        orders = session.query(models.order.Order).delete()
+        print("deleted " + str(meals) + " meals from database")
+        print("deleted " + str(toppings) + " ingredients from database")
+        print("deleted " + str(orders) + " orders from database")
+        try:
+            importdata = json.loads(jsondata)
+        except json.decoder.JSONDecodeError:
+            raise HTTPRedirect("config?message=Invalid JSON format")
+
+        for index, export in enumerate(importdata['meals']):
+            meal = Meal()
+            print(export)
+            meal.meal_name = export['meal_name']
+            meal.start_time = shared_functions.parse_utc(export['start_time'])
+            meal.end_time = shared_functions.parse_utc(export['end_time'])
+            meal.cutoff = shared_functions.parse_utc(export['cutoff'])
+            meal.locked = export['locked']
+            meal.description = export['description']
+            meal.detail_link = export['detail_link']
+
+            meal.toggle1 = export['toggle1']
+            meal.toggle1_title = export['toggle1_title']
+            meal.toggle2 = export['toggle2']
+            meal.toggle2_title = export['toggle2_title']
+            meal.toggle3 = export['toggle3']
+            meal.toggle3_title = export['toggle3_title']
+
+            meal.toppings1 = export['toppings1']
+            meal.toppings1_title = export['toppings1_title']
+            meal.toppings2 = export['toppings2']
+            meal.toppings2_title = export['toppings2_title']
+            session.add(meal)
+
+        for index, export in enumerate(importdata['ingredients']):
+            topping = models.ingredient.Ingredient()
+            topping.id = export['id']
+            topping.label = export['label']
+            topping.description = export['description']
+            session.add(topping)
+
+        session.commit()
+        session.close()
+        return json.dumps(export, indent=2)

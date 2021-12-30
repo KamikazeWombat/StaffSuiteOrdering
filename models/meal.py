@@ -25,8 +25,10 @@ class Meal(dec_base):
     toggle3 = Column('toggle3', String)
     toggle3_title = Column('toggle3_name', String)
 
-    toppings = Column('toppings', String)
-    toppings_title = Column('toppings_title', String)
+    toppings1 = Column('toppings1', String)
+    toppings1_title = Column('toppings1_title', String)
+    toppings2 = Column('toppings2', String)
+    toppings2_title = Column('toppings2_title', String)
     orders = relationship('Order')
     checkins = relationship('Checkin')
     # below used for page display purposes

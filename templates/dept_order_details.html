@@ -6,6 +6,7 @@
 <div class="container">
   <h2 class="form-signin-heading">Department Order Contact Details for {{ meal.meal_name }} for {{ dept }}</h2>
   <form role="form">
+    <input type="hidden" name="dept_order_id" value="{{ dept_order.id }}"/>
     <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
     <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
     <div class="section-border">
