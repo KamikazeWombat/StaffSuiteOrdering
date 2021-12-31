@@ -977,6 +977,7 @@ class Root:
             # cfg.schedule_tolerance = int(params['schedule_tolerance'])
             cfg.date_format = params['date_format']
             cfg.ss_hours = int(params['ss_hours'])
+            cfg.early_login_enabled = params['early_login_enabled']
             # print(params['staffer_list'])
             
             if 'staff_barcode' in params and params['staff_barcode']:
