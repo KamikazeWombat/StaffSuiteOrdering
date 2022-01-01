@@ -987,18 +987,16 @@ class Root:
             # cfg.schedule_tolerance = int(params['schedule_tolerance'])
             cfg.date_format = params['date_format']
             cfg.ss_hours = int(params['ss_hours'])
+
             if 'early_login_enabled' in params:
                 cfg.early_login_enabled = True
-                print("--------------------------")
-                print("early login true")
-                print("--------------------------")
+
             else:
                 cfg.early_login_enabled = False
-                print("--------------------------")
-                print("early login false")
-                print("--------------------------")
-            # print(params['staffer_list'])
-            
+
+            cfg.room_location = params['room_location']
+            cfg.location_url = params['location_url']
+            cfg.ss_url = params['ss_url']
             if 'staff_barcode' in params and params['staff_barcode']:
                 # adds given barcode or badge number to staff suite staffers list
                 shared_functions.add_access(params['staff_barcode'], 'staff')
