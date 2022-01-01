@@ -21,6 +21,9 @@ def send_message(phone_numbers, dept_name, meal_name):
         original_phone = phone
         # remove hyphens and such from phone number
         phone = re.sub(r'[-,()\.\+a-zA-Z]', '', phone)
+        if not phone:
+            continue
+            # skip anything that is blank after filtering out unwanted characters
 
         # if US number without 1 for country code at beginning of number then add it
         # I think this should ignore if someone has given an international number, at least in most cases.
