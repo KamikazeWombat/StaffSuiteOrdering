@@ -731,7 +731,7 @@ class Root:
                                        'selections loaded.')
                 except sqlalchemy.orm.exc.NoResultFound:
                     pass
-            
+
             if dh_edit:
                 try:
                     attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
@@ -821,18 +821,19 @@ class Root:
     @cherrypy.expose
     @admin_req
     def meal_delete_confirm(self, meal_id='', confirm=False):
-        # todo: something to block malicious users from doctoring links and tricking admins into deleting meals.
-        #       perhaps check if meal_delete_confirm is in link at login page?
-        #       Also change system to disable meal instead of physically deleting it so they can be recovered
+        # todo: Change system to disable meal instead of physically deleting it so they can be recovered
         
         session = models.new_sesh()
         session_info = get_session_info()
-        
+
         thismeal = session.query(Meal).filter_by(id=meal_id).one()
-    
+
         if confirm:
             redir = 'meal_setup_list?message=Meal ' + thismeal.meal_name + ' has been Deleted.'
+            # orders related to the meal must also be deleted to prevent future conflicts if a new meal gets the same ID
+            orders = session.query(Order).filter_by(meal_id=meal_id).all()
             session.delete(thismeal)
+            session.delete(orders)
             session.commit()
             session.close()
             raise HTTPRedirect(redir)
@@ -1256,7 +1257,7 @@ class Root:
         
         session = models.new_sesh()
         
-        meals = session.query(Meal).all()
+        meals = session.query(Meal).order_by(Meal.start_time).all()
         shift_buffer = relativedelta(minutes=cfg.schedule_tolerance)
         meal_list = []
         now = datetime.now()
@@ -1289,7 +1290,7 @@ class Root:
 
     @cherrypy.expose
     @ss_staffer
-    def ssf_dept_list(self, meal_id):
+    def ssf_dept_list(self, meal_id, meal_name):
         """
         For chosen meal, shows list of departments with how many orders are currently submitted for that department
         Fulfilment staff can select a department to view order details.
@@ -1327,6 +1328,7 @@ class Root:
         return template.render(depts=dept_list,
                                completed_depts=completed_depts,
                                meal_id=meal_id,
+                               meal_name=meal_name,
                                total=total_orders,
                                remaining=remaining_orders,
                                session=session_info,
@@ -1382,9 +1384,11 @@ class Root:
             order.toppings1 = return_selected_only(session, choices=thismeal.toppings1, orders=order.toppings1)
             order.toppings2 = return_selected_only(session, choices=thismeal.toppings2, orders=order.toppings2)
 
-            if response['result']['food_restrictions']:
+            if response['result']['food_restrictions']['standard_labels'] or \
+                    response['result']['food_restrictions']['freeform']:
                 order.allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
                                    'freeform': response['result']['food_restrictions']['freeform']}
+
             if order.eligible or order.overridden:
                 order_list.append(order)
         
@@ -1410,7 +1414,6 @@ class Root:
                 replacement_list = ['/', '\\', ':', '*', '?', '"', '<', '>', '|']
                 for char in replacement_list:
                     dept_name.replace(char, '-')
-
 
                 if cfg.env == "dev":  # Windows todo: change this to detect OS instead
                     # for some reason the silly system decided to not find wkhtmltopdf automatically anymore on Windows
