@@ -1289,7 +1289,7 @@ class Root:
 
     @cherrypy.expose
     @ss_staffer
-    def ssf_dept_list(self, meal_id):
+    def ssf_dept_list(self, meal_id, meal_name):
         """
         For chosen meal, shows list of departments with how many orders are currently submitted for that department
         Fulfilment staff can select a department to view order details.
@@ -1327,6 +1327,7 @@ class Root:
         return template.render(depts=dept_list,
                                completed_depts=completed_depts,
                                meal_id=meal_id,
+                               meal_name=meal_name,
                                total=total_orders,
                                remaining=remaining_orders,
                                session=session_info,
