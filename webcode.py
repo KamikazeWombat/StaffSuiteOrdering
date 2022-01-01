@@ -731,7 +731,7 @@ class Root:
                                        'selections loaded.')
                 except sqlalchemy.orm.exc.NoResultFound:
                     pass
-            
+
             if dh_edit:
                 try:
                     attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
@@ -821,18 +821,19 @@ class Root:
     @cherrypy.expose
     @admin_req
     def meal_delete_confirm(self, meal_id='', confirm=False):
-        # todo: something to block malicious users from doctoring links and tricking admins into deleting meals.
-        #       perhaps check if meal_delete_confirm is in link at login page?
-        #       Also change system to disable meal instead of physically deleting it so they can be recovered
+        # todo: Change system to disable meal instead of physically deleting it so they can be recovered
         
         session = models.new_sesh()
         session_info = get_session_info()
-        
+
         thismeal = session.query(Meal).filter_by(id=meal_id).one()
-    
+
         if confirm:
             redir = 'meal_setup_list?message=Meal ' + thismeal.meal_name + ' has been Deleted.'
+            # orders related to the meal must also be deleted to prevent future conflicts if a new meal gets the same ID
+            orders = session.query(Order).filter_by(meal_id=meal_id).all()
             session.delete(thismeal)
+            session.delete(orders)
             session.commit()
             session.close()
             raise HTTPRedirect(redir)
