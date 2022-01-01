@@ -1257,7 +1257,7 @@ class Root:
         
         session = models.new_sesh()
         
-        meals = session.query(Meal).all()
+        meals = session.query(Meal).order_by(Meal.start_time).all()
         shift_buffer = relativedelta(minutes=cfg.schedule_tolerance)
         meal_list = []
         now = datetime.now()
