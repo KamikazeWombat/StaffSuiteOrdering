@@ -989,8 +989,14 @@ class Root:
             cfg.ss_hours = int(params['ss_hours'])
             if 'early_login_enabled' in params:
                 cfg.early_login_enabled = True
+                print("--------------------------")
+                print("early login true")
+                print("--------------------------")
             else:
                 cfg.early_login_enabled = False
+                print("--------------------------")
+                print("early login false")
+                print("--------------------------")
             # print(params['staffer_list'])
             
             if 'staff_barcode' in params and params['staff_barcode']:
