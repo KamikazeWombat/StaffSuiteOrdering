@@ -113,12 +113,21 @@ class Root:
                 # check if orders open
                 if not cfg.orders_open():
                     if not cherrypy.session['is_ss_staffer']:
+                        print("not staffer")
                         if not cherrypy.session['is_admin']:
+                            print("not admin")
                             if not cherrypy.session['is_dh']:
+                                print("not dh")
                                 if not cherrypy.session['is_food_manager']:
-                                    raise HTTPRedirect('login?message=Orders are not yet open.  You can login beginning at '
-                                                       + con_tz(c.EPOCH).strftime(cfg.date_format) + ' ID: ' +
-                                                       str(cherrypy.session['staffer_id']))
+                                    print("not food manager")
+                                    print(response['result']['badge_type_label'])
+                                    if response['result']['badge_type_label'] == 'Staff' and cfg.early_login_enabled:
+                                        pass
+                                    else:
+                                        raise HTTPRedirect('login?message=Orders are not yet open.  '
+                                                           'You can login beginning at '
+                                                           + con_tz(c.EPOCH).strftime(cfg.date_format) + ' ID: ' +
+                                                           str(cherrypy.session['staffer_id']))
 
                 session = models.new_sesh()
                 # add or update attendee record in DB
