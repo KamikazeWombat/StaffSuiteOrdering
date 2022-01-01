@@ -20,7 +20,7 @@
   <br/>
 
   {% for meal in meallist %}
-    <form role="form">
+    <form style="padding-top:5px;padding-bottom:5px;" role="form">
       <div class="meal_selection">
           {% if meal.eligible == False and meal.overridden == False %}
             <span class="meal_selection_item">Not Eligible for Carryout</span>

@@ -114,6 +114,7 @@ class Config:
         self.schedule_tolerance = int(cdata['schedule_tolerance'])
         self.date_format = cdata['date_format']
         self.ss_hours = int(cdata['ss_hours'])
+        self.early_login_enabled = cdata['early_login_enabled']
         self.room_location = str(cdata['room_location'])
         self.location_url = str(cdata['location_url'])
         self.ss_url = str(cdata['ss_url'])
@@ -160,6 +161,9 @@ class Config:
         """
         Returns if orders open yet for attendees, based on official start time for event in Uber
         """
+        if cfg.early_login_enabled:
+            return True
+
         now = datetime.now()
         now = now.replace(tzinfo=tzlocal())  # sets timezone info to server local TZ
         now = now.astimezone(pytz.utc)  # converts time from local TZ to UTC
@@ -183,6 +187,7 @@ class Config:
             'schedule_tolerance': self.schedule_tolerance,
             'date_format': self.date_format,
             'ss_hours': self.ss_hours,
+            'early_login_enabled': self.early_login_enabled,
             'room_location': self.room_location,
             'location_url': self.location_url,
             'ss_url': self.ss_url,

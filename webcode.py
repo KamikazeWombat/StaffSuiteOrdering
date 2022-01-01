@@ -102,7 +102,7 @@ class Root:
                     cherrypy.session['is_super_admin'] = False
 
                 # food manager tag is for a person who only has this specific privilige, not DH or admin also.
-                # the only place this tag is used last I checked is to prevent a food manager from adding food managers
+                # This is not added to DH because food manager is basically a DH minus adding other food managers.
                 if cherrypy.session['staffer_id'] in cfg.food_managers and not cherrypy.session['is_dh'] \
                         and not cherrypy.session['is_admin']:
                     cherrypy.session['is_food_manager'] = True
@@ -111,14 +111,14 @@ class Root:
                     cherrypy.session['is_food_manager'] = False
                     
                 # check if orders open
-                """if not cfg.orders_open():
+                if not cfg.orders_open():
                     if not cherrypy.session['is_ss_staffer']:
                         if not cherrypy.session['is_admin']:
                             if not cherrypy.session['is_dh']:
                                 if not cherrypy.session['is_food_manager']:
                                     raise HTTPRedirect('login?message=Orders are not yet open.  You can login beginning at '
                                                        + con_tz(c.EPOCH).strftime(cfg.date_format) + ' ID: ' +
-                                                       str(cherrypy.session['staffer_id']))"""
+                                                       str(cherrypy.session['staffer_id']))
 
                 session = models.new_sesh()
                 # add or update attendee record in DB
@@ -977,6 +977,7 @@ class Root:
             # cfg.schedule_tolerance = int(params['schedule_tolerance'])
             cfg.date_format = params['date_format']
             cfg.ss_hours = int(params['ss_hours'])
+            cfg.early_login_enabled = params['early_login_enabled']
             # print(params['staffer_list'])
             
             if 'staff_barcode' in params and params['staff_barcode']:
