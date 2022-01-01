@@ -18,8 +18,7 @@
     <input type="hidden" name="order_id" value="{{ order.id }}"/>
     <input type="hidden" name="save_order" value="{{ meal.id }}"/>
     <br/>
-    <input type="text" class="form-control" placeholder="Meal Name" name="meal_name" value="{{ meal.meal_name }}" disabled />
-    <br/>
+    <h3><input type="text" placeholder="Meal Name" name="meal_name" value="{{ meal.meal_name }}" disabled /></h3>
     Meal Start Time
     <input type="datetime-local" placeholder="Start Time" name="start_time"
                 {% if meal.start_time %}value="{{ meal.start_time.isoformat() }}"{% endif %} disabled/>
@@ -33,8 +32,9 @@
              {% if meal.cutoff %} value="{{ meal.cutoff.isoformat() }}"{% endif %} disabled/>
     Staff Suite will begin making orders at this time.  You can still edit/submit orders up until they begin your department's order though.
     <br/>
-    Meal Description
-    <input type="text" placeholder="Description" name="description" value="{{ meal.description }}" disabled/>
+    <h4>Meal Description
+      <input type="text" placeholder="Description" name="description" value="{{ meal.description }}" disabled/>
+    </h4>
     <br/>
     Department that will be picking up<br/>
     {{ macros.dropdown(field='department', options=departments, is_required=True, is_readonly=order.locked) }}
