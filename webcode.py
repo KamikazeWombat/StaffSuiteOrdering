@@ -878,7 +878,7 @@ class Root:
                 shared_functions.send_webhook(params['webhook_url'], params['webhook_data'])
                 # below gets SQLAlchemy to reload attendee from database since needed for page display
         
-        meals = session.query(Meal).all()
+        meals = session.query(Meal).order_by(models.meal.Meal.start_time).all()
         sorted_shifts, response = combine_shifts(cherrypy.session['badge_num'], no_combine=True, full=True)
         allergies = allergy_info(cherrypy.session['badge_num'], response)
 
