@@ -83,6 +83,7 @@ class Config:
             elif argv[i] == '-config':
                 i += 1
                 filename = argv[i]
+                self.config_file_in_use = filename
                 print(filename)
             i += 1
 
@@ -93,7 +94,7 @@ class Config:
         configfile = open(filename, 'r')
         cdata = json.load(configfile)
         configfile.close()
-        
+
         self.admin_list = ''
         self.staffer_list = ''
         self.food_managers = ''
@@ -115,6 +116,8 @@ class Config:
         self.date_format = cdata['date_format']
         self.ss_hours = int(cdata['ss_hours'])
         self.early_login_enabled = cdata['early_login_enabled']
+        print("----------------------------------------")
+        print(self.early_login_enabled)
         self.room_location = str(cdata['room_location'])
         self.location_url = str(cdata['location_url'])
         self.ss_url = str(cdata['ss_url'])
@@ -179,6 +182,8 @@ class Config:
             'api_endpoint': self.api_endpoint,
             'uber_key_location': self.uber_key_location,
             'slack_key_location': self.slack_key_location,
+            'aws_key_location': self.aws_key_location,
+            'twilio_key_location': self.twilio_key_location,
             'database_location': self.database_location,
             'local_print': self.local_print,
             'remote_print': self.remote_print,
@@ -194,7 +199,7 @@ class Config:
             'cherrypy': self.cherrypy
         }
         
-        configfile = open('config.json', 'w')
+        configfile = open(self.config_file_in_use, 'w')
         json.dump(cdata, configfile, indent=2)
         configfile.close()
         
