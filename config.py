@@ -116,11 +116,11 @@ class Config:
         self.date_format = cdata['date_format']
         self.ss_hours = int(cdata['ss_hours'])
         self.early_login_enabled = cdata['early_login_enabled']
-        print("----------------------------------------")
-        print(self.early_login_enabled)
+
         self.room_location = str(cdata['room_location'])
         self.location_url = str(cdata['location_url'])
         self.ss_url = str(cdata['ss_url'])
+
         self.cherrypy = cdata['cherrypy']
         self.cherrypy['/']['tools.staticdir.root'] = os.path.abspath(os.getcwd())
 
