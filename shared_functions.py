@@ -300,16 +300,8 @@ def search_attendee(search):
     request_data = {'method': 'attendee.search',
                     'params': [search]}
 
-    print('-------------sending search request---------------')
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
-    print(str(request))
-    for item in request:
-        print(str(item))
-    print('------------converting search to json------------')
-
     response = json.loads(request.text)
-    print(response)
-    print('-----------returning json to caller-------------')
     return response
 
 
