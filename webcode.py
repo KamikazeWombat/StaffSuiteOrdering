@@ -960,7 +960,7 @@ class Root:
         
         if delete_order:
             if not session_info['is_super_admin']:
-                raise HTTPRedirect('config?message=You must be super admin to delete orders.')
+                raise HTTPRedirect('config?message=You must be super admin to delete orders here.')
             session = models.new_sesh()
             thisorder = session.query(Order).filter_by(id=delete_order).one()
             session.delete(thisorder)
