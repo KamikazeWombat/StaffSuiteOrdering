@@ -1189,7 +1189,7 @@ class Root:
             dept = session.query(Department).filter_by(id=dept_id).one()
         
         if 'other_contact' in params or 'slack_channel' in params or 'sms_contact' in params or 'email_contact' in params:
-            # save changes to dept_order
+            # save changes to dept_order contact info
             if 'slack_channel' in params:
                 this_dept_order.slack_channel = params['slack_channel']
             if 'slack_contact' in params:
@@ -1208,6 +1208,20 @@ class Root:
             this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
             
             messages.append('Department order bundle contact info successfully updated.')
+
+        # if no meal-specific contact info then load department default
+        if not this_dept_order.slack_channel \
+                and not this_dept_order.sms_contact\
+                and not this_dept_order.email_contact\
+                and not this_dept_order.other_contact:
+            this_dept_order.slack_contact = dept.slack_contact
+            this_dept_order.slack_channel = dept.slack_channel
+            this_dept_order.sms_contact = dept.sms_contact
+            this_dept_order.email_contact = dept.email_contact
+            this_dept_order.other_contact = dept.other_contact
+            using_default_contact = True
+        else:
+            using_default_contact = False
 
         order_list = session.query(Order).filter_by(meal_id=meal_id, department_id=dept_id).options(
             subqueryload(Order.attendee)).all()
@@ -1239,6 +1253,7 @@ class Root:
                                meal=thismeal,
                                departments=departments,
                                no_contact=no_contact,
+                               using_default_contact=using_default_contact,
                                messages=messages,
                                session=session_info,
                                c=c,
