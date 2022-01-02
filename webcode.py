@@ -102,7 +102,7 @@ class Root:
                     cherrypy.session['is_super_admin'] = False
 
                 # food manager tag is for a person who only has this specific privilige, not DH or admin also.
-                # the only place this tag is used last I checked is to prevent a food manager from adding food managers
+                # This is not added to DH because food manager is basically a DH minus adding other food managers.
                 if cherrypy.session['staffer_id'] in cfg.food_managers and not cherrypy.session['is_dh'] \
                         and not cherrypy.session['is_admin']:
                     cherrypy.session['is_food_manager'] = True
@@ -111,14 +111,23 @@ class Root:
                     cherrypy.session['is_food_manager'] = False
                     
                 # check if orders open
-                """if not cfg.orders_open():
+                if not cfg.orders_open():
                     if not cherrypy.session['is_ss_staffer']:
+                        print("not staffer")
                         if not cherrypy.session['is_admin']:
+                            print("not admin")
                             if not cherrypy.session['is_dh']:
+                                print("not dh")
                                 if not cherrypy.session['is_food_manager']:
-                                    raise HTTPRedirect('login?message=Orders are not yet open.  You can login beginning at '
-                                                       + con_tz(c.EPOCH).strftime(cfg.date_format) + ' ID: ' +
-                                                       str(cherrypy.session['staffer_id']))"""
+                                    print("not food manager")
+                                    print(response['result']['badge_type_label'])
+                                    if response['result']['badge_type_label'] == 'Staff' and cfg.early_login_enabled:
+                                        pass
+                                    else:
+                                        raise HTTPRedirect('login?message=Orders are not yet open.  '
+                                                           'You can login beginning at '
+                                                           + con_tz(c.EPOCH).strftime(cfg.date_format) + ' ID: ' +
+                                                           str(cherrypy.session['staffer_id']))
 
                 session = models.new_sesh()
                 # add or update attendee record in DB
@@ -256,20 +265,11 @@ class Root:
                                                 Order.meal_id == meal.id).one_or_none()
             if order:
                 sorted_shifts, response = combine_shifts(attend.badge_num, full=True, no_combine=True)
-                user_exempt = False
-                depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
-                for dept in depts:
-                    if dept.name in response['result']['assigned_depts_labels']:
-                        user_exempt = True
-
-                if cherrypy.session['is_dh'] or user_exempt:
-                    eligible = True
-                else:
-                    eligible = carryout_eligible(sorted_shifts, meal.start_time, meal.end_time)
+                eligible = carryout_eligible(sorted_shifts, response, meal.start_time, meal.end_time)
                 
                 # if during meal period and order exists for this attendee and meal period
                 # their order is eligible for carryout, they get kicked out
-                if eligible or user_exempt or order.overridden:
+                if eligible or order.overridden:
                     session.close()
                     return json.dumps({"success": False, "badge": badge, "reason": "Attendee has placed a delivery "
                                                                                    "order for this meal.  Do they need "
@@ -296,7 +296,7 @@ class Root:
                                "reason": "Attendee is already checked in for this meal.",
                                "has_allergy": has_allergy})
         
-        if not shared_functions.ss_eligible(badge) and not is_vip(badge):
+        if not shared_functions.ss_eligible(badge):
             session.close()
             return json.dumps({"success": False, "badge": badge,
                                "reason": "Attendee is not eligible for Staff Suite by normal rules. "
@@ -731,7 +731,7 @@ class Root:
                                        'selections loaded.')
                 except sqlalchemy.orm.exc.NoResultFound:
                     pass
-            
+
             if dh_edit:
                 try:
                     attend = session.query(Attendee).filter_by(badge_num=params['badge_number']).one()
@@ -821,18 +821,19 @@ class Root:
     @cherrypy.expose
     @admin_req
     def meal_delete_confirm(self, meal_id='', confirm=False):
-        # todo: something to block malicious users from doctoring links and tricking admins into deleting meals.
-        #       perhaps check if meal_delete_confirm is in link at login page?
-        #       Also change system to disable meal instead of physically deleting it so they can be recovered
+        # todo: Change system to disable meal instead of physically deleting it so they can be recovered
         
         session = models.new_sesh()
         session_info = get_session_info()
-        
+
         thismeal = session.query(Meal).filter_by(id=meal_id).one()
-    
+
         if confirm:
             redir = 'meal_setup_list?message=Meal ' + thismeal.meal_name + ' has been Deleted.'
+            # orders related to the meal must also be deleted to prevent future conflicts if a new meal gets the same ID
+            orders = session.query(Order).filter_by(meal_id=meal_id).all()
             session.delete(thismeal)
+            session.delete(orders)
             session.commit()
             session.close()
             raise HTTPRedirect(redir)
@@ -850,7 +851,7 @@ class Root:
 
     @cherrypy.expose
     @restricted
-    def staffer_meal_list(self, message=[], meal_id='', display_all=False, **params):
+    def staffer_meal_list(self, message=[], display_all=False, **params):
         """
         Display list of meals staffer is eligible for or has already created an order for, unless requested to show all
         """
@@ -868,7 +869,8 @@ class Root:
         eligible = ss_eligible(cherrypy.session['badge_num'])
         
         if not eligible:
-            messages.append('You are not scheduled for enough volunteer hours to be eligible for Staff Suite.  '
+            messages.append('You are not scheduled for enough volunteer hours to be eligible for Staff Suite, '
+                            'or you have not had your first shift marked as Worked.  '
                             'You will need to get a Department Head to authorize any orders you place.  '
                             'If you work in a non-shift capacity, please click the "Show all meals" button below '
                             'to submit a carryout order.  You will need to have a DH Override your order '
@@ -885,23 +887,15 @@ class Root:
                 session.commit()
                 shared_functions.send_webhook(params['webhook_url'], params['webhook_data'])
                 # below gets SQLAlchemy to reload attendee from database since needed for page display
-                junk = attendee.badge_num
         
-        meals = session.query(Meal).all()
+        meals = session.query(Meal).order_by(models.meal.Meal.start_time).all()
         sorted_shifts, response = combine_shifts(cherrypy.session['badge_num'], no_combine=True, full=True)
-        allergies = allergy_info(cherrypy.session['badge_num'])
+        allergies = allergy_info(cherrypy.session['badge_num'], response)
 
         meal_display = list()
         
         session.close()
 
-        # Below loop checks if user is part of a department that is exempt from shift time based requirements
-        user_exempt = False
-        depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
-        for dept in depts:
-            if dept.name in response['result']['assigned_depts_labels']:
-                user_exempt = True
-            
         now = datetime.utcnow()
 
         for thismeal in meals:
@@ -922,10 +916,7 @@ class Root:
 
         for meal in meals:
             # determining whether user is automatically eligible for a specific meal
-            if cherrypy.session['is_dh'] or user_exempt:
-                meal.eligible = True
-            else:
-                meal.eligible = carryout_eligible(sorted_shifts, meal.start_time, meal.end_time)
+            meal.eligible = carryout_eligible(sorted_shifts, response, meal.start_time, meal.end_time)
 
             # if eligible, or the user has an order AND meal not in past then add to display
             # if display of all was requested then add regardless
@@ -996,8 +987,16 @@ class Root:
             # cfg.schedule_tolerance = int(params['schedule_tolerance'])
             cfg.date_format = params['date_format']
             cfg.ss_hours = int(params['ss_hours'])
-            # print(params['staffer_list'])
-            
+
+            if 'early_login_enabled' in params:
+                cfg.early_login_enabled = True
+
+            else:
+                cfg.early_login_enabled = False
+
+            cfg.room_location = params['room_location']
+            cfg.location_url = params['location_url']
+            cfg.ss_url = params['ss_url']
             if 'staff_barcode' in params and params['staff_barcode']:
                 # adds given barcode or badge number to staff suite staffers list
                 shared_functions.add_access(params['staff_barcode'], 'staff')
@@ -1199,11 +1198,8 @@ class Root:
             subqueryload(Order.attendee)).all()
 
         for order in order_list:
-            sorted_shifts = combine_shifts(order.attendee.badge_num, no_combine=True)
-            if is_dh(order.attendee_id):
-                order.eligible = True
-            else:
-                order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
+            sorted_shifts, response = combine_shifts(order.attendee.badge_num, no_combine=True, full=True)
+            order.eligible = carryout_eligible(sorted_shifts, response, thismeal.start_time, thismeal.end_time)
             
         if len(order_list) == 0:
             messages.append('Your department does not have any orders for this meal.')
@@ -1268,7 +1264,7 @@ class Root:
         
         session = models.new_sesh()
         
-        meals = session.query(Meal).all()
+        meals = session.query(Meal).order_by(Meal.start_time).all()
         shift_buffer = relativedelta(minutes=cfg.schedule_tolerance)
         meal_list = []
         now = datetime.now()
@@ -1301,7 +1297,7 @@ class Root:
 
     @cherrypy.expose
     @ss_staffer
-    def ssf_dept_list(self, meal_id):
+    def ssf_dept_list(self, meal_id, meal_name):
         """
         For chosen meal, shows list of departments with how many orders are currently submitted for that department
         Fulfilment staff can select a department to view order details.
@@ -1339,6 +1335,7 @@ class Root:
         return template.render(depts=dept_list,
                                completed_depts=completed_depts,
                                meal_id=meal_id,
+                               meal_name=meal_name,
                                total=total_orders,
                                remaining=remaining_orders,
                                session=session_info,
@@ -1378,23 +1375,13 @@ class Root:
         dept = session.query(Department).filter_by(id=dept_id).one()
         dept_name = dept.name
 
-        depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
         session.close()  # this has to be before the order loop below or you get errors
 
         order_list = list()
         for order in orders:
             sorted_shifts, response = combine_shifts(order.attendee.badge_num, full=True, no_combine=True)
 
-            # checks for order eligibility for carryout
-            if response['result']['is_dept_head']:
-                order.eligible = True
-            else:
-                for dept in depts:
-                    if dept.name in response['result']['assigned_depts_labels']:
-                        order.eligible = True
-
-                if not order.eligible:  # checks for exempt dept first, then if not exempt checks shifts
-                    order.eligible = carryout_eligible(sorted_shifts, thismeal.start_time, thismeal.end_time)
+            order.eligible = carryout_eligible(sorted_shifts, response, thismeal.start_time, thismeal.end_time)
             # if not eligible and not overridden, remove from list for display/printing
             # todo: maybe add notification that one or more orders placed are not eligible and therefore not in list?
             
@@ -1404,9 +1391,11 @@ class Root:
             order.toppings1 = return_selected_only(session, choices=thismeal.toppings1, orders=order.toppings1)
             order.toppings2 = return_selected_only(session, choices=thismeal.toppings2, orders=order.toppings2)
 
-            if response['result']['food_restrictions']:
+            if response['result']['food_restrictions']['standard_labels'] or \
+                    response['result']['food_restrictions']['freeform']:
                 order.allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
                                    'freeform': response['result']['food_restrictions']['freeform']}
+
             if order.eligible or order.overridden:
                 order_list.append(order)
         
@@ -1428,9 +1417,10 @@ class Root:
                     'dpi': '203'
                 }
                 
-                # / or \ in name confuses the pdf creator when it tries to save the file
-                dept_name.replace('/', '-')
-                dept_name.replace('\\', '-')
+                # remove invalid filename characters for when the PDF creator saves the file
+                replacement_list = ['/', '\\', ':', '*', '?', '"', '<', '>', '|']
+                for char in replacement_list:
+                    dept_name.replace(char, '-')
 
                 if cfg.env == "dev":  # Windows todo: change this to detect OS instead
                     # for some reason the silly system decided to not find wkhtmltopdf automatically anymore on Windows
@@ -1635,7 +1625,7 @@ class Root:
             dept.slack_channel = params['slack_channel']
             dept.sms_contact = params['sms_contact']
             dept.email_contact = params['email_contact']
-            dept.other_contact = params['other_contact']
+            # dept.other_contact = params['other_contact']
             
             session.commit()
             session.close()
@@ -1704,8 +1694,8 @@ class Root:
             export += ','
             export += str(order.overridden)
             export += ','
-            shifts = combine_shifts(order.attendee.badge_num, no_combine=True)
-            export += str(shared_functions.carryout_eligible(shifts, order.meal.start_time, order.meal.end_time))
+            shifts, response = combine_shifts(order.attendee.badge_num, no_combine=True, full=True)
+            export += str(shared_functions.carryout_eligible(shifts, response, order.meal.start_time, order.meal.end_time))
             export += ','
             export += order.notes
             export += '\n'

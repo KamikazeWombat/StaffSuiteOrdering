@@ -49,24 +49,22 @@ def send_message(recipients, dept_name, meal_name):
         server.starttls()
         server.ehlo()
         server.login(cfg.aws_authuser, cfg.aws_authkey)
-        try:
-            for index, recipient in enumerate(recipients):
-                if index % 5 == 4:
-                    # every 5 emails waits 1 second, to avoid filling up the per-second sending limit for the AWS acct
-                    time.sleep(1)
-                msg['To'] = recipient
+        for index, recipient in enumerate(recipients):
+            if index % 5 == 4:
+                # every 5 emails waits 1 second, to avoid filling up the per-second sending limit for the AWS acct
+                time.sleep(1)
+            msg['To'] = recipient
+            try:
                 server.sendmail(SENDER, recipient, msg.as_string())
-        except Exception as e:
-            print(e)
-            print(recipients)
-            slack_bot.send_message("bottesting", "Email message failed to send to " + str(recipient) + " from "
-                                   + str(dept_name) + " for " + str(meal_name) + " \r\n" +
-                                   e.response['Error']['Message'])
+            except (smtplib.SMTPResponseException, smtplib.SMTPRecipientsRefused) as e:
+                slack_bot.send_message("@Wombat3", "Email message failed to send to " + str(recipient) + " from "
+                                       + str(dept_name) + " for " + str(meal_name) + " \r\n" +
+                                       str(e))
         server.close()
 
     except Exception as e:
-        print(e)
-        print(recipients)
-        slack_bot.send_message("bottesting", "General error sending emails, not tied to a specific email address "
-                               + " from " + str(dept_name) + " for " + str(meal_name) + " \r\n" + str(e))
+        slack_bot.send_message("@Wombat3", "General error sending emails, not tied to a specific email address"
+                               + " from " + str(dept_name) + " for " + str(meal_name) +
+                               " \r\n" + str(e) +
+                               " \r\n" + str(type(e)))
     return

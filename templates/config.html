@@ -60,6 +60,7 @@ padding-bottom: 3px;
                    placeholder="Date format; go to strftime.org for details"/>
           <br/>Date display format for most things; go to <a href="http://strftime.org">strftime.org</a> for details
       </td></tr>
+
         <tr><td>Schedule Tolerance</td>
       <td><input type="text" name="schedule_tolerance" value="{{ cfg.schedule_tolerance }}"/>
         <br/>Tolerance for amount of meal period not overlapped by shifts
@@ -68,16 +69,21 @@ padding-bottom: 3px;
         <td><input type="text" name="ss_hours" value="{{ cfg.ss_hours }}"/>
           <br/>How many weighted hours are needed for base Staff Suite eligibilty</td></tr>
 
+      <tr><td>Enable Early Login for Staff</td>
+        <td><label class="checkbox-label">Early Login Enabled</label><input type="checkbox" name="early_login_enabled" {% if cfg.early_login_enabled %} checked{% endif %}>
+          <br/>Whether people with Staff badges can login before event starts.  DH, Food Manager, Staff Suite Staff and Staff Suite Admins can log in anytime either way.
+      </td></tr>
+
       <tr><td>Room Location</td>
         <td><input type="text" name="room_location" value="{{ cfg.room_location }}"/>
         <br/>Room location, like "Room 2022"
       </td></tr>
       <tr><td>Room Location URL</td>
-        <td><input type="text" name="room_url" style="width:4in;" value="{{ cfg.location_url }}"/>
+        <td><input type="text" name="location_url" style="width:4in;" value="{{ cfg.location_url }}"/>
         <br/>URL pointing to room location info
       </td></tr>
       <tr><td>Staff Suite info URL</td>
-        <td><input type="text" name="room_url" style="width:4in;" value="{{ cfg.ss_url }}"/>
+        <td><input type="text" name="ss_url" style="width:4in;" value="{{ cfg.ss_url }}"/>
         <br/>URL for general info on Staff Suite
       </td></tr>
     </table>
@@ -89,15 +95,15 @@ padding-bottom: 3px;
   </form>
   <div class="section-border">
     <p>Super Admin section</p>
-    <a{% if not session.is_super_admin %} href="dangerous?reset_dept_list=True"{% endif %}>Reset Dept List</a><br/>
-    <a{% if not session.is_super_admin %} href="dangerous?reset_checkin_list=True"{% endif %}>Reset Checkins List</a><br/>
+    <a{% if session.is_super_admin %} href="dangerous?reset_dept_list=True"{% endif %}>Reset Dept List</a><br/>
+    <a{% if session.is_super_admin %} href="dangerous?reset_checkin_list=True"{% endif %}>Reset Checkins List</a><br/>
     <form>
-      <input type="text" name="badge"/>
+      <input type="text" name="badge"{% if not session.is_super_admin %} disabled {% endif %}/>
       <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Lookup Attendee</button>
       {{ attendee }}
     </form>
     <form>
-      <input type="text" name="delete_order">
+      <input type="text" name="delete_order"{% if not session.is_super_admin %} disabled {% endif %}>
       <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Delete Order</button>
     </form>
   </div>

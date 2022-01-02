@@ -83,6 +83,7 @@ class Config:
             elif argv[i] == '-config':
                 i += 1
                 filename = argv[i]
+                self.config_file_in_use = filename
                 print(filename)
             i += 1
 
@@ -93,7 +94,7 @@ class Config:
         configfile = open(filename, 'r')
         cdata = json.load(configfile)
         configfile.close()
-        
+
         self.admin_list = ''
         self.staffer_list = ''
         self.food_managers = ''
@@ -114,9 +115,12 @@ class Config:
         self.schedule_tolerance = int(cdata['schedule_tolerance'])
         self.date_format = cdata['date_format']
         self.ss_hours = int(cdata['ss_hours'])
+        self.early_login_enabled = cdata['early_login_enabled']
+
         self.room_location = str(cdata['room_location'])
         self.location_url = str(cdata['location_url'])
         self.ss_url = str(cdata['ss_url'])
+
         self.cherrypy = cdata['cherrypy']
         self.cherrypy['/']['tools.staticdir.root'] = os.path.abspath(os.getcwd())
 
@@ -160,6 +164,9 @@ class Config:
         """
         Returns if orders open yet for attendees, based on official start time for event in Uber
         """
+        if cfg.early_login_enabled:
+            return True
+
         now = datetime.now()
         now = now.replace(tzinfo=tzlocal())  # sets timezone info to server local TZ
         now = now.astimezone(pytz.utc)  # converts time from local TZ to UTC
@@ -175,6 +182,8 @@ class Config:
             'api_endpoint': self.api_endpoint,
             'uber_key_location': self.uber_key_location,
             'slack_key_location': self.slack_key_location,
+            'aws_key_location': self.aws_key_location,
+            'twilio_key_location': self.twilio_key_location,
             'database_location': self.database_location,
             'local_print': self.local_print,
             'remote_print': self.remote_print,
@@ -183,13 +192,14 @@ class Config:
             'schedule_tolerance': self.schedule_tolerance,
             'date_format': self.date_format,
             'ss_hours': self.ss_hours,
+            'early_login_enabled': self.early_login_enabled,
             'room_location': self.room_location,
             'location_url': self.location_url,
             'ss_url': self.ss_url,
             'cherrypy': self.cherrypy
         }
         
-        configfile = open('config.json', 'w')
+        configfile = open(self.config_file_in_use, 'w')
         json.dump(cdata, configfile, indent=2)
         configfile.close()
         
