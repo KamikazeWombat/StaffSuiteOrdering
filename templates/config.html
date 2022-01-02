@@ -99,9 +99,14 @@ padding-bottom: 3px;
     <a{% if session.is_super_admin %} href="dangerous?reset_checkin_list=True"{% endif %}>Reset Checkins List</a><br/>
     <form>
       <input type="text" name="badge"{% if not session.is_super_admin %} disabled {% endif %}/>
-      <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Lookup Attendee</button>
-      {{ attendee }}
+      <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Lookup Badge</button>
     </form>
+    <form>
+      <input type="text" name="search"{% if not session.is_super_admin %} disabled {% endif %}/>
+      <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Search Attendee</button>
+    </form>
+    {{ attendee }}
+    <p>------------</p>
     <form>
       <input type="text" name="delete_order"{% if not session.is_super_admin %} disabled {% endif %}>
       <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Delete Order</button>

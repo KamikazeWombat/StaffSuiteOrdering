@@ -294,6 +294,25 @@ def lookup_attendee(badge_num, full=False):
     return response
 
 
+def search_attendee(search):
+    # queries Uber/Reggie to find out if attendee is marked as a DH
+    REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
+    request_data = {'method': 'attendee.search',
+                    'params': [search]}
+
+    print('-------------sending search request---------------')
+    request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
+    print(str(request))
+    for item in request:
+        print(str(item))
+    print('------------converting search to json------------')
+
+    response = json.loads(request.text)
+    print(response)
+    print('-----------returning json to caller-------------')
+    return response
+
+
 def order_split(session, choices, orders=""):
     """
     Creates tuple from list of ingredient IDs in format needed for display on order screens
@@ -391,7 +410,7 @@ def order_selections(field, params, is_toggle=False):
             count += 1
     
     result = ','.join(result)
-    
+
     return result
 
 
