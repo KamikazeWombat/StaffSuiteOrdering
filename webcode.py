@@ -1107,7 +1107,7 @@ class Root:
         session = models.new_sesh()
         departments = department_split(session)
 
-        meal_list = session.query(Meal).all()
+        meal_list = session.query(Meal).order_by(Meal.start_time).all()
         
         for meal in meal_list:
             meal.start_time = con_tz(meal.start_time)
