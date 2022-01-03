@@ -17,6 +17,7 @@
     <div class="section-border>"My Allergy info: {{ macros.display_allergies(allergies) }}</div>
     <input type="hidden" name="order_id" value="{{ order.id }}"/>
     <input type="hidden" name="save_order" value="{{ meal.id }}"/>
+    <input type="hidden" name="meal_id" value="{{ meal.id }}"/>
     <br/>
     <h3><input type="text" placeholder="Meal Name" name="meal_name" value="{{ meal.meal_name }}" disabled /></h3>
     Meal Start Time

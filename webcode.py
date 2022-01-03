@@ -515,8 +515,7 @@ class Root:
     @cherrypy.expose
     def order_edit(self, meal_id='', save_order='', order_id='', message=[], notes='', delete_order=False,
                    dh_edit=False, **params):
-        
-        # todo: department select dropdown needs to restrict based upon if a department's order is already being processed or has been.
+
         messages = []
         if message:
             text = message
@@ -573,14 +572,14 @@ class Root:
             hour = relativedelta(hours=1)
             now = datetime.utcnow() + hour
             rd = relativedelta(now, thisorder.meal.end_time)
-            
+
             if rd.minutes > 0 or rd.hours > 0 or rd.days > 0:
                 raise HTTPRedirect("staffer_meal_list?message=Pickup orders for this meal time are closed")
-            
+
             if dh_edit:
                 # actually verifies you are admin and not just you edited URL
                 # print('starting dh_edit')
-                if is_dh(cherrypy.session['staffer_id']) or is_admin(cherrypy.session['staffer_id']):
+                if session_info['is_dh'] or session_info['is_admin']:
                     # print('is actualy dh or admin')
                     try:
                         # load attendee from database or Reggie if not already in DB
@@ -622,8 +621,11 @@ class Root:
                 
             session.commit()
             session.close()
-            
-            raise HTTPRedirect('staffer_meal_list?message=Succesfully saved order')
+            if dh_edit:
+                raise HTTPRedirect('dept_order?meal_id=' + str(meal_id) + '&dept_id=' + str(params['department']) +
+                                   '&message=Succesfully saved order for badge# ' + str(params['badge_number']))
+            else:
+                raise HTTPRedirect('staffer_meal_list?message=Succesfully saved order')
         
         if order_id:
             # load order
@@ -715,7 +717,8 @@ class Root:
 
                     session.close()
                     raise HTTPRedirect('order_edit?dh_edit=True&badge_number=' + str(params['badge_number']) +
-                                       '&order_id=' + str(thisorder.id) +
+                                       '&order_id=' + str(thisorder.id) + '&dept_id=' + str(params['department']) +
+                                       '&meal_id=' + str(meal_id) +
                                        '&message=An order already exists for this Meal, previously created '
                                        'order selections loaded.')
                 except sqlalchemy.orm.exc.NoResultFound:
@@ -802,7 +805,8 @@ class Root:
         thisorder = session.query(Order).filter_by(id=order_id).one()
         
         if confirm:
-            if thisorder.attendee_id == cherrypy.session['staffer_id']:
+            if thisorder.attendee_id == cherrypy.session['staffer_id']\
+                    or session_info['is_dh'] or session_info['is_admin']:
                 session.delete(thisorder)
                 session.commit()
                 session.close()
