@@ -949,7 +949,7 @@ class Root:
 
     @cherrypy.expose
     @admin_req
-    def config(self, badge='', message=[], delete_order='', **params):
+    def config(self, badge='', search='', message=[], delete_order='', **params):
         messages = []
 
         if message:
@@ -960,7 +960,7 @@ class Root:
         
         if delete_order:
             if not session_info['is_super_admin']:
-                raise HTTPRedirect('config?message=You must be super admin to delete orders.')
+                raise HTTPRedirect('config?message=You must be super admin to delete orders here.')
             session = models.new_sesh()
             thisorder = session.query(Order).filter_by(id=delete_order).one()
             session.delete(thisorder)
@@ -1020,6 +1020,21 @@ class Root:
                 raise HTTPRedirect('config?message=You must be super admin to use the attendee lookup feature')
             # lookup attendee in Uber, dumps result to page.  intended for troubleshooting purposes
             attendee = shared_functions.lookup_attendee(badge, True)
+            attendee = json.dumps(attendee, indent=2)
+            template = env.get_template('config.html')
+            return template.render(messages=messages,
+                                   session=session_info,
+                                   admin_list=admin_list,
+                                   staffer_list=staffer_list,
+                                   attendee=attendee,
+                                   c=c,
+                                   cfg=cfg)
+
+        if search:
+            if not session_info['is_super_admin']:
+                raise HTTPRedirect('config?message=You must be super admin to use the attendee search feature')
+            # lookup attendee in Uber, dumps result to page.  intended for troubleshooting purposes
+            attendee = shared_functions.search_attendee(search)
             attendee = json.dumps(attendee, indent=2)
             template = env.get_template('config.html')
             return template.render(messages=messages,
@@ -1092,7 +1107,7 @@ class Root:
         session = models.new_sesh()
         departments = department_split(session)
 
-        meal_list = session.query(Meal).all()
+        meal_list = session.query(Meal).order_by(Meal.start_time).all()
         
         for meal in meal_list:
             meal.start_time = con_tz(meal.start_time)
@@ -1174,7 +1189,7 @@ class Root:
             dept = session.query(Department).filter_by(id=dept_id).one()
         
         if 'other_contact' in params or 'slack_channel' in params or 'sms_contact' in params or 'email_contact' in params:
-            # save changes to dept_order
+            # save changes to dept_order contact info
             if 'slack_channel' in params:
                 this_dept_order.slack_channel = params['slack_channel']
             if 'slack_contact' in params:
@@ -1193,6 +1208,20 @@ class Root:
             this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
             
             messages.append('Department order bundle contact info successfully updated.')
+
+        # if no meal-specific contact info then load department default
+        if not this_dept_order.slack_channel \
+                and not this_dept_order.sms_contact\
+                and not this_dept_order.email_contact\
+                and not this_dept_order.other_contact:
+            this_dept_order.slack_contact = dept.slack_contact
+            this_dept_order.slack_channel = dept.slack_channel
+            this_dept_order.sms_contact = dept.sms_contact
+            this_dept_order.email_contact = dept.email_contact
+            this_dept_order.other_contact = dept.other_contact
+            using_default_contact = True
+        else:
+            using_default_contact = False
 
         order_list = session.query(Order).filter_by(meal_id=meal_id, department_id=dept_id).options(
             subqueryload(Order.attendee)).all()
@@ -1224,6 +1253,7 @@ class Root:
                                meal=thismeal,
                                departments=departments,
                                no_contact=no_contact,
+                               using_default_contact=using_default_contact,
                                messages=messages,
                                session=session_info,
                                c=c,
