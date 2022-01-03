@@ -10,7 +10,7 @@
   "multi_select_count": 5,
   "radio_select_count": 3,
   "schedule_tolerance": 45,
-  "date_format": "%d-%m-%Y %H:%M",
+  "date_format": "%m-%d-%Y %H:%M",
   "ss_hours": 12,
   "room_location": "Room 123456",
   "location_url": "https://url to page explaining how to find the food room",
