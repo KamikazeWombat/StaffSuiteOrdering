@@ -12,13 +12,12 @@ def send_message(recipients, dept_name, meal_name):
     """
     Send message to list of emails using Amazon AWS
     """
-    print('----------------beginning AWS sending--------------------')
     SENDER = "noreply@food.magevent.net"
     SENDERNAME = "Staff Suite Orders"
     HOST = "email-smtp.us-east-1.amazonaws.com"
     PORT = 587
 
-    SUBJECT = "Tuber Eats test email"
+    SUBJECT = "Staff Suite Order Ready"
     BODY_TEXT = ("Your department's order bundle for " + str(meal_name) + " for " + str(dept_name)
                  + " is ready for pickup. \r\n"
                  "Please have someone come get it.  Thanks!\r\n \r\n"
