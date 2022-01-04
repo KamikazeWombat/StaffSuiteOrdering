@@ -103,6 +103,7 @@ padding-bottom: 3px;
     </form>
     <form>
       <input type="text" name="search"{% if not session.is_super_admin %} disabled {% endif %}/>
+      <input type="checkbox" name="full_lookup"/>
       <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Search Attendee</button>
     </form>
     {{ attendee }}

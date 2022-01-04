@@ -953,7 +953,7 @@ class Root:
 
     @cherrypy.expose
     @admin_req
-    def config(self, badge='', search='', message=[], delete_order='', **params):
+    def config(self, badge='', search='', message=[], delete_order='', full_lookup=False, **params):
         messages = []
 
         if message:
@@ -1023,7 +1023,7 @@ class Root:
             if not session_info['is_super_admin']:
                 raise HTTPRedirect('config?message=You must be super admin to use the attendee lookup feature')
             # lookup attendee in Uber, dumps result to page.  intended for troubleshooting purposes
-            attendee = shared_functions.lookup_attendee(badge, True)
+            attendee = shared_functions.lookup_attendee(badge, full_lookup)
             attendee = json.dumps(attendee, indent=2)
             template = env.get_template('config.html')
             return template.render(messages=messages,
@@ -1038,7 +1038,7 @@ class Root:
             if not session_info['is_super_admin']:
                 raise HTTPRedirect('config?message=You must be super admin to use the attendee search feature')
             # lookup attendee in Uber, dumps result to page.  intended for troubleshooting purposes
-            attendee = shared_functions.search_attendee(search)
+            attendee = shared_functions.search_attendee(search, full_lookup)
             attendee = json.dumps(attendee, indent=2)
             template = env.get_template('config.html')
             return template.render(messages=messages,
