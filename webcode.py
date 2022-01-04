@@ -894,6 +894,7 @@ class Root:
         
         meals = session.query(Meal).order_by(models.meal.Meal.start_time).all()
         sorted_shifts, response = combine_shifts(cherrypy.session['badge_num'], no_combine=True, full=True)
+
         allergies = allergy_info(cherrypy.session['badge_num'], response)
 
         meal_display = list()
@@ -901,11 +902,7 @@ class Root:
         session.close()
 
         now = datetime.utcnow()
-
         for thismeal in meals:
-            thismeal.start_time = con_tz(thismeal.start_time)
-            thismeal.end_time = con_tz(thismeal.end_time)
-            thismeal.cutoff = con_tz(thismeal.cutoff)
             try:
                 # orders = session.query(Order).filter_by(meal_id=thismeal.id,
                 #                                         attendee_id=cherrypy.session['staffer_id']).all()
@@ -933,8 +930,12 @@ class Root:
                 rd += delta.days * 1440
                 # hides meals in the past by default
                 if rd >= 0 or display_all or meal.order_exists:
+                    # update time to be Con TZ for display purposes
+                    meal.start_time = con_tz(meal.start_time)
+                    meal.end_time = con_tz(meal.end_time)
+                    meal.cutoff = con_tz(meal.cutoff)
                     meal_display.append(meal)
-        
+
         if len(meal_display) == 0 and eligible:
             messages.append('You are not signed up for any shifts that overlap with meal times. '
                             'If you work in a non-shift capacity, please click the "Show all meals" button below '
