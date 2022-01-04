@@ -294,11 +294,16 @@ def lookup_attendee(badge_num, full=False):
     return response
 
 
-def search_attendee(search):
+def search_attendee(search, full_lookup=False):
     # queries Uber/Reggie to find out if attendee is marked as a DH
     REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
-    request_data = {'method': 'attendee.search',
-                    'params': [search]}
+
+    if full_lookup:
+        request_data = {'method': 'attendee.search',
+                        'params': [search, True]}
+    else:
+        request_data = {'method': 'attendee.search',
+                        'params': [search]}
 
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
     response = json.loads(request.text)
@@ -634,7 +639,7 @@ def combine_shifts(badge_num, full=False, no_combine=False):
                          extra_15=shift['job']['extra15']
                          )
             shift_list.append(item)
-            
+
     if no_combine:
         if full:
             return shift_list, response
@@ -704,7 +709,7 @@ def carryout_eligible(shifts, response, meal_start, meal_end):
             # start_delta.days being anything other than 0 means the shift is more than 24 hours from the meal
             return True
     """
-    # rd positive if first after second
+    # rd is negative if first before second
     # ss=shift start, se = shift end.  ms=meal start, me= meal end
     # if ss after ms AND before me then good
     # if se after ms AND before me then good
@@ -713,23 +718,28 @@ def carryout_eligible(shifts, response, meal_start, meal_end):
 
     # if there are no shifts, skip processing
     if len(shifts) != 0:
+        # this code checks for if shift start during meal period
+        # this will also catch entire shifts that happen inside part of meal period
         for shift in shifts:
             ss_ms = relativedelta(meal_start, shift.start)
             ss_ms_delta = ss_ms.minutes + (ss_ms.hours * 60)
             ss_me = relativedelta(meal_end, shift.start)
             ss_me_delta = ss_me.minutes + (ss_me.hours * 60)
-            if ss_ms_delta <= 0 and ss_me_delta >= 0 and ss_ms.days == 0:
+            if ss_ms_delta < 0 and ss_me_delta > 0 and ss_ms.days == 0:
                 # print('ss after ms AND before me then good')
                 return True
 
+            # this code checks for if shift end during meal period
             se_ms = relativedelta(meal_start, shift.end)
             se_ms_delta = se_ms.minutes + (se_ms.hours * 60)
             se_me = relativedelta(meal_end, shift.end)
             se_me_delta = se_me.minutes + (se_me.hours * 60)
-            if se_ms_delta <= 0 and se_me_delta >= 0 and ss_ms.days == 0:
+            if se_ms_delta < 0 and se_me_delta > 0 and ss_ms.days == 0:
                 # print('se after ms AND before me then good')
                 return True
 
+            # this code checks for if shift start is before/= AND shift end is after/= meal period
+            # this will also catch shifts that happen during the exact start and end time of the meal period
             if ss_ms_delta >= 0 and se_me_delta <= 0 and ss_ms.days == 0:
                 # print('if ss before ms AND se after me then good')
                 return True

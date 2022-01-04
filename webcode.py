@@ -894,6 +894,7 @@ class Root:
         
         meals = session.query(Meal).order_by(models.meal.Meal.start_time).all()
         sorted_shifts, response = combine_shifts(cherrypy.session['badge_num'], no_combine=True, full=True)
+
         allergies = allergy_info(cherrypy.session['badge_num'], response)
 
         meal_display = list()
@@ -901,11 +902,7 @@ class Root:
         session.close()
 
         now = datetime.utcnow()
-
         for thismeal in meals:
-            thismeal.start_time = con_tz(thismeal.start_time)
-            thismeal.end_time = con_tz(thismeal.end_time)
-            thismeal.cutoff = con_tz(thismeal.cutoff)
             try:
                 # orders = session.query(Order).filter_by(meal_id=thismeal.id,
                 #                                         attendee_id=cherrypy.session['staffer_id']).all()
@@ -933,8 +930,12 @@ class Root:
                 rd += delta.days * 1440
                 # hides meals in the past by default
                 if rd >= 0 or display_all or meal.order_exists:
+                    # update time to be Con TZ for display purposes
+                    meal.start_time = con_tz(meal.start_time)
+                    meal.end_time = con_tz(meal.end_time)
+                    meal.cutoff = con_tz(meal.cutoff)
                     meal_display.append(meal)
-        
+
         if len(meal_display) == 0 and eligible:
             messages.append('You are not signed up for any shifts that overlap with meal times. '
                             'If you work in a non-shift capacity, please click the "Show all meals" button below '
@@ -953,7 +954,7 @@ class Root:
 
     @cherrypy.expose
     @admin_req
-    def config(self, badge='', search='', message=[], delete_order='', **params):
+    def config(self, badge='', search='', message=[], delete_order='', full_lookup=False, **params):
         messages = []
 
         if message:
@@ -1023,7 +1024,7 @@ class Root:
             if not session_info['is_super_admin']:
                 raise HTTPRedirect('config?message=You must be super admin to use the attendee lookup feature')
             # lookup attendee in Uber, dumps result to page.  intended for troubleshooting purposes
-            attendee = shared_functions.lookup_attendee(badge, True)
+            attendee = shared_functions.lookup_attendee(badge, full_lookup)
             attendee = json.dumps(attendee, indent=2)
             template = env.get_template('config.html')
             return template.render(messages=messages,
@@ -1038,7 +1039,7 @@ class Root:
             if not session_info['is_super_admin']:
                 raise HTTPRedirect('config?message=You must be super admin to use the attendee search feature')
             # lookup attendee in Uber, dumps result to page.  intended for troubleshooting purposes
-            attendee = shared_functions.search_attendee(search)
+            attendee = shared_functions.search_attendee(search, full_lookup)
             attendee = json.dumps(attendee, indent=2)
             template = env.get_template('config.html')
             return template.render(messages=messages,
