@@ -9,6 +9,10 @@ then modified to my needs-->
 <!-- Custom styles for this template -->
 <link href="static/styles/login.css" rel="stylesheet">
 
+{% if isdev %}
+<h2 style="text-align:center;">Test server, main server is <a href="https://food.magevent.net">here</a></h2>
+{% endif %}
+
 <div class="container">
         {% if messages %}
             {% for message in messages %}
