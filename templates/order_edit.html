@@ -14,11 +14,14 @@
     </h2>
     {% if order.locked %}<h2>This order is locked for fulfilment, only Staff Suite admins can change it</h2> <br/>{% endif %}
     </div>
-    <div class="section-border>"My Allergy info: {{ macros.display_allergies(allergies) }}</div>
+    <div class="section-border">My Allergy info: {{ macros.display_allergies(allergies) }}</div>
+    <p>Grab and Go snacks and sandwiches are available during all Staff Suite Open Hours (8AM - 12AM)
+    <br/>See details on what is available <a href="/pdfs/Grab-and-Go.png" target="_blank">here</a></p>
+
     <input type="hidden" name="order_id" value="{{ order.id }}"/>
     <input type="hidden" name="save_order" value="{{ meal.id }}"/>
     <input type="hidden" name="meal_id" value="{{ meal.id }}"/>
-    <br/>
+
     <h3><input type="text" placeholder="Meal Name" name="meal_name" value="{{ meal.meal_name }}" disabled /></h3>
     Meal Start Time
     <input type="datetime-local" placeholder="Start Time" name="start_time"
