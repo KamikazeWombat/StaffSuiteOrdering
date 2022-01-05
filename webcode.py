@@ -1426,10 +1426,11 @@ class Root:
             order.toppings1 = return_selected_only(session, choices=thismeal.toppings1, orders=order.toppings1)
             order.toppings2 = return_selected_only(session, choices=thismeal.toppings2, orders=order.toppings2)
 
-            if response['result']['food_restrictions']['standard_labels'] or \
-                    response['result']['food_restrictions']['freeform']:
-                order.allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
-                                   'freeform': response['result']['food_restrictions']['freeform']}
+            if response['result']['food_restrictions']:
+                if response['result']['food_restrictions']['standard_labels'] or \
+                        response['result']['food_restrictions']['freeform']:
+                    order.allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
+                                       'freeform': response['result']['food_restrictions']['freeform']}
 
             if order.eligible or order.overridden:
                 order_list.append(order)
