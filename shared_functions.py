@@ -584,7 +584,7 @@ def ss_eligible(badge_num):
                 return True
 
     # Guests and Contractors automatically get access
-    if attendee['badge_type_label'] in ["Guest", "Contractor"]:
+    if attendee['badge_type_label'] in ["Guest", "Contractor", "Staff"]:
         return True
 
     # Department Heads always get access
@@ -593,9 +593,9 @@ def ss_eligible(badge_num):
 
     # Staff who have signed up for at least <event required> hours.
     # Having already worked a shift this event not required for people with Staff status
-    if attendee['badge_type_label'] == "Staff":
-        if attendee["weighted_hours"] >= cfg.ss_hours:
-            return True
+    # if attendee['badge_type_label'] == "Staff":
+      #   if attendee["weighted_hours"] >= cfg.ss_hours:
+        #     return True
 
     if response['result']['public_id'] in cfg.food_managers:
         return True
