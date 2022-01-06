@@ -14,8 +14,7 @@ def send_message(channel, message):
 
     channel_list = channel.split(',')
     for chan in channel_list:
-        chan = chan.strip()
-        if chan[0] == '@':
+        if chan and chan[0] == '@':
             open_channel = {'token': cfg.slack_authkey,
                             'users': chan}
             response = requests.post('https://slack.com/api/conversations.open', open_channel, headers)
