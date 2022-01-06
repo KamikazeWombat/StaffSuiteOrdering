@@ -1619,7 +1619,7 @@ class Root:
             dept_order.slack_channel = params['slack_channel']
             dept_order.sms_contact = params['sms_contact']
             dept_order.email_contact = params['email_contact']
-            dept_order.other_contact = params['other_contact']
+            # dept_order.other_contact = params['other_contact']
             session.commit()
             session.close()
             raise HTTPRedirect('dept_order_details?dept_order_id=' + str(dept_order_id))
