@@ -102,6 +102,10 @@
             <td>
               <label style="padding:5px;">Not Eligible for Carryout</label>
             </td>
+          {% else %}
+            <td>
+              <label style="padding:5px;">Eligible &#10004</label>
+            </td>
           {% endif %}
 
           {% if order.overridden %}
