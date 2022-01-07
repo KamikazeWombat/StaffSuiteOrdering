@@ -1415,10 +1415,14 @@ class Root:
         order_list = list()
         for order in orders:
             sorted_shifts, response = combine_shifts(order.attendee.badge_num, full=True, no_combine=True)
-
-            order.eligible = carryout_eligible(sorted_shifts, response, thismeal.start_time, thismeal.end_time)
-            # if not eligible and not overridden, remove from list for display/printing
-            # todo: maybe add notification that one or more orders placed are not eligible and therefore not in list?
+            try:
+                order.eligible = carryout_eligible(sorted_shifts, response, thismeal.start_time, thismeal.end_time)
+                # if not eligible and not overridden, remove from list for display/printing
+                # todo: maybe add notification that one or more orders placed are not eligible and therefore not in list?
+            except KeyError:
+                order.eligible = True
+                # someone's order is crashing because it doesn't get a response.
+                # going to err on the side of giving them food if possible.
             
             order.toggle1 = return_selected_only(session, choices=thismeal.toggle1, orders=order.toggle1)
             order.toggle2 = return_selected_only(session, choices=thismeal.toggle2, orders=order.toggle2)
@@ -1426,11 +1430,14 @@ class Root:
             order.toppings1 = return_selected_only(session, choices=thismeal.toppings1, orders=order.toppings1)
             order.toppings2 = return_selected_only(session, choices=thismeal.toppings2, orders=order.toppings2)
 
-            if response['result']['food_restrictions']:
-                if response['result']['food_restrictions']['standard_labels'] or \
-                        response['result']['food_restrictions']['freeform']:
-                    order.allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
-                                       'freeform': response['result']['food_restrictions']['freeform']}
+            try:
+                if response['result']['food_restrictions']:
+                    if response['result']['food_restrictions']['standard_labels'] or \
+                            response['result']['food_restrictions']['freeform']:
+                        order.allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
+                                           'freeform': response['result']['food_restrictions']['freeform']}
+            except KeyError:
+                pass
 
             if order.eligible or order.overridden:
                 order_list.append(order)
