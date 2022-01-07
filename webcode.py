@@ -1430,6 +1430,18 @@ class Root:
             order.toppings1 = return_selected_only(session, choices=thismeal.toppings1, orders=order.toppings1)
             order.toppings2 = return_selected_only(session, choices=thismeal.toppings2, orders=order.toppings2)
 
+            # below modifications allows fulfilment to limp along if major meal changes are needed.
+            if len(order.toggle1) == 0:
+                thismeal.toggle1_title = ''
+            if len(order.toggle2) == 0:
+                thismeal.toggle2_title = ''
+            if len(order.toggle3) == 0:
+                thismeal.toggle3_title = ''
+            if len(order.toppings1) == 0:
+                thismeal.toppings1_title = ''
+            if len(order.toppings2) == 0:
+                thismeal.toppings2_title = ''
+
             try:
                 if response['result']['food_restrictions']:
                     if response['result']['food_restrictions']['standard_labels'] or \
@@ -1490,6 +1502,8 @@ class Root:
                                        options=options)
         if dept_order.completed:
             dept_order.completed_time = con_tz(dept_order.completed_time).strftime(cfg.date_format)
+
+
         
         template = env.get_template('ssf_orders.html')
         return template.render(dept_order=dept_order,
