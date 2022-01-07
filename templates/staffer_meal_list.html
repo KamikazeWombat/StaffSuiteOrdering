@@ -27,7 +27,10 @@
       <div class="meal_selection">
           {% if meal.eligible == False and meal.overridden == False %}
             <span class="meal_selection_item">Not Eligible for Carryout</span>
+          {% else %}
+            <span class="meal_selection_item">Eligible &#10004</span>
           {% endif %}
+
           {% if meal.overridden %}
             <span class="meal_selection_item">Order Authorized by DH</span>
           {% endif %}

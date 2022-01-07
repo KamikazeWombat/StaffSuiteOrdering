@@ -747,6 +747,9 @@ def carryout_eligible(shifts, response, meal_start, meal_end):
     if response['result']['is_dept_head']:
         return True
 
+    if response['result']['badge_type_label'] in ["Contractor", "Guest"]:
+        return True
+
     if response['result']['public_id'] in cfg.food_managers:
         return True
 

@@ -1,0 +1,25 @@
+sudo apt install python3
+git clone https://github.com/bitbyt3r/sideboard.git
+cd sideboard
+on my system I had to also run apt-get install python3-venv
+python3 -m venv venv
+source venv/bin/activate
+export SIDEBOARD_GITPLUGINS='[{"plugin_directory": "uber", "git_url": "https://github.com/bitbyt3r/ubersystem.git", "branch": "master"}]'
+
+possibly need to install gcc? - already installed apparently? - had to run with sudo when retrying
+got error saying need libcap development headers - sudo apt-get install build-essential libcap-dev
+below commamd produced a number of errors, but this was also 3rd time running it on the same wsl ibstall so not sure if partial previous runs is why
+python setup.py develop
+possibly need pip install psycopg2-binary - need to install python3-pip first
+python setup.py fetchplugins
+sudo apt install redis
+redis-server &
+sudo apt install postgresql
+
+https://askubuntu.com/questions/50621/cannot-connect-to-postgresql-on-port-5432/824325#824325
+above link, probably only need to do /etc command
+
+psql # create reggie user and database with password reggie
+sep reset_uber_db
+python sideboard/run_server.py
+# It should now be running on localhost:8282/reggie
