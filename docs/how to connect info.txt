@@ -1,6 +1,0 @@
-Login URL now fixed to not need ports and such!
-staffsuite.codewombat.software
-Test Admin, testadmin@example.com, 24502
-Test Staff, teststaff@example.com, 24502 
-Test User, testuser@example.com, 24502
-Test Dh, testdh@example.com, 24502 
