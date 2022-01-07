@@ -24,8 +24,10 @@
     <p>Slack Channel   : <textarea name="slack_channel" cols="50" rows="1"
               placeholder="Where to send the Slack message"
       {% if dept_order.completed %} disabled {% endif %}
-    >{{ dept_order.slack_channel }}</textarea><br/>Where would you like us to post, can be in a channel or DM, e.g. staffsuiteordering, #bottesting, @wombat3
-    <br/>Can be multiple recipients, comma separated</p>
+    >{{ dept_order.slack_channel }}</textarea>
+      <br/>Where would you like us to post, can be in a channel or DM, e.g. staffsuiteordering, #bottesting, @wombat3
+      <br/>Must be <b>comma separated</b> if more than one. If the channel is private you must invite @Tuber Eats to the channel before it can post there
+
     <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"
               placeholder="Who to ping in Slack? (optional)"
       {% if dept_order.completed %} disabled {% endif %}
