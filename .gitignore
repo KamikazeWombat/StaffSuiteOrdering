@@ -14,3 +14,4 @@ pdfs/
 *.db
 *.csv
 ~$readme.rtf
+my docs/
