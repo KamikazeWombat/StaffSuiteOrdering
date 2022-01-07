@@ -1552,13 +1552,22 @@ class Root:
                                    '&message=The Bundle must be Locked before it can be marked Complete.')
             dept_order.completed = True
             dept_order.completed_time = now_utc()
+
+            orders = session.query(models.order.Order).filter_by(meal_id=meal_id, department_id=dept_id).all()
+            # if no orders for department, skip notifying them.
+            if len(orders) == 0:
+                session.commit()
+                session.close()
+                raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
+                                   '&message=This Bundle is now marked Complete.')
+
             dept = session.query(Department).filter_by(id=dept_id).one()
             meal = session.query(Meal).filter_by(id=meal_id).one()
             contact_details = shared_functions.load_d_o_contact_details(dept_order, dept)
 
             if contact_details.slack_channel:
                 message = 'Your food order bundle for ' + meal.meal_name + ' for ' + dept.name + \
-                          'is ready, please pickup from Staff Suite.  ' + \
+                          ' is ready, please pickup from Staff Suite.  ' + \
                           '  ' + dept_order.slack_contact
                 slack_bot.send_message(dept_order.slack_channel, message)
 
