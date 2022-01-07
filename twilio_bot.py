@@ -43,6 +43,7 @@ def send_message(phone_numbers, dept_name, meal_name):
 
         except TwilioRestException as e:
             slack_bot.send_message('@wombat3', 'Error sending SMS message to ' + original_phone +
-                                   '\r\nFor ' + str(meal_name) + " for " + str(dept_name))
+                                   '\r\nFor ' + str(meal_name) + " for " + str(dept_name) + '\r\n'
+                                   + str(e))
 
     return
