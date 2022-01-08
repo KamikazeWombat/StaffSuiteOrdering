@@ -577,8 +577,7 @@ class Root:
                 raise HTTPRedirect("staffer_meal_list?message=Your department's bundle "
                                    "has already been started by Staff Suite")
 
-            hour = relativedelta(hours=1)
-            now = datetime.utcnow() + hour
+            now = datetime.utcnow()
             rd = relativedelta(now, thisorder.meal.end_time)
 
             if rd.minutes > 0 or rd.hours > 0 or rd.days > 0:
