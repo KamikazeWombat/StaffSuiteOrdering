@@ -252,12 +252,20 @@ class Root:
             if 'error' in response:
                 session.close()
                 return json.dumps({"success": False, "badge": badge, "reason": "Badge # {} is not found in Reggie".format(badge)})
-            attend = Attendee()
-            attend.badge_num = response['result']['badge_num']
-            attend.public_id = response['result']['public_id']
-            attend.full_name = response['result']['full_name']
-            session.add(attend)
-            session.commit()
+
+            try:
+                attendee = session.query(Attendee).filter_by(public_id=response['result']['public_id']).one()
+                attendee.badge_num = response['result']['badge_num']
+                attendee.public_id = response['result']['public_id']
+                attendee.full_name = response['result']['full_name']
+
+            except sqlalchemy.orm.exc.NoResultFound:
+                attend = Attendee()
+                attend.badge_num = response['result']['badge_num']
+                attend.public_id = response['result']['public_id']
+                attend.full_name = response['result']['full_name']
+                session.add(attend)
+                session.commit()
             
         if meal:
             # check for existing carryout order for this meal period
