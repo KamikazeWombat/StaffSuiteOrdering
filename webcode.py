@@ -327,7 +327,7 @@ class Root:
                     if abs(delta.minutes) <= 15 and delta.hours == 0 and abs(delta.days) == 0:
                         # if a previously received checkin
                         # is within 15 minutes of current checkin, does not record as another checkin
-                        checkin = Checkin(attendee_id=attend.public_id, meal_id=meal.id, duplicate=True)
+                        checkin = Checkin(attendee_id=attend.public_id, meal_id=None, duplicate=True)
                         session.add(checkin)
                         session.commit()
                         session.close()
@@ -1900,3 +1900,40 @@ class Root:
         session.commit()
         session.close()
         return json.dumps(export, indent=2)
+
+
+    @admin_req
+    def export_completion_csv(self):
+        """
+        Exports to a CSV the dept order list with meal start time, started time, completed time
+        """
+        session = models.new_sesh()
+
+        orders = session.query(models.dept_order.DeptOrder)\
+            .order_by(models.dept_order.DeptOrder.meal_id, models.dept_order.DeptOrder.dept_id)\
+            .all()
+        export = "Meal,Department,Meal Start Time,Time Order Started,Time Order Completed" \
+                 ",Difference between Meal Start and Completion\n"
+        for order in orders:
+            meal = session.query(models.meal.Meal).filter_by(id=order.meal_id).one()
+            dept = session.query(models.department.Department).filter_by(id=order.dept_id).one()
+            export += meal.meal_name
+            export += ','
+            export += dept.name
+            export += ','
+            export += con_tz(meal.start_time)
+            export += ','
+            export += con_tz(order.start_time)
+            export += ','
+            export += con_tz(order.completed_time)
+            export += ','
+            delta = relativedelta(meal.start_time, order.completed_time)
+            export += str(delta.hours) + ' hours ' + str(delta.minutes) + ' minutes'
+            export += '\n'
+
+        exportfile = open('pdfs/order_completion_export.csv', 'w', encoding='utf-8')
+        exportfile.write(export)
+        exportfile.close()
+
+        session.close()
+        raise HTTPRedirect('pdfs/order_completion_export.csv')
