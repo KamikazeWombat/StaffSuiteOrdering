@@ -1489,7 +1489,7 @@ class Root:
                 # remove invalid filename characters for when the PDF creator saves the file
                 replacement_list = ['/', '\\', ':', '*', '?', '"', '<', '>', '|']
                 for char in replacement_list:
-                    dept_name.replace(char, '-')
+                    dept_name = dept_name.replace(char, '-')
 
                 if cfg.env == "dev":  # Windows todo: change this to detect OS instead
                     # for some reason the silly system decided to not find wkhtmltopdf automatically anymore on Windows
@@ -1782,7 +1782,7 @@ class Root:
             export += ','
             replacement_list = [',', ';', '\r', '\n', '\t']
             for char in replacement_list:
-                order.notes.replace(char, ' - ')
+                order.notes = order.notes.replace(char, ' - ')
             export += order.notes
             export += '\n'
         

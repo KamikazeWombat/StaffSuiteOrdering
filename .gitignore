@@ -12,6 +12,7 @@ secure/
 .idea/
 pdfs/
 *.db
+*.db-journal
 *.csv
 ~$readme.rtf
 my docs/
