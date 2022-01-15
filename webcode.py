@@ -1841,10 +1841,11 @@ class Root:
             export['ingredients'][index]['label'] = topping.label
             export['ingredients'][index]['description'] = topping.description
 
-
         session.close()
-        return json.dumps(export, indent=2)
-
+        fileexport = open("pdfs/meal_export.json", 'w')
+        json.dump(export, fileexport, indent=2)
+        fileexport.close()
+        raise HTTPRedirect('pdfs/meal_export.json')
 
     @admin_req
     def import_meals(self, jsondata):
