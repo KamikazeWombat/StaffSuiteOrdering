@@ -1768,16 +1768,21 @@ class Root:
             export += str(order.overridden)
             export += ','
             shifts, response = combine_shifts(order.attendee.badge_num, no_combine=True, full=True)
-            export += str(shared_functions.carryout_eligible(shifts, response, order.meal.start_time, order.meal.end_time))
+            if "error" in response:
+                export += 'Error'
+            else:
+                export += str(shared_functions.carryout_eligible(shifts, response, order.meal.start_time, order.meal.end_time))
             export += ','
+            replacement_list = [',', ';', '\r', '\n', '\t']
+            for char in replacement_list:
+                order.notes.replace(char, ' - ')
             export += order.notes
             export += '\n'
         
         end = datetime.utcnow()
         rd = relativedelta(start, end)
-        print('-------------done pulling orders--------------')
-        print('minutes ' + str(rd.minutes))
-        print('seconds ' + str(rd.seconds))
+        print('-------------done generating orders CSV--------------')
+        print(str(rd.minutes) + ' minutes, ' + str(rd.seconds) + ' seconds')
         
         exportfile = open('pdfs/order_export.csv', 'w', encoding='utf-8')
         exportfile.write(export)
