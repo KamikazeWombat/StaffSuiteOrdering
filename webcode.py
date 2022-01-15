@@ -279,6 +279,7 @@ class Root:
                 # their order is eligible for carryout, they get kicked out
                 if eligible or order.overridden:
                     session.close()
+
                     return json.dumps({"success": False, "badge": badge, "reason": "Attendee has placed a delivery "
                                                                                    "order for this meal.  Do they need "
                                                                                    "to pick it up?".format(badge)})
@@ -299,6 +300,9 @@ class Root:
                                                     Checkin.meal_id == None).all()
         if checkin and meal:
             # ie if there is a checkin for this meal period (meal is blank if not during meal period)
+            checkin = Checkin(attendee_id=attend.public_id, meal_id=meal.id, duplicate=True)
+            session.add(checkin)
+            session.commit()
             session.close()
             return json.dumps({"success": True, "badge": badge,
                                "reason": "Attendee is already checked in for this meal.",
@@ -323,6 +327,9 @@ class Root:
                     if abs(delta.minutes) <= 15 and delta.hours == 0 and abs(delta.days) == 0:
                         # if a previously received checkin
                         # is within 15 minutes of current checkin, does not record as another checkin
+                        checkin = Checkin(attendee_id=attend.public_id, meal_id=meal.id, duplicate=True)
+                        session.add(checkin)
+                        session.commit()
                         session.close()
                         return json.dumps({"success": True, "badge": badge, "reason": "Attendee is already checked in.",
                                            "has_allergy": has_allergy})
