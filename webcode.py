@@ -1901,7 +1901,7 @@ class Root:
         session.close()
         return json.dumps(export, indent=2)
 
-
+    @cherrypy.expose
     @admin_req
     def export_completion_csv(self):
         """
@@ -1921,11 +1921,13 @@ class Root:
             export += ','
             export += dept.name
             export += ','
-            export += con_tz(meal.start_time)
+            export += con_tz(meal.start_time).strftime(cfg.date_format)
             export += ','
-            export += con_tz(order.start_time)
+            if order.start_time:
+                export += con_tz(order.start_time).strftime(cfg.date_format)
             export += ','
-            export += con_tz(order.completed_time)
+            if order.completed_time:
+                export += con_tz(order.completed_time).strftime(cfg.date_format)
             export += ','
             delta = relativedelta(meal.start_time, order.completed_time)
             export += str(delta.hours) + ' hours ' + str(delta.minutes) + ' minutes'
