@@ -172,7 +172,7 @@ class Root:
 
     @cherrypy.expose
     @admin_req
-    def meal_setup_list(self, message=[], id=''):
+    def meal_setup_list(self, message=None, meal_id=''):
     
         messages = []
         if message:
@@ -182,9 +182,9 @@ class Root:
         session = models.new_sesh()
         
         # this should be triggered if an edit button is clicked from the list
-        if id:
+        if meal_id:
             session.close()
-            raise HTTPRedirect('meal_edit?meal_id='+id)
+            raise HTTPRedirect('meal_edit?meal_id=' + meal_id)
 
         meallist = session.query(Meal).order_by(models.meal.Meal.start_time).all()
         session.close()
