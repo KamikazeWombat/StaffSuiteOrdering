@@ -1106,7 +1106,7 @@ class Root:
     
     @cherrypy.expose
     @dh_or_admin
-    def dept_order_selection(self, message='', **params):
+    def dept_order_selection(self, message='', show_all=False, **params):
         """
         Allows DH or food manager to select meal time and which department they wish to view the dept_order for.
         Filters meal list to only show future meals by default (by end time, not start time)
@@ -1126,12 +1126,16 @@ class Root:
         session = models.new_sesh()
         departments = department_split(session)
 
-        meal_list = session.query(Meal).order_by(Meal.start_time).all()
-        
-        for meal in meal_list:
-            meal.start_time = con_tz(meal.start_time)
-            meal.end_time = con_tz(meal.end_time)
-            meal.cutoff = con_tz(meal.cutoff)
+        meals = session.query(Meal).order_by(Meal.start_time).all()
+        meal_list = list()
+
+        for meal in meals:
+            rd = relativedelta(now_utc(), meal.end_time)
+            if rd.days < 0 and rd.hours < 0 and rd.minutes < 0 or show_all:
+                meal.start_time = con_tz(meal.start_time)
+                meal.end_time = con_tz(meal.end_time)
+                meal.cutoff = con_tz(meal.cutoff)
+                meal_list.append(meal)
             
         session.close()
         template = env.get_template("dept_order_selection.html")
