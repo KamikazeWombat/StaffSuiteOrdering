@@ -1610,8 +1610,8 @@ class Root:
 
             if contact_details.slack_channel:
                 message = 'Your food order bundle for ' + meal.meal_name + ' for ' + dept.name + \
-                          ' is ready, please pickup from Staff Suite.  ' + \
-                          '  ' + dept_order.slack_contact
+                          ' is ready, please pickup from Staff Suite in ' + cfg.room_location + '.  ' + \
+                          dept_order.slack_contact
                 slack_bot.send_message(dept_order.slack_channel, message)
 
             if contact_details.sms_contact:
