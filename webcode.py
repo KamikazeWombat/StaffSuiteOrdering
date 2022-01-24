@@ -1377,7 +1377,7 @@ class Root:
                 # dept_order may not exist yet if no DH or Admin has looked at it
                 dept_order = create_dept_order(dept.id, meal_id, session)
 
-            if order_count == 0:
+            if order_count == 0 and not dept_order.completed:
                 orderless_depts.append((dept.name, order_count, dept.id))
                 continue
 
