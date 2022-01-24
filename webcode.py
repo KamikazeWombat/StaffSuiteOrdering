@@ -1618,15 +1618,7 @@ class Root:
                 twilio_bot.send_message(contact_details.sms_contact, dept.name, meal.meal_name)
 
             if contact_details.email_contact:
-                emails_list = contact_details.email_contact.split(',')
-                emails = []
-                for email_list2 in emails_list:
-                    # in case someone puts semicolons out of habit puts semicolons to separate emails
-                    emailsplit = email_list2.split(';')
-                    for email in emailsplit:
-                        emails.append(email)
-
-                aws_bot.send_message(emails, dept.name, meal.meal_name)
+                aws_bot.send_message(contact_details.email_contact, dept.name, meal.meal_name)
                 
             orders = session.query(Order).filter_by(department_id=dept_order.dept_id, meal_id=dept_order.meal_id) \
                 .options(subqueryload(Order.attendee)).all()
