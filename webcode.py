@@ -1615,8 +1615,7 @@ class Root:
                 slack_bot.send_message(dept_order.slack_channel, message)
 
             if contact_details.sms_contact:
-                sms_list = contact_details.sms_contact.split(',')
-                twilio_bot.send_message(sms_list, dept.name, meal.meal_name)
+                twilio_bot.send_message(contact_details.sms_contact, dept.name, meal.meal_name)
 
             if contact_details.email_contact:
                 emails_list = contact_details.email_contact.split(',')
