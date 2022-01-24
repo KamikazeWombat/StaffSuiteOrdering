@@ -31,6 +31,7 @@
   {% if dept_order.started %}<br/>Bundle Prep Started: {{ dept_order.start_time }} {% endif %}
   {% if dept_order.completed %}<br/>Bundle Prep Completed: {{ dept_order.completed_time }} {% endif %}
   <h2 class="form-signin-heading">{{ dept_name }} Order List for {{ meal.meal_name }}</h2>
+  {% if order_list|count == 0 %}<h1>There are no eligible or overridden orders for this department for this meal</h1>{% endif %}
   {% for order in order_list %}
 
     <form class="section-border" role="form">
