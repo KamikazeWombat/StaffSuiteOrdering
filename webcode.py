@@ -1363,39 +1363,50 @@ class Root:
         depts = session.query(models.department.Department).all()
         dept_list = list()
         completed_depts = list()
+        orderless_depts = list()
         total_orders = 0
         remaining_orders = 0
         
         for dept in depts:
-            count = session.query(Order).filter_by(department_id=dept.id, meal_id=meal_id).count()
+            # todo: make this count only eligible orders, but will require ~30 seconds to load if done by plain loop
+            order_count = session.query(Order).filter_by(department_id=dept.id, meal_id=meal_id).count()
             
             try:
                 dept_order = session.query(DeptOrder).filter_by(dept_id=dept.id, meal_id=meal_id).one()
             except sqlalchemy.orm.exc.NoResultFound:
                 # dept_order may not exist yet if no DH or Admin has looked at it
                 dept_order = create_dept_order(dept.id, meal_id, session)
-                
-            if not dept_order.completed:
-                dept_list.append((dept.name, count, dept.id))
-                remaining_orders += count
+
+            if order_count == 0:
+                orderless_depts.append((dept.name, order_count, dept.id))
+                continue
+
+            if dept_order.completed:
+                completed_depts.append((dept.name, order_count, dept.id))
             else:
-                completed_depts.append((dept.name, count, dept.id))
-                
-            total_orders += count
+                # if not empty, and not already completed add to primary list
+                dept_list.append((dept.name, order_count, dept.id))
+                remaining_orders += order_count
+
+            total_orders += order_count
+
+        # todo: if remaining orders 0 then offer button to lock and then complete empty depts
+        # todo: needs to lock, then check orderless list again if 0 remaining before marking all complete
+        # todo: probably sleep 1 between locking and checking for orders to make sure any in-progress commits finish
 
         session.close()
         template = env.get_template('ssf_dept_list.html')
         return template.render(depts=dept_list,
-                               completed_depts=completed_depts,
                                meal_id=meal_id,
                                meal_name=meal_name,
                                total=total_orders,
                                remaining=remaining_orders,
+                               completed_depts=completed_depts,
+                               orderless_depts=orderless_depts,
                                session=session_info,
                                c=c,
                                cfg=cfg)
-        
-        
+
     @cherrypy.expose
     @ss_staffer
     def ssf_orders(self, meal_id, dept_id, message=[]):
