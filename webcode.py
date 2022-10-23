@@ -1748,6 +1748,7 @@ class Root:
             export += ','
             export += str(checkin.attendee.badge_num)
             export += ','
+            checkin.timestamp = con_tz(checkin.timestamp)
             export += checkin.timestamp.strftime(cfg.date_format)
             export += '\n'
         
