@@ -62,6 +62,7 @@
   {% if not session.is_food_manager or session.is_dh or session.is_admin %}
     <form class="section-border">
       <h3>Add someone as a Food Manager</h3>
+      A food manager can create orders for others and manage order overrides for order which are not otherwise eligible, same as what a DH can do in the Tuber Eats system
       <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
       <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
       <br/>
@@ -99,8 +100,8 @@
       <table>
         <tr style="padding:5px;">
           {% if order.eligible == False %}
-            <td>
-              <label style="padding:5px;">Not Eligible for Carryout</label>
+            <td {% if order.overridden == False %} style="border:5px solid; color:red" {% endif %}>
+              <label style="padding:5px;{% if order.overridden == False %}color:red{% endif %}">Not Eligible for Carryout</label>
             </td>
           {% else %}
             <td>
