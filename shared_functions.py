@@ -905,20 +905,21 @@ def load_d_o_contact_details(dept_order, dept):
     contact_details = models.department.Department()
 
     # if someone has edited the contact details for this order bundle, use that.  otherwise use department defaults
-    if dept_order.slack_contact or dept_order.slack_channel or dept_order.sms_contact or dept_order.other_contact or \
-            dept_order.email_contact:
+    """if dept_order.slack_contact or dept_order.slack_channel or dept_order.sms_contact \
+            or dept_order.other_contact or dept_order.email_contact:
         contact_details.slack_contact = dept_order.slack_contact
         contact_details.slack_channel = dept_order.slack_channel
         contact_details.email_contact = dept_order.email_contact
         contact_details.sms_contact = dept_order.sms_contact
         contact_details.other_contact = dept_order.other_contact
-    else:
-        contact_details.slack_contact = dept.slack_contact
-        contact_details.slack_channel = dept.slack_channel
-        contact_details.email_contact = dept.email_contact
-        contact_details.sms_contact = dept.sms_contact
-        contact_details.other_contact = dept.other_contact
-    
+    else:"""
+    # above removed because we are not currently using order-specific contact info
+    contact_details.slack_contact = dept.slack_contact
+    contact_details.slack_channel = dept.slack_channel
+    contact_details.email_contact = dept.email_contact
+    contact_details.sms_contact = dept.sms_contact
+    contact_details.other_contact = dept.other_contact
+
     return contact_details
     
     

@@ -5,56 +5,47 @@
 
 <div class="container">
   <h2 class="form-signin-heading">View/Edit Department Order Bundle for {{ meal.meal_name }} for {{ dept.name }}</h2>
-  <div class="section-border">
-    {% if no_contact %}
-      <h4 style="color:red;">Please add default contact info for your department. </h4>
-    {% endif %}
-    <p>This will be used if no meal-specific info is provided for meal bundles for your department</p>
-    <a class="btn btn-lg btn-primary" href="dept_contact?dept_id={{ dept_order.dept_id }}&original_location=dept_order%3Fmeal_id%3D{{ dept_order.meal_id }}%26dept_id%3D{{ dept_order.dept_id }}">Edit <b>Default</b> contact info for {{ dept.name }}</a>
-  </div>
+  {% if no_contact %}
+    <div class="section-border" style="color:red;">
+      <h4>Please add default contact info for your department. </h4>
+    </div>
+  {% endif %}
   <div class="section-border">
     <form role="form">
     <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
     <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
-    {% if using_default_contact %}
-      <h4>Currently showing/using your Department's Default contact info</h4>
-    {% else %}
-      <h4>Currently showing/using meal-specific contact info</h4>
-    {% endif %}
+    <h3>{{ dept.name }} Department's contact info for order completion</h3>
+    <p>Notification is automatically sent to any info submitted below when Staff Suite marks your Dept's order ready for pickup.</p>
     <p>Slack Channel   : <textarea name="slack_channel" cols="50" rows="1"
               placeholder="Where to send the Slack message"
       {% if dept_order.completed %} disabled {% endif %}
-    >{{ dept_order.slack_channel }}</textarea>
+    >{{ dept.slack_channel }}</textarea>
       <br/>Where would you like us to post, can be in a channel or DM, e.g. staffsuiteordering, #bottesting, @wombat3
       <br/>Must be <b>comma separated</b> if more than one. If the channel is private you must invite @Tuber Eats to the channel before it can post there
 
     <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"
               placeholder="Who to ping in Slack? (optional)"
-      {% if dept_order.completed %} disabled {% endif %}
-    >{{ dept_order.slack_contact }}</textarea><br/>Should we ping anyone in Slack? (pings not required, will send message with or without this)</p>
+      {% if dept.completed %} disabled {% endif %}
+    >{{ dept.slack_contact }}</textarea><br/>Should we ping anyone in Slack? (pings not required, will send message with or without this)</p>
 
     <p>SMS             : <textarea name="sms_contact" cols="50" rows="4"
               placeholder="Phone numbers to send SMS messages to, comma separated"
-      {% if dept_order.completed %} disabled {% endif %}
-    >{{ dept_order.sms_contact }}</textarea><br/>Phone numbers to send SMS messages to, comma separated</p>
+      {% if dept.completed %} disabled {% endif %}
+    >{{ dept.sms_contact }}</textarea><br/>Phone numbers to send SMS messages to, comma separated</p>
 
     <p>Email           : <textarea name="email_contact" cols="50" rows="4"
               placeholder="Email addresses to send emails to, comma separated"
-      {% if dept_order.completed %} disabled {% endif %}
-    >{{ dept_order.email_contact }}</textarea><br/>Email addresses to send emails to, comma separated</p>
+      {% if dept.completed %} disabled {% endif %}
+    >{{ dept.email_contact }}</textarea><br/>Email addresses to send emails to, comma separated</p>
 <!--
     <p>Other Contact   : <textarea name="other_contact" cols="50" rows="4"
                      placeholder="How you else would like to be contacted for order pickup.  Please remember that fulfilment staff are busy so automated contact options above are preferred."
       {% if dept_order.completed %} disabled {% endif %}
     >{{ dept_order.other_contact }}</textarea></p>
 -->
-    {% if using_default_contact %}
-      <p>The above contact info is for meal order bundle completion for this department, for only this meal.  </p>
-    {% else %}
-      <p>The above contact info is the default for meal order bundle completion for this department.  </p>
-    {% endif %}
+    <p>The above contact info is the default for meal order bundle completion for this department.  </p>
     <p>All contact info sections are optional</p>
-    <button class="btn btn-lg btn-primary" type="submit">Update Department's Contact Info for THIS meal</button>
+    <button class="btn btn-lg btn-primary" type="submit">Update Department's Contact Info</button>
   </form></div>
 
 

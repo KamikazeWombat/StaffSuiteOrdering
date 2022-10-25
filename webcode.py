@@ -1216,18 +1216,28 @@ class Root:
             thismeal = session.query(Meal).filter_by(id=meal_id).one()
             dept = session.query(Department).filter_by(id=dept_id).one()
         
-        if 'other_contact' in params or 'slack_channel' in params or 'sms_contact' in params or 'email_contact' in params:
-            # save changes to dept_order contact info
+        if 'slack_channel' in params or 'sms_contact' in params or 'email_contact' in params or 'other_contact' in params:
+            # save changes to dept's contact info
             if 'slack_channel' in params:
-                this_dept_order.slack_channel = params['slack_channel']
+                dept.slack_channel = params['slack_channel']
+            else:
+                dept.slack_channel = ""
             if 'slack_contact' in params:
-                this_dept_order.slack_contact = params['slack_contact']
+                dept.slack_contact = params['slack_contact']
+            else:
+                dept.slack_contact = ""
             if 'email_contact' in params:
-                this_dept_order.email_contact = params['email_contact']
+                dept.email_contact = params['email_contact']
+            else:
+                dept.email_contact = ""
             if 'sms_contact' in params:
-                this_dept_order.sms_contact = params['sms_contact']
+                dept.sms_contact = params['sms_contact']
+            else:
+                dept.sms_contact = ""
             if 'other_contact' in params:
-                this_dept_order.other_contact = params['other_contact']
+                dept.other_contact = params['other_contact']
+            else:
+                dept.other_contact = ""
 
             session.commit()
             # reload these items since commit flushes them
@@ -1235,21 +1245,7 @@ class Root:
             thismeal = session.query(Meal).filter_by(id=meal_id).one()
             this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
             
-            messages.append('Department order bundle contact info successfully updated.')
-
-        # if no meal-specific contact info then load department default
-        if not this_dept_order.slack_channel \
-                and not this_dept_order.sms_contact\
-                and not this_dept_order.email_contact\
-                and not this_dept_order.other_contact:
-            this_dept_order.slack_contact = dept.slack_contact
-            this_dept_order.slack_channel = dept.slack_channel
-            this_dept_order.sms_contact = dept.sms_contact
-            this_dept_order.email_contact = dept.email_contact
-            this_dept_order.other_contact = dept.other_contact
-            using_default_contact = True
-        else:
-            using_default_contact = False
+            messages.append(str(dept.name) + 'Department contact info successfully updated.')
 
         order_list = session.query(Order).filter_by(meal_id=meal_id, department_id=dept_id).options(
             subqueryload(Order.attendee)).all()
@@ -1281,7 +1277,6 @@ class Root:
                                meal=thismeal,
                                departments=departments,
                                no_contact=no_contact,
-                               using_default_contact=using_default_contact,
                                messages=messages,
                                session=session_info,
                                c=c,
@@ -1616,8 +1611,8 @@ class Root:
             if contact_details.slack_channel:
                 message = 'Your food order bundle for ' + meal.meal_name + ' for ' + dept.name + \
                           ' is ready, please pickup from Staff Suite in ' + cfg.room_location + '.  ' + \
-                          dept_order.slack_contact
-                slack_bot.send_message(dept_order.slack_channel, message)
+                          contact_details.slack_contact
+                slack_bot.send_message(contact_details.slack_channel, message)
 
             if contact_details.sms_contact:
                 twilio_bot.send_message(contact_details.sms_contact, dept.name, meal.meal_name)
