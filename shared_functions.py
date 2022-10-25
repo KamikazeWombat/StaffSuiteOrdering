@@ -12,6 +12,7 @@ from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzlocal
 import pytz
 import sqlalchemy.orm.exc
+import sqlalchemy.exc
 
 from config import cfg, c
 import models
@@ -318,12 +319,18 @@ def order_split(session, choices, orders=""):
     :param choices: list of ingredient IDs that are available
     :return: list of tuple(checked, label, description)
     """
+    """This check probably make the next try redundant, but postgresql handles something different that breaks the 
+    below code without this to specifically leave the function if no choices are provided and I don't
+    want to risk removing the try statement in case that breaks something else."""
+    if not choices:
+        return []
+
     try:
         choices_list = sorted(choices.split(','))
     except ValueError:
         # this happens if no toppings in list
         return []
-    
+
     choices_list = session.query(Ingredient).filter(Ingredient.id.in_(choices_list)).all()
     tuple_list = []
     
@@ -599,6 +606,7 @@ def ss_eligible(badge_num):
 
     if response['result']['public_id'] in cfg.food_managers:
         return True
+
 
     session = models.new_sesh()
 

@@ -242,7 +242,12 @@ class Root:
         session = models.new_sesh()
         # meal_id would be blank if checking attendee in for self-serve food outside an offical meal period
         # this is fine, skips checking for a pickup order and leaves meal detail blank in log
-        meal = session.query(Meal).filter(Meal.id == meal_id).one_or_none()
+        try:
+            # postgresql query with meal_id not being a valid int causes a crash
+            int(meal_id)
+            meal = session.query(Meal).filter(Meal.id == meal_id).one_or_none()
+        except ValueError:
+            meal = None
 
         try:
             attend = session.query(Attendee).filter_by(badge_num=badge).one()
