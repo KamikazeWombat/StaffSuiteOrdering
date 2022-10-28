@@ -26,8 +26,8 @@
     <form style="padding-top:5px;padding-bottom:5px;" role="form">
       <div class="meal_selection">
           {% if meal.eligible == False and meal.overridden == False %}
-            <span class="meal_selection_item">Not Eligible for Carryout</span>
-          {% else %}
+            <span class="meal_selection_item"{% if meal.order_exists %} style="color:red;"{% endif %}>Not Eligible for Carryout</span>
+          {% elif meal.eligible == True %}
             <span class="meal_selection_item">Eligible &#10004</span>
           {% endif %}
 
