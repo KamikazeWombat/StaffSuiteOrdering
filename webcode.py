@@ -906,11 +906,16 @@ class Root:
         
         if 'webhook_url' in params:
             if cherrypy.session['is_dh'] or cherrypy.session['is_admin']:
-                # save webhook data
-                attendee.webhook_url = params['webhook_url']
-                attendee.webhook_data = params['webhook_data']
-                session.commit()
-                shared_functions.send_webhook(params['webhook_url'], params['webhook_data'])
+                # only DH or Admin allowed to use webhook
+                if 'webhook_url' in params:
+                    # save webhook data
+                    attendee.webhook_url = params['webhook_url']
+                    attendee.webhook_data = params['webhook_data']
+                    session.commit()
+                    shared_functions.send_webhook(params['webhook_url'], params['webhook_data'])
+                else:
+                    attendee.webhook_url = ''
+                    attendee.webhook_data = ''
                 # below gets SQLAlchemy to reload attendee from database since needed for page display
         
         meals = session.query(Meal).order_by(models.meal.Meal.start_time).all()
