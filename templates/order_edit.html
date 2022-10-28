@@ -89,7 +89,9 @@
     {% endif %}
     <button class="btn btn-lg btn-primary " type="submit"{% if order.locked %} disabled{% endif %}>Submit</button>
     <a class="btn btn-lg btn-primary " href="staffer_meal_list">Cancel</a>
+    {% if order.exists == True %}
     <a class="btn btn-lg btn-primary " href="order_delete_confirm?order_id={{ order.id }}{% if order.locked %} disabled{% endif %}">Delete</a>
+    {% endif %}
   </form>
 </div>
 {% endblock content %}

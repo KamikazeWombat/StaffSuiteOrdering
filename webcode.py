@@ -563,6 +563,8 @@ class Root:
                     thisorder = session.query(Order).filter_by(meal_id=save_order,
                                                                attendee_id=cherrypy.session['staffer_id']).one()
                 # does not update if not belong to user or user is DH/Admin
+                thisorder.exists = True  # disables delete button if not set, ie if order does not already exist
+
                 if not thisorder.attendee.public_id == cherrypy.session['staffer_id']:
                     if not shared_functions.is_dh(cherrypy.session['staffer_id']):
                         if not shared_functions.is_admin(cherrypy.session['staffer_id']):
@@ -793,7 +795,7 @@ class Root:
             else:
                 departments = department_split(session)
             thisorder.notes = ''
-            
+
             template = env.get_template('order_edit.html')
             return template.render(order=thisorder,
                                    meal=thismeal,
