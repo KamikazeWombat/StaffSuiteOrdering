@@ -490,13 +490,18 @@ def meal_split(session, toppings):
     :param toppings: list of ingredient IDs
     :return:
     """
-    
     try:
         id_list = sorted(toppings.split(','))
     except ValueError:
         # this happens if no toppings in list
         return []
-    
+    try:
+        # somehow blank items get in the list sometimes
+        id_list.remove('')
+    except ValueError:
+        # if no blank items to remove, continue anyway
+        pass
+
     ing_list = session.query(Ingredient).filter(Ingredient.id.in_(id_list)).all()
     tuple_list = []
     for ing in ing_list:
