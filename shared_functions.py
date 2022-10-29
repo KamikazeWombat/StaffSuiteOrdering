@@ -102,13 +102,15 @@ def utc_tz(date):
     """converts a datetime object OR a date string from event local to UTC TZ datetime object for storage"""
     if isinstance(date, str):
         date = parse(date)
-    
-    try:
-        date = c.EVENT_TIMEZONE.localize(date)
-    except ValueError:
-        pass  # would happen if already has tzinfo
-    
+
+    # if somehow there is TZ info already localize doesn't do anything.  If there is already TZ info it could be wrong.
+    date = date.replace(tzinfo=None)
+
+    date = c.EVENT_TIMEZONE.localize(date)
+
     date = date.astimezone(pytz.utc)
+    # removing TZ info needed because otherwise the web browser will convert to local if different than event TZ
+    date = date.replace(tzinfo=None)
     return date
 
 
@@ -116,7 +118,7 @@ def con_tz(date):
     """converts a datetime object OR a date string from UTC to local TZ datetime object for display"""
     if isinstance(date, str):
         date = parse_utc(date)
-        
+
     try:
         date = pytz.utc.localize(date)
     except ValueError:
