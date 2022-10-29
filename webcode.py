@@ -1953,3 +1953,57 @@ class Root:
 
         session.close()
         raise HTTPRedirect('pdfs/order_completion_export.csv')
+
+    @cherrypy.expose
+    @ss_staffer
+    def custom_label(self, title="", title_size=32, detail_text="", detail_size=14):
+        """
+        Page for printing custom labels such as to label food or whatever else you want to label.
+        """
+        if cfg.local_print and (title or detail_text):
+            labels = env.get_template('print_custom_label.html')
+            options = {
+                'page-height': '2.0in',
+                'page-width': '4.0in',
+                'margin-top': '0.0in',
+                'margin-right': '0.0in',
+                'margin-bottom': '0.0in',
+                'margin-left': '0.0in',
+                # 'encoding': "UTF-8",
+                # 'print-media-type': None,
+                'dpi': '203'
+            }
+            if cfg.env == "dev":  # Windows todo: change this to detect OS instead
+                # for some reason the silly system decided to not find wkhtmltopdf automatically anymore on Windows
+                path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
+                config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+
+                rendered_labels = labels.render(title=title,
+                                                title_size=title_size,
+                                                detail_text=detail_text,
+                                                detail_size=detail_size)
+
+                pdfkit.from_string(rendered_labels,
+                                   'pdfs\\custom_label.pdf',
+                                   options=options,
+                                   configuration=config)
+
+            else:  # Linux seems to find the package automatically
+                # path_wkhtmltopdf = r'/usr/local/bin/wkhtmltopdf'
+                # config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+                pdfkit.from_string(labels.render(title=title,
+                                                 title_size=title_size,
+                                                 detail_text=detail_text,
+                                                 detail_size=detail_size),
+                                   'pdfs/custom_label.pdf',
+                                   options=options)
+
+
+        template = env.get_template('custom_label.html')
+        return template.render(title=title,
+                               title_size=title_size,
+                               detail_text=detail_text,
+                               detail_size=detail_size,
+                               session=get_session_info(),
+                               c=c,
+                               cfg=cfg)
