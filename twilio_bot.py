@@ -14,6 +14,10 @@ def send_message(phone_numbers, dept_name, meal_name):
     """
     client = Client(cfg.twilio_authkey, cfg.twilio_authsecret, cfg.twilio_account_sid)
 
+    # If people put new lines, or for some reason semicolons to separate phone numbers this converts them to commas
+    phone_numbers = re.sub(r'[\r\n;]', ',', phone_numbers)
+    phone_numbers = phone_numbers.split(',')
+
     for index, phone in enumerate(phone_numbers):
         if index % 5 == 4:
             time.sleep(5)
@@ -21,11 +25,10 @@ def send_message(phone_numbers, dept_name, meal_name):
         original_phone = phone
         # remove hyphens and such from phone number
         phone = re.sub(r'[-,()\.\+a-zA-Z]', '', phone)
+        phone = phone.strip()
         if not phone:
             continue
             # skip anything that is blank after filtering out unwanted characters
-
-        phone = phone.strip()
 
         # if US number without 1 for country code at beginning of number then add it
         # I think this should ignore if someone has given an international number, at least in most cases.

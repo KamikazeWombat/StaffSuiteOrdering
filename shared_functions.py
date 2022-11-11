@@ -12,6 +12,7 @@ from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzlocal
 import pytz
 import sqlalchemy.orm.exc
+import sqlalchemy.exc
 
 from config import cfg, c
 import models
@@ -101,13 +102,15 @@ def utc_tz(date):
     """converts a datetime object OR a date string from event local to UTC TZ datetime object for storage"""
     if isinstance(date, str):
         date = parse(date)
-    
-    try:
-        date = c.EVENT_TIMEZONE.localize(date)
-    except ValueError:
-        pass  # would happen if already has tzinfo
-    
+
+    # if somehow there is TZ info already localize doesn't do anything.  If there is already TZ info it could be wrong.
+    date = date.replace(tzinfo=None)
+
+    date = c.EVENT_TIMEZONE.localize(date)
+
     date = date.astimezone(pytz.utc)
+    # removing TZ info needed because otherwise the web browser will convert to local if different than event TZ
+    date = date.replace(tzinfo=None)
     return date
 
 
@@ -115,7 +118,7 @@ def con_tz(date):
     """converts a datetime object OR a date string from UTC to local TZ datetime object for display"""
     if isinstance(date, str):
         date = parse_utc(date)
-        
+
     try:
         date = pytz.utc.localize(date)
     except ValueError:
@@ -318,12 +321,18 @@ def order_split(session, choices, orders=""):
     :param choices: list of ingredient IDs that are available
     :return: list of tuple(checked, label, description)
     """
+    """This check probably make the next try redundant, but postgresql handles something different that breaks the 
+    below code without this to specifically leave the function if no choices are provided and I don't
+    want to risk removing the try statement in case that breaks something else."""
+    if not choices:
+        return []
+
     try:
         choices_list = sorted(choices.split(','))
     except ValueError:
         # this happens if no toppings in list
         return []
-    
+
     choices_list = session.query(Ingredient).filter(Ingredient.id.in_(choices_list)).all()
     tuple_list = []
     
@@ -483,13 +492,18 @@ def meal_split(session, toppings):
     :param toppings: list of ingredient IDs
     :return:
     """
-    
     try:
         id_list = sorted(toppings.split(','))
     except ValueError:
         # this happens if no toppings in list
         return []
-    
+    try:
+        # somehow blank items get in the list sometimes
+        id_list.remove('')
+    except ValueError:
+        # if no blank items to remove, continue anyway
+        pass
+
     ing_list = session.query(Ingredient).filter(Ingredient.id.in_(id_list)).all()
     tuple_list = []
     for ing in ing_list:
@@ -599,6 +613,7 @@ def ss_eligible(badge_num):
 
     if response['result']['public_id'] in cfg.food_managers:
         return True
+
 
     session = models.new_sesh()
 
@@ -897,20 +912,21 @@ def load_d_o_contact_details(dept_order, dept):
     contact_details = models.department.Department()
 
     # if someone has edited the contact details for this order bundle, use that.  otherwise use department defaults
-    if dept_order.slack_contact or dept_order.slack_channel or dept_order.sms_contact or dept_order.other_contact or \
-            dept_order.email_contact:
+    """if dept_order.slack_contact or dept_order.slack_channel or dept_order.sms_contact \
+            or dept_order.other_contact or dept_order.email_contact:
         contact_details.slack_contact = dept_order.slack_contact
         contact_details.slack_channel = dept_order.slack_channel
         contact_details.email_contact = dept_order.email_contact
         contact_details.sms_contact = dept_order.sms_contact
         contact_details.other_contact = dept_order.other_contact
-    else:
-        contact_details.slack_contact = dept.slack_contact
-        contact_details.slack_channel = dept.slack_channel
-        contact_details.email_contact = dept.email_contact
-        contact_details.sms_contact = dept.sms_contact
-        contact_details.other_contact = dept.other_contact
-    
+    else:"""
+    # above removed because we are not currently using order-specific contact info
+    contact_details.slack_contact = dept.slack_contact
+    contact_details.slack_channel = dept.slack_channel
+    contact_details.email_contact = dept.email_contact
+    contact_details.sms_contact = dept.sms_contact
+    contact_details.other_contact = dept.other_contact
+
     return contact_details
     
     

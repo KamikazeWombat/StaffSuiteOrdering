@@ -172,7 +172,7 @@ class Root:
 
     @cherrypy.expose
     @admin_req
-    def meal_setup_list(self, message=[], id=''):
+    def meal_setup_list(self, message=None, meal_id=''):
     
         messages = []
         if message:
@@ -182,9 +182,9 @@ class Root:
         session = models.new_sesh()
         
         # this should be triggered if an edit button is clicked from the list
-        if id:
+        if meal_id:
             session.close()
-            raise HTTPRedirect('meal_edit?meal_id='+id)
+            raise HTTPRedirect('meal_edit?meal_id=' + meal_id)
 
         meallist = session.query(Meal).order_by(models.meal.Meal.start_time).all()
         session.close()
@@ -242,7 +242,12 @@ class Root:
         session = models.new_sesh()
         # meal_id would be blank if checking attendee in for self-serve food outside an offical meal period
         # this is fine, skips checking for a pickup order and leaves meal detail blank in log
-        meal = session.query(Meal).filter(Meal.id == meal_id).one_or_none()
+        try:
+            # postgresql query with meal_id not being a valid int causes a crash
+            int(meal_id)
+            meal = session.query(Meal).filter(Meal.id == meal_id).one_or_none()
+        except ValueError:
+            meal = None
 
         try:
             attend = session.query(Attendee).filter_by(badge_num=badge).one()
@@ -279,6 +284,7 @@ class Root:
                 # their order is eligible for carryout, they get kicked out
                 if eligible or order.overridden:
                     session.close()
+
                     return json.dumps({"success": False, "badge": badge, "reason": "Attendee has placed a delivery "
                                                                                    "order for this meal.  Do they need "
                                                                                    "to pick it up?".format(badge)})
@@ -299,6 +305,9 @@ class Root:
                                                     Checkin.meal_id == None).all()
         if checkin and meal:
             # ie if there is a checkin for this meal period (meal is blank if not during meal period)
+            checkin = Checkin(attendee_id=attend.public_id, meal_id=meal.id, duplicate=True)
+            session.add(checkin)
+            session.commit()
             session.close()
             return json.dumps({"success": True, "badge": badge,
                                "reason": "Attendee is already checked in for this meal.",
@@ -323,6 +332,9 @@ class Root:
                     if abs(delta.minutes) <= 15 and delta.hours == 0 and abs(delta.days) == 0:
                         # if a previously received checkin
                         # is within 15 minutes of current checkin, does not record as another checkin
+                        checkin = Checkin(attendee_id=attend.public_id, meal_id=None, duplicate=True)
+                        session.add(checkin)
+                        session.commit()
                         session.close()
                         return json.dumps({"success": True, "badge": badge, "reason": "Attendee is already checked in.",
                                            "has_allergy": has_allergy})
@@ -551,6 +563,8 @@ class Root:
                     thisorder = session.query(Order).filter_by(meal_id=save_order,
                                                                attendee_id=cherrypy.session['staffer_id']).one()
                 # does not update if not belong to user or user is DH/Admin
+                thisorder.exists = True  # disables delete button if not set, ie if order does not already exist
+
                 if not thisorder.attendee.public_id == cherrypy.session['staffer_id']:
                     if not shared_functions.is_dh(cherrypy.session['staffer_id']):
                         if not shared_functions.is_admin(cherrypy.session['staffer_id']):
@@ -577,8 +591,7 @@ class Root:
                 raise HTTPRedirect("staffer_meal_list?message=Your department's bundle "
                                    "has already been started by Staff Suite")
 
-            hour = relativedelta(hours=1)
-            now = datetime.utcnow() + hour
+            now = datetime.utcnow()
             rd = relativedelta(now, thisorder.meal.end_time)
 
             if rd.minutes > 0 or rd.hours > 0 or rd.days > 0:
@@ -782,7 +795,7 @@ class Root:
             else:
                 departments = department_split(session)
             thisorder.notes = ''
-            
+
             template = env.get_template('order_edit.html')
             return template.render(order=thisorder,
                                    meal=thismeal,
@@ -893,11 +906,16 @@ class Root:
         
         if 'webhook_url' in params:
             if cherrypy.session['is_dh'] or cherrypy.session['is_admin']:
-                # save webhook data
-                attendee.webhook_url = params['webhook_url']
-                attendee.webhook_data = params['webhook_data']
-                session.commit()
-                shared_functions.send_webhook(params['webhook_url'], params['webhook_data'])
+                # only DH or Admin allowed to use webhook
+                if 'webhook_url' in params:
+                    # save webhook data
+                    attendee.webhook_url = params['webhook_url']
+                    attendee.webhook_data = params['webhook_data']
+                    session.commit()
+                    shared_functions.send_webhook(params['webhook_url'], params['webhook_data'])
+                else:
+                    attendee.webhook_url = ''
+                    attendee.webhook_data = ''
                 # below gets SQLAlchemy to reload attendee from database since needed for page display
         
         meals = session.query(Meal).order_by(models.meal.Meal.start_time).all()
@@ -1100,7 +1118,7 @@ class Root:
     
     @cherrypy.expose
     @dh_or_admin
-    def dept_order_selection(self, message='', **params):
+    def dept_order_selection(self, message='', show_all=False, **params):
         """
         Allows DH or food manager to select meal time and which department they wish to view the dept_order for.
         Filters meal list to only show future meals by default (by end time, not start time)
@@ -1120,12 +1138,16 @@ class Root:
         session = models.new_sesh()
         departments = department_split(session)
 
-        meal_list = session.query(Meal).order_by(Meal.start_time).all()
-        
-        for meal in meal_list:
-            meal.start_time = con_tz(meal.start_time)
-            meal.end_time = con_tz(meal.end_time)
-            meal.cutoff = con_tz(meal.cutoff)
+        meals = session.query(Meal).order_by(Meal.start_time).all()
+        meal_list = list()
+
+        for meal in meals:
+            rd = relativedelta(now_utc(), meal.end_time)
+            if rd.days < 0 and rd.hours < 0 and rd.minutes < 0 or show_all:
+                meal.start_time = con_tz(meal.start_time)
+                meal.end_time = con_tz(meal.end_time)
+                meal.cutoff = con_tz(meal.cutoff)
+                meal_list.append(meal)
             
         session.close()
         template = env.get_template("dept_order_selection.html")
@@ -1201,18 +1223,28 @@ class Root:
             thismeal = session.query(Meal).filter_by(id=meal_id).one()
             dept = session.query(Department).filter_by(id=dept_id).one()
         
-        if 'other_contact' in params or 'slack_channel' in params or 'sms_contact' in params or 'email_contact' in params:
-            # save changes to dept_order contact info
+        if 'slack_channel' in params or 'sms_contact' in params or 'email_contact' in params or 'other_contact' in params:
+            # save changes to dept's contact info
             if 'slack_channel' in params:
-                this_dept_order.slack_channel = params['slack_channel']
+                dept.slack_channel = params['slack_channel']
+            else:
+                dept.slack_channel = ""
             if 'slack_contact' in params:
-                this_dept_order.slack_contact = params['slack_contact']
+                dept.slack_contact = params['slack_contact']
+            else:
+                dept.slack_contact = ""
             if 'email_contact' in params:
-                this_dept_order.email_contact = params['email_contact']
+                dept.email_contact = params['email_contact']
+            else:
+                dept.email_contact = ""
             if 'sms_contact' in params:
-                this_dept_order.sms_contact = params['sms_contact']
+                dept.sms_contact = params['sms_contact']
+            else:
+                dept.sms_contact = ""
             if 'other_contact' in params:
-                this_dept_order.other_contact = params['other_contact']
+                dept.other_contact = params['other_contact']
+            else:
+                dept.other_contact = ""
 
             session.commit()
             # reload these items since commit flushes them
@@ -1220,21 +1252,7 @@ class Root:
             thismeal = session.query(Meal).filter_by(id=meal_id).one()
             this_dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
             
-            messages.append('Department order bundle contact info successfully updated.')
-
-        # if no meal-specific contact info then load department default
-        if not this_dept_order.slack_channel \
-                and not this_dept_order.sms_contact\
-                and not this_dept_order.email_contact\
-                and not this_dept_order.other_contact:
-            this_dept_order.slack_contact = dept.slack_contact
-            this_dept_order.slack_channel = dept.slack_channel
-            this_dept_order.sms_contact = dept.sms_contact
-            this_dept_order.email_contact = dept.email_contact
-            this_dept_order.other_contact = dept.other_contact
-            using_default_contact = True
-        else:
-            using_default_contact = False
+            messages.append(str(dept.name) + 'Department contact info successfully updated.')
 
         order_list = session.query(Order).filter_by(meal_id=meal_id, department_id=dept_id).options(
             subqueryload(Order.attendee)).all()
@@ -1266,7 +1284,6 @@ class Root:
                                meal=thismeal,
                                departments=departments,
                                no_contact=no_contact,
-                               using_default_contact=using_default_contact,
                                messages=messages,
                                session=session_info,
                                c=c,
@@ -1353,39 +1370,50 @@ class Root:
         depts = session.query(models.department.Department).all()
         dept_list = list()
         completed_depts = list()
+        orderless_depts = list()
         total_orders = 0
         remaining_orders = 0
         
         for dept in depts:
-            count = session.query(Order).filter_by(department_id=dept.id, meal_id=meal_id).count()
+            # todo: make this count only eligible orders, but will require ~30 seconds to load if done by plain loop
+            order_count = session.query(Order).filter_by(department_id=dept.id, meal_id=meal_id).count()
             
             try:
                 dept_order = session.query(DeptOrder).filter_by(dept_id=dept.id, meal_id=meal_id).one()
             except sqlalchemy.orm.exc.NoResultFound:
                 # dept_order may not exist yet if no DH or Admin has looked at it
                 dept_order = create_dept_order(dept.id, meal_id, session)
-                
-            if not dept_order.completed:
-                dept_list.append((dept.name, count, dept.id))
-                remaining_orders += count
+
+            if order_count == 0 and not dept_order.completed:
+                orderless_depts.append((dept.name, order_count, dept.id))
+                continue
+
+            if dept_order.completed:
+                completed_depts.append((dept.name, order_count, dept.id))
             else:
-                completed_depts.append((dept.name, count, dept.id))
-                
-            total_orders += count
+                # if not empty, and not already completed add to primary list
+                dept_list.append((dept.name, order_count, dept.id))
+                remaining_orders += order_count
+
+            total_orders += order_count
+
+        # todo: if remaining orders 0 then offer button to lock and then complete empty depts
+        # todo: needs to lock, then check orderless list again if 0 remaining before marking all complete
+        # todo: probably sleep 1 between locking and checking for orders to make sure any in-progress commits finish
 
         session.close()
         template = env.get_template('ssf_dept_list.html')
         return template.render(depts=dept_list,
-                               completed_depts=completed_depts,
                                meal_id=meal_id,
                                meal_name=meal_name,
                                total=total_orders,
                                remaining=remaining_orders,
+                               completed_depts=completed_depts,
+                               orderless_depts=orderless_depts,
                                session=session_info,
                                c=c,
                                cfg=cfg)
-        
-        
+
     @cherrypy.expose
     @ss_staffer
     def ssf_orders(self, meal_id, dept_id, message=[]):
@@ -1483,7 +1511,7 @@ class Root:
                 # remove invalid filename characters for when the PDF creator saves the file
                 replacement_list = ['/', '\\', ':', '*', '?', '"', '<', '>', '|']
                 for char in replacement_list:
-                    dept_name.replace(char, '-')
+                    dept_name = dept_name.replace(char, '-')
 
                 if cfg.env == "dev":  # Windows todo: change this to detect OS instead
                     # for some reason the silly system decided to not find wkhtmltopdf automatically anymore on Windows
@@ -1589,24 +1617,15 @@ class Root:
 
             if contact_details.slack_channel:
                 message = 'Your food order bundle for ' + meal.meal_name + ' for ' + dept.name + \
-                          ' is ready, please pickup from Staff Suite.  ' + \
-                          '  ' + dept_order.slack_contact
-                slack_bot.send_message(dept_order.slack_channel, message)
+                          ' is ready, please pickup from Staff Suite in ' + cfg.room_location + '.  ' + \
+                          contact_details.slack_contact
+                slack_bot.send_message(contact_details.slack_channel, message)
 
             if contact_details.sms_contact:
-                sms_list = contact_details.sms_contact.split(',')
-                twilio_bot.send_message(sms_list, dept.name, meal.meal_name)
+                twilio_bot.send_message(contact_details.sms_contact, dept.name, meal.meal_name)
 
             if contact_details.email_contact:
-                emails_list = contact_details.email_contact.split(',')
-                emails = []
-                for email_list2 in emails_list:
-                    # in case someone puts semicolons out of habit puts semicolons to separate emails
-                    emailsplit = email_list2.split(';')
-                    for email in emailsplit:
-                        emails.append(email)
-
-                aws_bot.send_message(emails, dept.name, meal.meal_name)
+                aws_bot.send_message(contact_details.email_contact, dept.name, meal.meal_name)
                 
             orders = session.query(Order).filter_by(department_id=dept_order.dept_id, meal_id=dept_order.meal_id) \
                 .options(subqueryload(Order.attendee)).all()
@@ -1736,6 +1755,7 @@ class Root:
             export += ','
             export += str(checkin.attendee.badge_num)
             export += ','
+            checkin.timestamp = con_tz(checkin.timestamp)
             export += checkin.timestamp.strftime(cfg.date_format)
             export += '\n'
         
@@ -1769,16 +1789,21 @@ class Root:
             export += str(order.overridden)
             export += ','
             shifts, response = combine_shifts(order.attendee.badge_num, no_combine=True, full=True)
-            export += str(shared_functions.carryout_eligible(shifts, response, order.meal.start_time, order.meal.end_time))
+            if "error" in response:
+                export += 'Error'
+            else:
+                export += str(shared_functions.carryout_eligible(shifts, response, order.meal.start_time, order.meal.end_time))
             export += ','
+            replacement_list = [',', ';', '\r', '\n', '\t']
+            for char in replacement_list:
+                order.notes = order.notes.replace(char, ' - ')
             export += order.notes
             export += '\n'
         
         end = datetime.utcnow()
         rd = relativedelta(start, end)
-        print('-------------done pulling orders--------------')
-        print('minutes ' + str(rd.minutes))
-        print('seconds ' + str(rd.seconds))
+        print('-------------done generating orders CSV--------------')
+        print(str(rd.minutes) + ' minutes, ' + str(rd.seconds) + ' seconds')
         
         exportfile = open('pdfs/order_export.csv', 'w', encoding='utf-8')
         exportfile.write(export)
@@ -1830,10 +1855,11 @@ class Root:
             export['ingredients'][index]['label'] = topping.label
             export['ingredients'][index]['description'] = topping.description
 
-
         session.close()
-        return json.dumps(export, indent=2)
-
+        fileexport = open("pdfs/meal_export.json", 'w')
+        json.dump(export, fileexport, indent=2)
+        fileexport.close()
+        raise HTTPRedirect('pdfs/meal_export.json')
 
     @admin_req
     def import_meals(self, jsondata):
@@ -1888,3 +1914,96 @@ class Root:
         session.commit()
         session.close()
         return json.dumps(export, indent=2)
+
+    @cherrypy.expose
+    @admin_req
+    def export_completion_csv(self):
+        """
+        Exports to a CSV the dept order list with meal start time, started time, completed time
+        """
+        session = models.new_sesh()
+
+        orders = session.query(models.dept_order.DeptOrder)\
+            .order_by(models.dept_order.DeptOrder.meal_id, models.dept_order.DeptOrder.dept_id)\
+            .all()
+        export = "Meal,Department,Meal Start Time,Time Order Started,Time Order Completed" \
+                 ",Difference between Meal Start and Completion\n"
+        for order in orders:
+            meal = session.query(models.meal.Meal).filter_by(id=order.meal_id).one()
+            dept = session.query(models.department.Department).filter_by(id=order.dept_id).one()
+            export += meal.meal_name
+            export += ','
+            export += dept.name
+            export += ','
+            export += con_tz(meal.start_time).strftime(cfg.date_format)
+            export += ','
+            if order.start_time:
+                export += con_tz(order.start_time).strftime(cfg.date_format)
+            export += ','
+            if order.completed_time:
+                export += con_tz(order.completed_time).strftime(cfg.date_format)
+            export += ','
+            delta = relativedelta(meal.start_time, order.completed_time)
+            export += str(delta.hours) + ' hours ' + str(delta.minutes) + ' minutes'
+            export += '\n'
+
+        exportfile = open('pdfs/order_completion_export.csv', 'w', encoding='utf-8')
+        exportfile.write(export)
+        exportfile.close()
+
+        session.close()
+        raise HTTPRedirect('pdfs/order_completion_export.csv')
+
+    @cherrypy.expose
+    @ss_staffer
+    def custom_label(self, title="", title_size=32, detail_text="", detail_size=14):
+        """
+        Page for printing custom labels such as to label food or whatever else you want to label.
+        """
+        if cfg.local_print and (title or detail_text):
+            labels = env.get_template('print_custom_label.html')
+            options = {
+                'page-height': '2.0in',
+                'page-width': '4.0in',
+                'margin-top': '0.0in',
+                'margin-right': '0.0in',
+                'margin-bottom': '0.0in',
+                'margin-left': '0.0in',
+                # 'encoding': "UTF-8",
+                # 'print-media-type': None,
+                'dpi': '203'
+            }
+            if cfg.env == "dev":  # Windows todo: change this to detect OS instead
+                # for some reason the silly system decided to not find wkhtmltopdf automatically anymore on Windows
+                path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
+                config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+
+                rendered_labels = labels.render(title=title,
+                                                title_size=title_size,
+                                                detail_text=detail_text,
+                                                detail_size=detail_size)
+
+                pdfkit.from_string(rendered_labels,
+                                   'pdfs\\custom_label.pdf',
+                                   options=options,
+                                   configuration=config)
+
+            else:  # Linux seems to find the package automatically
+                # path_wkhtmltopdf = r'/usr/local/bin/wkhtmltopdf'
+                # config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+                pdfkit.from_string(labels.render(title=title,
+                                                 title_size=title_size,
+                                                 detail_text=detail_text,
+                                                 detail_size=detail_size),
+                                   'pdfs/custom_label.pdf',
+                                   options=options)
+
+
+        template = env.get_template('custom_label.html')
+        return template.render(title=title,
+                               title_size=title_size,
+                               detail_text=detail_text,
+                               detail_size=detail_size,
+                               session=get_session_info(),
+                               c=c,
+                               cfg=cfg)

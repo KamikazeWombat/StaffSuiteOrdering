@@ -82,9 +82,16 @@
               placeholder="Notes/requests. No guarantees that requests will be honored due to lack of time and staff for order processing, please be aware of your own allergies."
     >{{ order.notes }}</textarea>
     <br/>
+    {% if order.eligible == False %}
+      <h3 style="border:5px solid; padding:2px; color:red;">You are not seen as automatically eligible to order for this meal by the food system.
+        You will need to get your DH to override your order or else go upstairs for self serve food.
+        If you believe this is in error please contact us in Slack #StaffSuiteOrdering</h3>
+    {% endif %}
     <button class="btn btn-lg btn-primary " type="submit"{% if order.locked %} disabled{% endif %}>Submit</button>
     <a class="btn btn-lg btn-primary " href="staffer_meal_list">Cancel</a>
+    {% if order.exists == True %}
     <a class="btn btn-lg btn-primary " href="order_delete_confirm?order_id={{ order.id }}{% if order.locked %} disabled{% endif %}">Delete</a>
+    {% endif %}
   </form>
 </div>
 {% endblock content %}

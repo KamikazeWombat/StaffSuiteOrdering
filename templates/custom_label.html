@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% set admin_area=True %}
+{% block title %}Staffer Meal List{% endblock %}
+{% block backlink %}{% endblock %}
+{% block content %}
+
+<div class="container">
+  <h2 class="form-signin-heading">Print custom labels!</h2>
+
+  <form role="form">
+    <p>Title (optional) <input type="text" name="title" value="{{ title }}"/></p>
+
+    <p>Title Font Size <input type="number" name="title_size" value="{{ title_size }}"></p>
+{% autoescape false %}
+    <p>Detail Text (optional) <textarea name="detail_text" cols="50" rows="5">{{ detail_text }}</textarea></p>
+{% endautoescape %}
+    <p>Detail Font Size <input type="number" name="detail_size" value="{{ detail_size }}"/></p>
+
+    <button class="btn btn-lg btn-primary" type="submit">Generate custom label</button>
+    <a href=".\pdfs\custom_label.pdf"class="btn btn-lg btn-primary" target="_blank">Print</a>
+  </form>
+</div>
+{% endblock content %}

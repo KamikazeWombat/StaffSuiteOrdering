@@ -1,6 +1,7 @@
-import email.utils
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formataddr
+import re
 import smtplib
 import time
 
@@ -12,6 +13,10 @@ def send_message(recipients, dept_name, meal_name):
     """
     Send message to list of emails using Amazon AWS
     """
+
+    recipients = re.sub(r'[\r\n; ]', ',', recipients)
+    recipients = recipients.split(',')
+
     SENDER = "noreply@food.magevent.net"
     SENDERNAME = "Staff Suite Orders"
     HOST = "email-smtp.us-east-1.amazonaws.com"
@@ -36,7 +41,7 @@ def send_message(recipients, dept_name, meal_name):
 
     msg = MIMEMultipart('alternative')
     msg['Subject'] = SUBJECT
-    msg['From'] = email.utils.formataddr((SENDERNAME, SENDER))
+    msg['From'] = formataddr((SENDERNAME, SENDER))
     part1 = MIMEText(BODY_TEXT, 'plain')
     part2 = MIMEText(BODY_HTML, 'html')
     msg.attach(part1)
@@ -52,6 +57,10 @@ def send_message(recipients, dept_name, meal_name):
             if index % 5 == 4:
                 # every 5 emails waits 1 second, to avoid filling up the per-second sending limit for the AWS acct
                 time.sleep(1)
+            recipient.strip()
+            if not recipient:
+                # if recipient blank after processing, skip trying to send to it
+                continue
             msg['To'] = recipient
             try:
                 server.sendmail(SENDER, recipient, msg.as_string())
