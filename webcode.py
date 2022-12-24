@@ -10,6 +10,7 @@ from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzlocal
 import pdfkit
 import pytz
+from sqlalchemy import desc
 import sqlalchemy.orm.exc
 from sqlalchemy.orm import joinedload, subqueryload
 
@@ -204,6 +205,9 @@ class Root:
     @cherrypy.expose
     @ss_staffer
     def dinein_checkin(self):
+        """
+        This page handles scanning attendee's badges for walk-in food
+        """
         session = models.new_sesh()
         now = now_utc()
         current_meals = session.query(Meal).filter(Meal.start_time < now, Meal.end_time > now).order_by(Meal.end_time).all()
@@ -224,7 +228,7 @@ class Root:
 
     @cherrypy.expose
     @ss_staffer
-    def checkin_badge(self, meal_id='', badge=''):
+    def checkin_badge(self, badge=''):
         """
         Processes checkin requests for walk-ins
         """
@@ -238,16 +242,10 @@ class Root:
             
         if not badge:
             return json.dumps({"success": False, "badge": badge, "reason": "Could not locate badge."})
-
         session = models.new_sesh()
-        # meal_id would be blank if checking attendee in for self-serve food outside an offical meal period
-        # this is fine, skips checking for a pickup order and leaves meal detail blank in log
-        try:
-            # postgresql query with meal_id not being a valid int causes a crash
-            int(meal_id)
-            meal = session.query(Meal).filter(Meal.id == meal_id).one_or_none()
-        except ValueError:
-            meal = None
+
+        now = now_utc()
+        meal = session.query(Meal).filter(Meal.start_time < now, Meal.end_time > now).order_by(Meal.end_time).one_or_none()
 
         try:
             attend = session.query(Attendee).filter_by(badge_num=badge).one()
@@ -296,23 +294,24 @@ class Root:
         if allergies['freeform']:
             has_allergy = True
 
-        # checks for prior checkins this event, by current meal period if during meal period
+        # loads any prior checkins this event, by current meal period if during meal period
         if meal:
             checkin = session.query(Checkin).filter(Checkin.attendee_id == attend.public_id,
                                                     Checkin.meal_id == meal.id).all()
         else:
             checkin = session.query(Checkin).filter(Checkin.attendee_id == attend.public_id,
-                                                    Checkin.meal_id == None).all()
+                                                    Checkin.meal_id == None).order_by(desc(Checkin.timestamp)).all()
         if checkin and meal:
             # ie if there is a checkin for this meal period (meal is blank if not during meal period)
             checkin = Checkin(attendee_id=attend.public_id, meal_id=meal.id, duplicate=True)
             session.add(checkin)
             session.commit()
             session.close()
+            # Attendee is already checked in for this meal.
             return json.dumps({"success": True, "badge": badge,
-                               "reason": "Attendee is already checked in for this meal.",
+                               "reason": "Checked in successfully!",
                                "has_allergy": has_allergy})
-        
+
         if not shared_functions.ss_eligible(badge):
             session.close()
             return json.dumps({"success": False, "badge": badge,
@@ -336,7 +335,8 @@ class Root:
                         session.add(checkin)
                         session.commit()
                         session.close()
-                        return json.dumps({"success": True, "badge": badge, "reason": "Attendee is already checked in.",
+                        # Attendee is already checked in.
+                        return json.dumps({"success": True, "badge": badge, "reason": "Checked in successfully!",
                                            "has_allergy": has_allergy})
             # if no existing checkin for this attendee overlaps current time, create new checkin
             checkin = Checkin(attendee_id=attend.public_id, meal_id=None)
@@ -440,7 +440,6 @@ class Root:
         if message:
             text = message
             messages.append(text)
-            
         # save new / updated meal
         if 'meal_name' in params:
             session = models.new_sesh()
@@ -858,7 +857,8 @@ class Root:
             # orders related to the meal must also be deleted to prevent future conflicts if a new meal gets the same ID
             orders = session.query(Order).filter_by(meal_id=meal_id).all()
             session.delete(thismeal)
-            session.delete(orders)
+            if orders:
+                session.delete(orders)
             session.commit()
             session.close()
             raise HTTPRedirect(redir)

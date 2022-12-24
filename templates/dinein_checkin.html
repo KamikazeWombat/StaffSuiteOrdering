@@ -13,7 +13,7 @@
         message = document.getElementById("message");
         message.innerHTML = "Loading...";
         allergy.innerHTML = "";
-        fetch("checkin_badge?meal_id={% if current_meal %}{{ current_meal.id }}{% else %}None{% endif %}&badge=" + barcode.value, {credentials: "include"}, ).then((response) => {
+        fetch("checkin_badge?badge=" + barcode.value, {credentials: "include"}, ).then((response) => {
             return response.json();
         }).then((response) => {
             barcode.value = "";
