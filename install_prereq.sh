@@ -1,8 +1,12 @@
+mkdir pdfs
+mkdir secure
 apt-get install -y python3
 apt install -y python3-pip
 apt install -y libjpeg-turbo
-wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb
-sudo apt install -y ./wkhtmltox_0.12.6-1.focal_amd64.deb
+# these commands were required for some time because the normal apt-get command didn't work
+# wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb
+# sudo apt install -y ./wkhtmltox_0.12.6-1.focal_amd64.deb
+sudo apt-get -y install wkhtmltopdf
 sudo apt-get -y install postgresql
 pip3 install cherrypy
 pip3 install python-dateutil
