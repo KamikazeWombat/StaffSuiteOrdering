@@ -1,0 +1,37 @@
+<!DOCTYPE HTML>
+<html xmlns:style="http://www.w3.org/1999/xhtml">
+<head>
+  <style>
+div {
+    font-size: 14pt;
+    font-family: Tahoma, Verdona;
+    }
+.new-page {page-break-after: always;}
+.label-page {position: relative;
+            top: 3px;
+            left: 3px;
+            height: 225px;
+            width: 445px;
+            margin-right: 5px;
+            padding-left: 5px;
+            padding-right: 5px;
+            overflow:hidden;
+            }
+
+.border {
+    border-style: solid;
+    border-radius: 3px;
+    }
+  </style>
+</head>
+
+<body>
+  <div style="text-align:center;">
+    {% if title %}
+    <label style="font-size:{{ title_size }}pt;font-family:Tahoma, Verdona;">{{ title }}</label>
+    <br/>
+    {% endif %}
+    <label style="font-size:{{ detail_size }}pt;font-family:Tahoma, Verdona;">{{ detail_text }}</label>
+  </div>
+  </body>
+</html>
