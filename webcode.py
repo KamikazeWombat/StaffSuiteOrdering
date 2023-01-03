@@ -777,12 +777,17 @@ class Root:
 
             thismeal = session.query(Meal).filter_by(id=meal_id).one()
             session.close()
-            
+
+            sorted_shifts, response = combine_shifts(attend.badge_num, full=True, no_combine=True)
+            eligible = carryout_eligible(sorted_shifts, response, thismeal.start_time, thismeal.end_time)
+
             thismeal.start_time = con_tz(thismeal.start_time)
             thismeal.end_time = con_tz(thismeal.end_time)
             thismeal.cutoff = con_tz(thismeal.cutoff)
             thisorder = Order()
             thisorder.attendee_id = cherrypy.session['staffer_id']
+            thisorder.eligible = eligible
+
             toggles1 = order_split(session, thismeal.toggle1)
             toggles2 = order_split(session, thismeal.toggle2)
             toggles3 = order_split(session, thismeal.toggle3)
@@ -900,7 +905,7 @@ class Root:
                             'If you work in a non-shift capacity, please click the "Show all meals" button below '
                             'to submit a carryout order.  You will need to have a DH Override your order '
                             'after it has been created or if your department is a non-shift department you can request '
-                            'this change in Slack #StaffSuiteOrdering.')
+                            'this change in Slack #Super-Staff-Suite-Ordering.')
 
         attendee = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
         
@@ -967,7 +972,7 @@ class Root:
                             'If you work in a non-shift capacity, please click the "Show all meals" button below '
                             'to submit a carryout order.  You will need to have a DH Override your order '
                             'after it has been created or if your department is a non-shift department you can request '
-                            'this change in Slack #StaffSuiteOrdering.')
+                            'this change in Slack #Super-Staff-Suite-Ordering.')
             
         template = env.get_template('staffer_meal_list.html')
         return template.render(messages=messages,
