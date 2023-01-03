@@ -9,8 +9,8 @@ import sqlalchemy.exc
 from config import cfg, dec_base
 from models import meal, attendee, order, ingredient, department, dept_order, checkin
 
-
-engine = create_engine(cfg.database_location)
+# todo: hardcoded for now, needs to be added to config
+engine = create_engine(cfg.database_location, pool_size=25, max_overflow=50)
 
 new_sesh = sessionmaker(bind=engine)
 
