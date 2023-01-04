@@ -676,7 +676,10 @@ class Root:
                 if not shared_functions.is_dh(cherrypy.session['staffer_id']):
                     if not shared_functions.is_admin(cherrypy.session['staffer_id']):
                         raise HTTPRedirect("staffer_meal_list?message=This isn't your order.")
-                    
+
+            sorted_shifts, response = combine_shifts(attend.badge_num, full=True, no_combine=True)
+            eligible = carryout_eligible(sorted_shifts, response, thismeal.start_time, thismeal.end_time)
+
             thismeal.start_time = con_tz(thismeal.start_time)
             thismeal.end_time = con_tz(thismeal.end_time)
             thismeal.cutoff = con_tz(thismeal.cutoff)
