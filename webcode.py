@@ -676,10 +676,14 @@ class Root:
                 if not shared_functions.is_dh(cherrypy.session['staffer_id']):
                     if not shared_functions.is_admin(cherrypy.session['staffer_id']):
                         raise HTTPRedirect("staffer_meal_list?message=This isn't your order.")
-                    
+
+            sorted_shifts, response = combine_shifts(attend.badge_num, full=True, no_combine=True)
+            thisorder.eligible = carryout_eligible(sorted_shifts, response, thismeal.start_time, thismeal.end_time)
+
             thismeal.start_time = con_tz(thismeal.start_time)
             thismeal.end_time = con_tz(thismeal.end_time)
             thismeal.cutoff = con_tz(thismeal.cutoff)
+
             toggles1 = order_split(session, choices=thismeal.toggle1, orders=thisorder.toggle1)
             toggles2 = order_split(session, choices=thismeal.toggle2, orders=thisorder.toggle2)
             toggles3 = order_split(session, choices=thismeal.toggle3, orders=thisorder.toggle3)
@@ -778,15 +782,14 @@ class Root:
             thismeal = session.query(Meal).filter_by(id=meal_id).one()
             session.close()
 
+            thisorder = Order()
+            thisorder.attendee_id = cherrypy.session['staffer_id']
             sorted_shifts, response = combine_shifts(attend.badge_num, full=True, no_combine=True)
-            eligible = carryout_eligible(sorted_shifts, response, thismeal.start_time, thismeal.end_time)
+            thisorder.eligible = carryout_eligible(sorted_shifts, response, thismeal.start_time, thismeal.end_time)
 
             thismeal.start_time = con_tz(thismeal.start_time)
             thismeal.end_time = con_tz(thismeal.end_time)
             thismeal.cutoff = con_tz(thismeal.cutoff)
-            thisorder = Order()
-            thisorder.attendee_id = cherrypy.session['staffer_id']
-            thisorder.eligible = eligible
 
             toggles1 = order_split(session, thismeal.toggle1)
             toggles2 = order_split(session, thismeal.toggle2)
