@@ -15,8 +15,7 @@
     {% if order.locked %}<h2>This order is locked for fulfilment, only Staff Suite admins can change it</h2> <br/>{% endif %}
     </div>
     <div class="section-border">My Allergy info: {{ macros.display_allergies(allergies) }}</div>
-    <p>Grab and Go snacks and sandwiches are available during all Staff Suite Open Hours (8AM - 12AM)
-    <br/>See details on what is available <a href="/pdfs/Grab-and-Go.png" target="_blank">here</a></p>
+    <p><a href="{{ cfg.ss_url }}" target="_blank">Grab and Go snacks and sandwiches</a> are available during all Staff Suite Open Hours (8AM - Midnight)
 
     <input type="hidden" name="order_id" value="{{ order.id }}"/>
     <input type="hidden" name="save_order" value="{{ meal.id }}"/>
