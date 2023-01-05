@@ -680,6 +680,8 @@ class Root:
             sorted_shifts, response = combine_shifts(attend.badge_num, full=True, no_combine=True)
             thisorder.eligible = carryout_eligible(sorted_shifts, response, thismeal.start_time, thismeal.end_time)
             thisorder.exists = True  # disables delete button if not set, ie if order does not already exist
+            if thisorder.overridden:
+                thisorder.eligible = True
 
             thismeal.start_time = con_tz(thismeal.start_time)
             thismeal.end_time = con_tz(thismeal.end_time)
@@ -787,6 +789,8 @@ class Root:
             thisorder.attendee_id = cherrypy.session['staffer_id']
             sorted_shifts, response = combine_shifts(attend.badge_num, full=True, no_combine=True)
             thisorder.eligible = carryout_eligible(sorted_shifts, response, thismeal.start_time, thismeal.end_time)
+            if thisorder.overridden:
+                thisorder.eligible = True
 
             thismeal.start_time = con_tz(thismeal.start_time)
             thismeal.end_time = con_tz(thismeal.end_time)
