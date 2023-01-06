@@ -24,7 +24,7 @@ def send_message(phone_numbers, dept_name, meal_name):
 
         original_phone = phone
         # remove hyphens and such from phone number
-        phone = re.sub(r'[-,()\.\+a-zA-Z]', '', phone)
+        phone = re.sub(r'[-,()\s.\+a-zA-Z]', '', phone)
         phone = phone.strip()
         if not phone:
             continue
