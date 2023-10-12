@@ -63,6 +63,8 @@ class Config:
             for super in sa_list:
                 super = super.strip()
                 self.super_admins.append(super)
+                if super not in self.admin_list:
+                    self.admin_list.append(super)
         except FileNotFoundError:
             pass
 
