@@ -76,7 +76,7 @@ class Root:
                 messages.append(response['error']['message'])
                 error = True
                 print(response['error']['message'])
-            
+
             if not error:
                 # ensure_csrf_token_exists()  this is commented out cause I haven't yet learned what/how for CSRF
                 cherrypy.session['staffer_id'] = response['result']['public_id']
@@ -925,7 +925,8 @@ class Root:
                     attendee.webhook_url = params['webhook_url']
                     attendee.webhook_data = params['webhook_data']
                     session.commit()
-                    shared_functions.send_webhook(params['webhook_url'], params['webhook_data'])
+                    if attendee.webhook_url and attendee.webhook_data:  # no test if blank webhook
+                        shared_functions.send_webhook(params['webhook_url'], params['webhook_data'])
                 else:
                     attendee.webhook_url = ''
                     attendee.webhook_data = ''
