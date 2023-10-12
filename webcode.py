@@ -1601,18 +1601,7 @@ class Root:
         dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
         orders = session.query(Order).filter_by(meal_id=meal_id, department_id=dept_id).all()
 
-        if not unlock_order:
-            dept_order.started = True
-            dept_order.start_time = now_utc()
-            for order in orders:
-                order.locked = True
-            session.commit()
-            session.close()
-            if no_redirect:
-                return
-            raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                               '&message=This order Bundle is now locked.')
-        else:
+        if unlock_order:
             if dept_order.completed:
                 session.close()
                 if no_redirect:
@@ -1630,6 +1619,18 @@ class Root:
                 return
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                                '&message=This order Bundle is now un-locked.')
+
+        dept_order.started = True
+        dept_order.start_time = now_utc()
+        for order in orders:
+            order.locked = True
+        session.commit()
+        session.close()
+        if no_redirect:
+            return
+        raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
+                           '&message=This order Bundle is now locked.')
+
 
     @cherrypy.expose
     @ss_staffer
