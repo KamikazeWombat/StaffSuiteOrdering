@@ -1327,13 +1327,14 @@ class Root:
         raise HTTPRedirect('dept_order?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                            '&message=' + message + str(cherrypy.session['badge_num']))
 
+
     @cherrypy.expose
     @ss_staffer
     def ssf_meal_list(self, display_all=False):
         """
         Displays list of Meals to be fulfilled
         """
-        
+
         session_info = get_session_info()
         
         session = models.new_sesh()
@@ -1371,7 +1372,7 @@ class Root:
 
     @cherrypy.expose
     @ss_staffer
-    def ssf_dept_list(self, meal_id, meal_name):
+    def ssf_dept_list(self, meal_id, meal_name, **params):
         """
         For chosen meal, shows list of departments with how many orders are currently submitted for that department
         Fulfilment staff can select a department to view order details.
@@ -1387,6 +1388,8 @@ class Root:
         orderless_depts = list()
         total_orders = 0
         remaining_orders = 0
+        no_remaining_orders = False
+        order_fulfilment_completed = False
         
         for dept in depts:
             # todo: make this count only eligible orders, but will require ~30 seconds to load if done by plain loop
@@ -1411,6 +1414,26 @@ class Root:
 
             total_orders += order_count
 
+        if 'complete_remaining' in params and params['complete_remaining']:
+            # locks all remaining orders for dept and meal then checks if any remaining orders for meal
+            # if no remaining orders marks them complete
+            for dept in orderless_depts:
+                print('-------------------------dept object-----------------')
+                print(str(dept[0]) + '---' + str(dept[1]) + '---' + str(dept[2]))
+                print('-------------------------------------------------')
+                self.ssf_lock_order(meal_id, dept[2], no_redirect=True)
+            for dept in orderless_depts:
+                order_count = session.query(Order).filter_by(department_id=dept[2], meal_id=meal_id).count()
+                if order_count == 0:
+                    self.ssf_complete_order(meal_id, dept[2], no_redirect=True)
+            raise HTTPRedirect('ssf_dept_list?meal_id=' + str(meal_id) + '&meal_name=' + meal_name)
+
+        if remaining_orders == 0:
+            no_remaining_orders = True
+
+        if len(dept_list) == 0 and len(orderless_depts) == 0:
+            order_fulfilment_completed = True
+
         # todo: if remaining orders 0 then offer button to lock and then complete empty depts
         # todo: needs to lock, then check orderless list again if 0 remaining before marking all complete
         # todo: probably sleep 1 between locking and checking for orders to make sure any in-progress commits finish
@@ -1424,6 +1447,8 @@ class Root:
                                remaining=remaining_orders,
                                completed_depts=completed_depts,
                                orderless_depts=orderless_depts,
+                               no_remaining_orders=no_remaining_orders,
+                               order_fulfilment_completed=order_fulfilment_completed,
                                session=session_info,
                                c=c,
                                cfg=cfg)
@@ -1565,10 +1590,10 @@ class Root:
                                session=session_info,
                                c=c,
                                cfg=cfg)
-    
+
     @cherrypy.expose
     @ss_staffer
-    def ssf_lock_order(self, meal_id, dept_id, unlock_order=False):
+    def ssf_lock_order(self, meal_id, dept_id, unlock_order=False, no_redirect=False):
         """
         Locks or unlocks dept_order and individual orders for selected meal and department
         """
@@ -1583,26 +1608,32 @@ class Root:
                 order.locked = True
             session.commit()
             session.close()
+            if no_redirect:
+                return
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                                '&message=This order Bundle is now locked.')
         else:
             if dept_order.completed:
                 session.close()
+                if no_redirect:
+                    return
                 raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                                    '&message=You cannot un-lock an order Bundle that is marked Completed.')
-            
+
             dept_order.started = False
             dept_order.start_time = None
             for order in orders:
                 order.locked = False
             session.commit()
             session.close()
+            if no_redirect:
+                return
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                                '&message=This order Bundle is now un-locked.')
-        
+
     @cherrypy.expose
     @ss_staffer
-    def ssf_complete_order(self, meal_id, dept_id, uncomplete_order=False):
+    def ssf_complete_order(self, meal_id, dept_id, uncomplete_order=False, no_redirect=False):
         """
         Marks or unmarks department order as complete for selected meal and department
         """
@@ -1614,11 +1645,15 @@ class Root:
             dept_order.completed_time = None
             session.commit()
             session.close()
+            if no_redirect:
+                return
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                                '&message=This Bundle is now un-marked Complete.')
 
         if not dept_order.started:
             session.close()
+            if no_redirect:
+                return
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                                '&message=The Bundle must be Locked before it can be marked Complete.')
 
@@ -1630,6 +1665,8 @@ class Root:
         if len(orders) == 0:
             session.commit()
             session.close()
+            if no_redirect:
+                return
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                                '&message=This Bundle is now marked Complete.')
 
@@ -1658,12 +1695,16 @@ class Root:
         if dept_order.other_contact:
             session.commit()
             session.close()
+            if no_redirect:
+                return
             raise HTTPRedirect('dept_order_details?dept_order_id=' + str(dept_order.id) +
                                '&message=This department has requested manual contact.  '
                                'Please contact them as listed in the Other Contact Info box.  '
                                'This Bundle is now marked Complete.')
         session.commit()
         session.close()
+        if no_redirect:
+            return
         raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                            '&message=This Bundle is now marked Complete.')
 
