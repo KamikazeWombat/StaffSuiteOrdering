@@ -1608,64 +1608,64 @@ class Root:
         """
         session = models.new_sesh()
         dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
-        
-        if not uncomplete_order:
-            if not dept_order.started:
-                session.close()
-                raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                                   '&message=The Bundle must be Locked before it can be marked Complete.')
-            dept_order.completed = True
-            dept_order.completed_time = now_utc()
 
-            orders = session.query(models.order.Order).filter_by(meal_id=meal_id, department_id=dept_id).all()
-            # if no orders for department, skip notifying them.
-            if len(orders) == 0:
-                session.commit()
-                session.close()
-                raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                                   '&message=This Bundle is now marked Complete.')
-
-            dept = session.query(Department).filter_by(id=dept_id).one()
-            meal = session.query(Meal).filter_by(id=meal_id).one()
-            contact_details = shared_functions.load_d_o_contact_details(dept_order, dept)
-
-            if contact_details.slack_channel:
-                message = 'Your food order bundle for ' + meal.meal_name + ' for ' + dept.name + \
-                          ' is ready, please pickup from Staff Suite in ' + cfg.room_location + '.  ' + \
-                          contact_details.slack_contact
-                slack_bot.send_message(contact_details.slack_channel, message)
-
-            if contact_details.sms_contact:
-                twilio_bot.send_message(contact_details.sms_contact, dept.name, meal.meal_name)
-
-            if contact_details.email_contact:
-                aws_bot.send_message(contact_details.email_contact, dept.name, meal.meal_name)
-                
-            orders = session.query(Order).filter_by(department_id=dept_order.dept_id, meal_id=dept_order.meal_id) \
-                .options(subqueryload(Order.attendee)).all()
-            for order in orders:
-                if order.attendee.webhook_url:
-                    shared_functions.send_webhook(order.attendee.webhook_url, order.attendee.webhook_data)
-                
-            if dept_order.other_contact:
-                session.commit()
-                session.close()
-                raise HTTPRedirect('dept_order_details?dept_order_id=' + str(dept_order.id) +
-                                   '&message=This department has requested manual contact.  '
-                                   'Please contact them as listed in the Other Contact Info box.  '
-                                   'This Bundle is now marked Complete.')
-            session.commit()
-            session.close()
-            raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                               '&message=This Bundle is now marked Complete.')
-        else:
-            # if uncomplete_order is True
+        if uncomplete_order:
             dept_order.completed = False
             dept_order.completed_time = None
             session.commit()
             session.close()
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                                '&message=This Bundle is now un-marked Complete.')
+
+        if not dept_order.started:
+            session.close()
+            raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
+                               '&message=The Bundle must be Locked before it can be marked Complete.')
+
+        dept_order.completed = True
+        dept_order.completed_time = now_utc()
+
+        orders = session.query(models.order.Order).filter_by(meal_id=meal_id, department_id=dept_id).all()
+        # if no orders for department, skip notifying them.
+        if len(orders) == 0:
+            session.commit()
+            session.close()
+            raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
+                               '&message=This Bundle is now marked Complete.')
+
+        dept = session.query(Department).filter_by(id=dept_id).one()
+        meal = session.query(Meal).filter_by(id=meal_id).one()
+        contact_details = shared_functions.load_d_o_contact_details(dept_order, dept)
+
+        if contact_details.slack_channel:
+            message = 'Your food order bundle for ' + meal.meal_name + ' for ' + dept.name + \
+                      ' is ready, please pickup from Staff Suite in ' + cfg.room_location + '.  ' + \
+                      contact_details.slack_contact
+            slack_bot.send_message(contact_details.slack_channel, message)
+
+        if contact_details.sms_contact:
+            twilio_bot.send_message(contact_details.sms_contact, dept.name, meal.meal_name)
+
+        if contact_details.email_contact:
+            aws_bot.send_message(contact_details.email_contact, dept.name, meal.meal_name)
+
+        orders = session.query(Order).filter_by(department_id=dept_order.dept_id, meal_id=dept_order.meal_id) \
+            .options(subqueryload(Order.attendee)).all()
+        for order in orders:
+            if order.attendee.webhook_url:
+                shared_functions.send_webhook(order.attendee.webhook_url, order.attendee.webhook_data)
+
+        if dept_order.other_contact:
+            session.commit()
+            session.close()
+            raise HTTPRedirect('dept_order_details?dept_order_id=' + str(dept_order.id) +
+                               '&message=This department has requested manual contact.  '
+                               'Please contact them as listed in the Other Contact Info box.  '
+                               'This Bundle is now marked Complete.')
+        session.commit()
+        session.close()
+        raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
+                           '&message=This Bundle is now marked Complete.')
 
     @dh_or_staffer
     @cherrypy.expose
