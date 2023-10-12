@@ -1418,9 +1418,6 @@ class Root:
             # locks all remaining orders for dept and meal then checks if any remaining orders for meal
             # if no remaining orders marks them complete
             for dept in orderless_depts:
-                print('-------------------------dept object-----------------')
-                print(str(dept[0]) + '---' + str(dept[1]) + '---' + str(dept[2]))
-                print('-------------------------------------------------')
                 self.ssf_lock_order(meal_id, dept[2], no_redirect=True)
             for dept in orderless_depts:
                 order_count = session.query(Order).filter_by(department_id=dept[2], meal_id=meal_id).count()
