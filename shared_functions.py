@@ -802,9 +802,10 @@ def is_dh(staff_id):
     # queries Uber/Reggie to find out if attendee is marked as a DH
     REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
     request_data = {'method': 'attendee.search',
-                    'params': [staff_id]}
+                    'params': [str(staff_id)]}
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
     response = json.loads(request.text)
+
     return response['result'][0]['is_dept_head']
 
 

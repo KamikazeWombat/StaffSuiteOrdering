@@ -79,7 +79,8 @@ class Root:
 
             if not error:
                 # ensure_csrf_token_exists()  this is commented out cause I haven't yet learned what/how for CSRF
-                cherrypy.session['staffer_id'] = response['result']['public_id']
+                # cherrypy.session['staffer_id'] = str(response['result']['public_id']) # this one is for when attendee search works with Uber public ID
+                cherrypy.session['staffer_id'] = str(response['result']['badge_num']) # this one is for when attendee search is not accepting public ID, uses just badge number everywhere instead
                 cherrypy.session['badge_num'] = response['result']['badge_num']
                 
                 if is_ss_staffer(cherrypy.session['staffer_id']):
@@ -133,8 +134,8 @@ class Root:
                 session = models.new_sesh()
                 # add or update attendee record in DB
                 try:
-                    attendee = session.query(Attendee).filter_by(public_id=response['result']['public_id']).one()
-                    
+                    attendee = session.query(Attendee).filter_by(public_id=str(cherrypy.session['staffer_id'])).one()
+
                     # only update record if different
                     if not attendee.full_name == response['result']['full_name'] \
                             or not attendee.badge_num == response['result']['badge_num']:
@@ -146,7 +147,7 @@ class Root:
                     # new attendee login, creating record
                     attendee = Attendee()
                     attendee.badge_num = response['result']['badge_num']
-                    attendee.public_id = response['result']['public_id']
+                    attendee.public_id = cherrypy.session['staffer_id']
                     attendee.full_name = response['result']['full_name']
                     session.add(attendee)
                     session.commit()
