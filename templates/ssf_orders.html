@@ -5,7 +5,7 @@
 
 <div class="container">
   <h2>{{ message }} <br/></h2>
-  <a class="btn btn-lg btn-primary " href="ssf_dept_list?meal_id={{ meal.id }}&meal_name=meal.meal_name">Back to Department List</a> <br/>
+  <a class="btn btn-lg btn-primary " href="ssf_dept_list?meal_id={{ meal.id }}&meal_name={{ meal.meal_name }}">Back to Department List</a> <br/>
   {% if dept_order.started %}
   <h3>Orders locked!</h3><a class="btn btn-lg btn-primary " href="ssf_lock_order?meal_id={{ meal.id }}&dept_id={{ dept_id }}&unlock_order=True"{% if dept_order.completed %} disabled{% endif %}>Un-Lock orders for department</a> <br/>
   {% else %}
