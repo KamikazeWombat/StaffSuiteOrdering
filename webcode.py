@@ -969,8 +969,8 @@ class Root:
                 rd += delta.minutes
                 rd += delta.hours * 60
                 rd += delta.days * 1440
-                # hides meals in the past by default
-                if rd >= 0 or display_all or meal.order_exists:
+                # hides meals more than 2 hours in the past by default
+                if rd >= 120 or display_all or meal.order_exists:
                     # update time to be Con TZ for display purposes
                     meal.start_time = con_tz(meal.start_time)
                     meal.end_time = con_tz(meal.end_time)
