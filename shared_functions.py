@@ -705,6 +705,16 @@ def carryout_eligible(shifts, response, meal_start, meal_end):
     :param meal_end : date object for the meal end in python dateutil datetime format
     :return: returns True or False
     """
+
+    if response['result']['is_dept_head']:
+        return True
+
+    if response['result']['badge_type_label'] in ["Contractor", "Guest"]:
+        return True
+
+    if response['result']['public_id'] in cfg.food_managers:
+        return True
+
     # need to check combined if shift starts within <<buffer>> after start of meal time or earlier
     # AND ends within <<buffer>exc> before end of meal time or later
 
@@ -758,15 +768,6 @@ def carryout_eligible(shifts, response, meal_start, meal_end):
             if ss_ms_delta >= 0 and se_me_delta <= 0 and ss_ms.days == 0:
                 # print('if ss before ms AND se after me then good')
                 return True
-
-    if response['result']['is_dept_head']:
-        return True
-
-    if response['result']['badge_type_label'] in ["Contractor", "Guest"]:
-        return True
-
-    if response['result']['public_id'] in cfg.food_managers:
-        return True
 
     session = models.new_sesh()
 
