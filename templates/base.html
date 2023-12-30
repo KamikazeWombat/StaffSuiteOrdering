@@ -6,7 +6,7 @@
 <head>
     {{ macros.ie7_compatibility_check() }}
     <title>{{ c.EVENT_NAME }} - {% block title %}{% endblock %}</title>
-    <link rel="icon" href="{{ c.EVENT_URL_ROOT }}/static/images/favicon.png" type="image/x-icon" />
+    <link rel="icon" href="{{ c.EVENT_URL_ROOT }}static/images/favicon.png" type="image/x-icon" />
 
     {% block head_styles %}
         <link rel="stylesheet" href="../static/deps/combined.min.css" />
@@ -115,9 +115,9 @@
 <body>
     {% block top_of_body_additional %}
             <div id="floating_logo">
-                <img src={{ c.EVENT_URL_ROOT }}/static/theme/bg-logo.png/>
+                <img src={{ c.EVENT_URL_ROOT }}static/theme/bg-logo.png/>
                 <a href="{{ cfg.ss_url }}" target="_blank">Staff Suite Info & Allergies</a>
-                <div style="text-align:center;"><h1>{{ c.EVENT_NAME }} Tuber Eats v 1.1.6</h1></div>
+                <div style="text-align:center;"><h1>{{ c.EVENT_NAME }} Tuber Eats v 1.1.7</h1></div>
 
             </div>
     {% endblock %}

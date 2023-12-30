@@ -83,7 +83,7 @@
     <br/>
     {% if order.eligible == False %}
       <h3 style="border:5px solid; padding:2px; color:red;">You are not seen as automatically eligible to order for this meal by the food system.
-        You will need to get your DH to override your order or else go upstairs for self serve food.
+        You will need to get your DH to override your order or else go to Staff Suite in {{ cfg.room_location }} for self serve food.
         If you believe this is in error please contact us in Slack #Super-Staff-Suite-Ordering</h3>
     {% endif %}
     <button class="btn btn-lg btn-primary " type="submit"{% if order.locked %} disabled{% endif %}>Submit</button>
