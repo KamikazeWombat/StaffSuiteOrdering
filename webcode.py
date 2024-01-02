@@ -79,8 +79,8 @@ class Root:
 
             if not error:
                 # ensure_csrf_token_exists()  this is commented out cause I haven't yet learned what/how for CSRF
-                # cherrypy.session['staffer_id'] = str(response['result']['public_id']) # this one is for when attendee search works with Uber public ID
-                cherrypy.session['staffer_id'] = str(response['result']['badge_num']) # this one is for when attendee search is not accepting public ID, uses just badge number everywhere instead
+                cherrypy.session['staffer_id'] = str(response['result']['public_id']) # this one is for when attendee search works with Uber public ID
+                # cherrypy.session['staffer_id'] = str(response['result']['badge_num']) # this one is for when attendee search is not accepting public ID, uses just badge number everywhere instead
                 cherrypy.session['badge_num'] = response['result']['badge_num']
                 
                 if is_ss_staffer(cherrypy.session['staffer_id']):
