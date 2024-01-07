@@ -76,10 +76,11 @@ class Root:
                 messages.append(response['error']['message'])
                 error = True
                 print(response['error']['message'])
-            
+
             if not error:
                 # ensure_csrf_token_exists()  this is commented out cause I haven't yet learned what/how for CSRF
-                cherrypy.session['staffer_id'] = response['result']['public_id']
+                cherrypy.session['staffer_id'] = str(response['result']['public_id']) # this one is for when attendee search works with Uber public ID
+                # cherrypy.session['staffer_id'] = str(response['result']['badge_num']) # this one is for when attendee search is not accepting public ID, uses just badge number everywhere instead
                 cherrypy.session['badge_num'] = response['result']['badge_num']
                 
                 if is_ss_staffer(cherrypy.session['staffer_id']):
@@ -133,8 +134,8 @@ class Root:
                 session = models.new_sesh()
                 # add or update attendee record in DB
                 try:
-                    attendee = session.query(Attendee).filter_by(public_id=response['result']['public_id']).one()
-                    
+                    attendee = session.query(Attendee).filter_by(public_id=str(cherrypy.session['staffer_id'])).one()
+
                     # only update record if different
                     if not attendee.full_name == response['result']['full_name'] \
                             or not attendee.badge_num == response['result']['badge_num']:
@@ -146,7 +147,7 @@ class Root:
                     # new attendee login, creating record
                     attendee = Attendee()
                     attendee.badge_num = response['result']['badge_num']
-                    attendee.public_id = response['result']['public_id']
+                    attendee.public_id = cherrypy.session['staffer_id']
                     attendee.full_name = response['result']['full_name']
                     session.add(attendee)
                     session.commit()
@@ -925,7 +926,8 @@ class Root:
                     attendee.webhook_url = params['webhook_url']
                     attendee.webhook_data = params['webhook_data']
                     session.commit()
-                    shared_functions.send_webhook(params['webhook_url'], params['webhook_data'])
+                    if attendee.webhook_url and attendee.webhook_data:  # no test if blank webhook
+                        shared_functions.send_webhook(params['webhook_url'], params['webhook_data'])
                 else:
                     attendee.webhook_url = ''
                     attendee.webhook_data = ''
@@ -967,8 +969,8 @@ class Root:
                 rd += delta.minutes
                 rd += delta.hours * 60
                 rd += delta.days * 1440
-                # hides meals in the past by default
-                if rd >= 0 or display_all or meal.order_exists:
+                # hides meals more than 2 hours in the past by default
+                if rd >= 120 or display_all or meal.order_exists:
                     # update time to be Con TZ for display purposes
                     meal.start_time = con_tz(meal.start_time)
                     meal.end_time = con_tz(meal.end_time)
@@ -1326,13 +1328,14 @@ class Root:
         raise HTTPRedirect('dept_order?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                            '&message=' + message + str(cherrypy.session['badge_num']))
 
+
     @cherrypy.expose
     @ss_staffer
     def ssf_meal_list(self, display_all=False):
         """
         Displays list of Meals to be fulfilled
         """
-        
+
         session_info = get_session_info()
         
         session = models.new_sesh()
@@ -1370,7 +1373,7 @@ class Root:
 
     @cherrypy.expose
     @ss_staffer
-    def ssf_dept_list(self, meal_id, meal_name):
+    def ssf_dept_list(self, meal_id, meal_name, **params):
         """
         For chosen meal, shows list of departments with how many orders are currently submitted for that department
         Fulfilment staff can select a department to view order details.
@@ -1386,6 +1389,8 @@ class Root:
         orderless_depts = list()
         total_orders = 0
         remaining_orders = 0
+        no_remaining_orders = False
+        order_fulfilment_completed = False
         
         for dept in depts:
             # todo: make this count only eligible orders, but will require ~30 seconds to load if done by plain loop
@@ -1410,6 +1415,23 @@ class Root:
 
             total_orders += order_count
 
+        if 'complete_remaining' in params and params['complete_remaining']:
+            # locks all remaining orders for dept and meal then checks if any remaining orders for meal
+            # if no remaining orders marks them complete
+            for dept in orderless_depts:
+                self.ssf_lock_order(meal_id, dept[2], no_redirect=True)
+            for dept in orderless_depts:
+                order_count = session.query(Order).filter_by(department_id=dept[2], meal_id=meal_id).count()
+                if order_count == 0:
+                    self.ssf_complete_order(meal_id, dept[2], no_redirect=True)
+            raise HTTPRedirect('ssf_dept_list?meal_id=' + str(meal_id) + '&meal_name=' + meal_name)
+
+        if remaining_orders == 0:
+            no_remaining_orders = True
+
+        if len(dept_list) == 0 and len(orderless_depts) == 0:
+            order_fulfilment_completed = True
+
         # todo: if remaining orders 0 then offer button to lock and then complete empty depts
         # todo: needs to lock, then check orderless list again if 0 remaining before marking all complete
         # todo: probably sleep 1 between locking and checking for orders to make sure any in-progress commits finish
@@ -1423,6 +1445,8 @@ class Root:
                                remaining=remaining_orders,
                                completed_depts=completed_depts,
                                orderless_depts=orderless_depts,
+                               no_remaining_orders=no_remaining_orders,
+                               order_fulfilment_completed=order_fulfilment_completed,
                                session=session_info,
                                c=c,
                                cfg=cfg)
@@ -1564,10 +1588,10 @@ class Root:
                                session=session_info,
                                c=c,
                                cfg=cfg)
-    
+
     @cherrypy.expose
     @ss_staffer
-    def ssf_lock_order(self, meal_id, dept_id, unlock_order=False):
+    def ssf_lock_order(self, meal_id, dept_id, unlock_order=False, no_redirect=False):
         """
         Locks or unlocks dept_order and individual orders for selected meal and department
         """
@@ -1575,96 +1599,113 @@ class Root:
         dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
         orders = session.query(Order).filter_by(meal_id=meal_id, department_id=dept_id).all()
 
-        if not unlock_order:
-            dept_order.started = True
-            dept_order.start_time = now_utc()
-            for order in orders:
-                order.locked = True
-            session.commit()
-            session.close()
-            raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                               '&message=This order Bundle is now locked.')
-        else:
+        if unlock_order:
             if dept_order.completed:
                 session.close()
+                if no_redirect:
+                    return
                 raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                                    '&message=You cannot un-lock an order Bundle that is marked Completed.')
-            
+
             dept_order.started = False
             dept_order.start_time = None
             for order in orders:
                 order.locked = False
             session.commit()
             session.close()
+            if no_redirect:
+                return
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                                '&message=This order Bundle is now un-locked.')
-        
+
+        dept_order.started = True
+        dept_order.start_time = now_utc()
+        for order in orders:
+            order.locked = True
+        session.commit()
+        session.close()
+        if no_redirect:
+            return
+        raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
+                           '&message=This order Bundle is now locked.')
+
+
     @cherrypy.expose
     @ss_staffer
-    def ssf_complete_order(self, meal_id, dept_id, uncomplete_order=False):
+    def ssf_complete_order(self, meal_id, dept_id, uncomplete_order=False, no_redirect=False):
         """
         Marks or unmarks department order as complete for selected meal and department
         """
         session = models.new_sesh()
         dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
-        
-        if not uncomplete_order:
-            if not dept_order.started:
-                session.close()
-                raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                                   '&message=The Bundle must be Locked before it can be marked Complete.')
-            dept_order.completed = True
-            dept_order.completed_time = now_utc()
 
-            orders = session.query(models.order.Order).filter_by(meal_id=meal_id, department_id=dept_id).all()
-            # if no orders for department, skip notifying them.
-            if len(orders) == 0:
-                session.commit()
-                session.close()
-                raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                                   '&message=This Bundle is now marked Complete.')
-
-            dept = session.query(Department).filter_by(id=dept_id).one()
-            meal = session.query(Meal).filter_by(id=meal_id).one()
-            contact_details = shared_functions.load_d_o_contact_details(dept_order, dept)
-
-            if contact_details.slack_channel:
-                message = 'Your food order bundle for ' + meal.meal_name + ' for ' + dept.name + \
-                          ' is ready, please pickup from Staff Suite in ' + cfg.room_location + '.  ' + \
-                          contact_details.slack_contact
-                slack_bot.send_message(contact_details.slack_channel, message)
-
-            if contact_details.sms_contact:
-                twilio_bot.send_message(contact_details.sms_contact, dept.name, meal.meal_name)
-
-            if contact_details.email_contact:
-                aws_bot.send_message(contact_details.email_contact, dept.name, meal.meal_name)
-                
-            orders = session.query(Order).filter_by(department_id=dept_order.dept_id, meal_id=dept_order.meal_id) \
-                .options(subqueryload(Order.attendee)).all()
-            for order in orders:
-                if order.attendee.webhook_url:
-                    shared_functions.send_webhook(order.attendee.webhook_url, order.attendee.webhook_data)
-                
-            if dept_order.other_contact:
-                session.commit()
-                session.close()
-                raise HTTPRedirect('dept_order_details?dept_order_id=' + str(dept_order.id) +
-                                   '&message=This department has requested manual contact.  '
-                                   'Please contact them as listed in the Other Contact Info box.  '
-                                   'This Bundle is now marked Complete.')
-            session.commit()
-            session.close()
-            raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
-                               '&message=This Bundle is now marked Complete.')
-        else:
-            # if uncomplete_order is True
+        if uncomplete_order:
             dept_order.completed = False
             dept_order.completed_time = None
             session.commit()
             session.close()
+            if no_redirect:
+                return
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                                '&message=This Bundle is now un-marked Complete.')
+
+        if not dept_order.started:
+            session.close()
+            if no_redirect:
+                return
+            raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
+                               '&message=The Bundle must be Locked before it can be marked Complete.')
+
+        dept_order.completed = True
+        dept_order.completed_time = now_utc()
+
+        orders = session.query(models.order.Order).filter_by(meal_id=meal_id, department_id=dept_id).all()
+        # if no orders for department, skip notifying them.
+        if len(orders) == 0:
+            session.commit()
+            session.close()
+            if no_redirect:
+                return
+            raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
+                               '&message=This Bundle is now marked Complete.')
+
+        dept = session.query(Department).filter_by(id=dept_id).one()
+        meal = session.query(Meal).filter_by(id=meal_id).one()
+        contact_details = shared_functions.load_d_o_contact_details(dept_order, dept)
+
+        if contact_details.slack_channel:
+            message = 'Your food order bundle for ' + meal.meal_name + ' for ' + dept.name + \
+                      ' is ready, please pickup from Staff Suite in ' + cfg.room_location + '.  ' + \
+                      contact_details.slack_contact
+            slack_bot.send_message(contact_details.slack_channel, message)
+
+        if contact_details.sms_contact:
+            twilio_bot.send_message(contact_details.sms_contact, dept.name, meal.meal_name)
+
+        if contact_details.email_contact:
+            aws_bot.send_message(contact_details.email_contact, dept.name, meal.meal_name)
+
+        orders = session.query(Order).filter_by(department_id=dept_order.dept_id, meal_id=dept_order.meal_id) \
+            .options(subqueryload(Order.attendee)).all()
+        for order in orders:
+            if order.attendee.webhook_url:
+                shared_functions.send_webhook(order.attendee.webhook_url, order.attendee.webhook_data)
+
+        if dept_order.other_contact:
+            session.commit()
+            session.close()
+            if no_redirect:
+                return
+            raise HTTPRedirect('dept_order_details?dept_order_id=' + str(dept_order.id) +
+                               '&message=This department has requested manual contact.  '
+                               'Please contact them as listed in the Other Contact Info box.  '
+                               'This Bundle is now marked Complete.')
+        session.commit()
+        session.close()
+        if no_redirect:
+            return
+        raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
+                           '&message=This Bundle is now marked Complete.')
 
     @dh_or_staffer
     @cherrypy.expose
@@ -2020,3 +2061,40 @@ class Root:
                                session=get_session_info(),
                                c=c,
                                cfg=cfg)
+
+
+    @cherrypy.expose
+    @admin_req
+    def import_export(self):
+        """
+        Page for importing or exporting DB stuf
+        """
+
+        template = env.get_template('import_export.html')
+        return template.render(session=get_session_info(),
+                               c=c,
+                               cfg=cfg,)
+
+    @cherrypy.expose
+    @admin_req
+    def process_export(self, choice=""):
+        export = {
+            "version": cfg.version,
+            "export_date": datetime.now().strftime(cfg.date_format)
+        }
+        cherrypy.response.headers['content-type'] = 'text/json'
+
+        if choice == "meals":
+            cherrypy.response.headers['content-disposition'] = 'attachment; filename=meals_export.json'
+            export["meals"] = shared_functions.export_meals()
+
+        if choice == "all":
+            cherrypy.response.headers['content-disposition'] = 'attachment; filename=everything_export.json'
+            export["attendees"] = shared_functions.export_attendees()
+            export["checkins"] = shared_functions.export_checkins()
+            export["dept_order"] = shared_functions.export_dept_orders()
+            export["ingredient"] = shared_functions.export_ingredients()
+            export["meals"] = shared_functions.export_meals()
+            export["orders"] = shared_functions.export_orders()
+
+        return json.dumps(export, indent=2)

@@ -2,7 +2,7 @@
 import cherrypy
 
 from config import cfg, c
-from shared_functions import load_departments
+from shared_functions import load_departments, older_than_current_version, do_upgrade
 import webcode
 
 # force_tls and load_http_server both copied from this guy's blog post.  thanks much for showing me how to do this!
@@ -28,6 +28,11 @@ def load_http_server():
 def main():
     load_departments()
     load_http_server()
+    cfg.version = "1.1.8"
+
+    older = older_than_current_version(cfg.last_version_loaded)
+    if older:
+        do_upgrade()
     cherrypy.quickstart(webcode.Root(), '/', cfg.cherrypy)
 
 

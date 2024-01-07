@@ -705,6 +705,16 @@ def carryout_eligible(shifts, response, meal_start, meal_end):
     :param meal_end : date object for the meal end in python dateutil datetime format
     :return: returns True or False
     """
+
+    if response['result']['is_dept_head']:
+        return True
+
+    if response['result']['badge_type_label'] in ["Contractor", "Guest"]:
+        return True
+
+    if response['result']['public_id'] in cfg.food_managers:
+        return True
+
     # need to check combined if shift starts within <<buffer>> after start of meal time or earlier
     # AND ends within <<buffer>exc> before end of meal time or later
 
@@ -759,15 +769,6 @@ def carryout_eligible(shifts, response, meal_start, meal_end):
                 # print('if ss before ms AND se after me then good')
                 return True
 
-    if response['result']['is_dept_head']:
-        return True
-
-    if response['result']['badge_type_label'] in ["Contractor", "Guest"]:
-        return True
-
-    if response['result']['public_id'] in cfg.food_managers:
-        return True
-
     session = models.new_sesh()
 
     if is_vip(response['result']['badge_num'], session):
@@ -802,9 +803,10 @@ def is_dh(staff_id):
     # queries Uber/Reggie to find out if attendee is marked as a DH
     REQUEST_HEADERS = {'X-Auth-Token': cfg.uber_authkey}
     request_data = {'method': 'attendee.search',
-                    'params': [staff_id]}
+                    'params': [str(staff_id)]}
     request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
     response = json.loads(request.text)
+
     return response['result'][0]['is_dept_head']
 
 
@@ -973,3 +975,168 @@ def is_vip(badge, session=None):
             return True
 
     return False
+
+
+def older_than_current_version(comparable_version):
+    """
+    Compares version numbers and returns True if supplied version is older than current version
+    """
+    current_list = cfg.version.split('.')
+    standard_list = comparable_version.split('.')
+
+    for cur, std in zip(current_list, standard_list):
+        if int(std) < int(cur):
+            return True
+        if int(std) > int(cur):
+            return False
+    return False  # if the versions are the same
+
+
+def do_upgrade():
+    """
+    Runs any potentially needed upgrades,
+    then saves CFG to show current server version so it doesn't need to run next time.
+    """
+    changes_needed = False
+    # put upgrade code here
+    cfg.last_version_loaded = cfg.version
+    cfg.save(cfgonly=True)
+    return changes_needed
+
+
+def export_attendees():
+    """
+    Export attendees to a list, for later importing to another server
+    """
+    session = models.new_sesh()
+    attendees = session.query(models.attendee.Attendee).all()
+    attendees_for_export = list()
+    for att in attendees:
+        attendees_for_export.append({"badge_num": att.badge_num,
+                                     "public_id": att.public_id,
+                                     "full_name": att.full_name,
+                                     "webhook_url": att.webhook_url,
+                                     "webhook_data": att.webhook_data,
+                                     "is_vip": att.is_vip
+                                     })
+    return attendees_for_export
+
+
+def export_checkins():
+    """
+    Export ingredients to a list, for later importing to another server
+    """
+    session = models.new_sesh()
+    checkins = session.query(models.checkin.Checkin).all()
+    checkins_for_export = list()
+    for checkin in checkins:
+        checkins_for_export.append({"id": checkin.id,
+                                    "attendee_id": checkin.attendee_id,
+                                    "meal_id": checkin.meal_id,
+                                    "timestamp": checkin.timestamp.strftime(cfg.date_format),
+                                    "duplicate": checkin.duplicate
+                                    })
+    return checkins_for_export
+
+
+def export_dept_orders():
+    """
+    Export ingredients to a list, for later importing to another server
+    """
+    session = models.new_sesh()
+    dept_orders = session.query(models.dept_order.DeptOrder).all()
+    do_for_export = list()
+
+    for do in dept_orders:
+        if do.start_time:
+            start_time = do.start_time.strftime(cfg.date_format),
+        else:
+            start_time = ""
+        if do.completed_time:
+            completed_time = do.completed_time.strftime(cfg.date_format)
+        else:
+            completed_time = ""
+        do_for_export.append({"id": do.id,
+                              "dept_id": do.dept_id,
+                              "meal_id": do.meal_id,
+                              "started": do.started,
+                              "start_time": start_time,
+                              "completed": do.completed,
+                              "completed_time": completed_time,
+                              "slack_channel": do.slack_channel,
+                              "slack_contact": do.slack_contact,
+                              "sms_contact": do.sms_contact,
+                              "email_contact": do.email_contact,
+                              "other_contact": do.other_contact,
+                              })
+        return do_for_export
+
+
+def export_ingredients():
+    """
+    Export ingredients to a list, for later importing to another server
+    """
+    session = models.new_sesh()
+    ingredients = session.query(models.ingredient.Ingredient).all()
+    ingredients_for_export = list()
+    for ing in ingredients:
+        ingredients_for_export.append({"id": ing.id,
+                                       "label": ing.label,
+                                       "description": ing.description
+                                       })
+    return ingredients_for_export
+
+
+def export_meals():
+    """
+    Export meals to a list, for later importing to another server
+    """
+    session = models.new_sesh()
+
+    meals = session.query(models.meal.Meal).all()
+    meals_for_export = list()
+    for meal in meals:
+        meals_for_export.append({"id": meal.id,
+                                 "meal_name": meal.meal_name,
+                                 "start_time": meal.start_time.strftime(cfg.date_format),
+                                 "end_time": meal.end_time.strftime(cfg.date_format),
+                                 "cutoff": meal.cutoff.strftime(cfg.date_format),
+                                 "description": meal.description,
+                                 "detail_link": meal.detail_link,
+                                 "toggle1": meal.toggle1,
+                                 "toggle1_title": meal.toggle1_title,
+                                 "toggle2": meal.toggle2,
+                                 "toggle2_title": meal.toggle2_title,
+                                 "toggle3": meal.toggle3,
+                                 "toggle3_title": meal.toggle3_title,
+                                 "toppings1": meal.toppings1,
+                                 "toppings1_title": meal.toppings1_title,
+                                 "toppings2": meal.toppings2,
+                                 "toppings2_title": meal.toppings2_title
+                                 })
+    return meals_for_export
+
+
+def export_orders():
+    """
+    Export ingredients to a list, for later importing to another server
+    """
+    session = models.new_sesh()
+    orders = session.query(models.order.Order).all()
+    orders_for_export = list()
+    for order in orders:
+        orders_for_export.append({"id": order.id,
+                                  "attendee_id": order.attendee_id,
+                                  "department_id": order.department_id,
+                                  "meal_id": order.meal_id,
+                                  "overridden": order.overridden,
+                                  "locked": order.locked,
+                                  "toggle1": order.toggle1,
+                                  "toggle2": order.toggle2,
+                                  "toggle3": order.toggle3,
+                                  "toppings1": order.toppings1,
+                                  "toppings2": order.toppings2,
+                                  "notes": order.notes
+                                  })
+    return orders_for_export
+
