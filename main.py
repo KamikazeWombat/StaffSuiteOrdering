@@ -30,7 +30,7 @@ def main():
     load_http_server()
     cfg.version = "1.1.8"
 
-    older = older_than_current_version(cfg.last_loaded_version)
+    older = older_than_current_version(cfg.last_version_loaded)
     if older:
         do_upgrade()
     cherrypy.quickstart(webcode.Root(), '/', cfg.cherrypy)

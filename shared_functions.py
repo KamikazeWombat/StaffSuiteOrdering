@@ -984,12 +984,11 @@ def older_than_current_version(comparable_version):
     current_list = cfg.version.split('.')
     standard_list = comparable_version.split('.')
 
-    for cur, std in current_list, standard_list:
+    for cur, std in zip(current_list, standard_list):
         if int(std) < int(cur):
             return True
         if int(std) > int(cur):
             return False
-
     return False  # if the versions are the same
 
 
@@ -1000,6 +999,6 @@ def do_upgrade():
     """
     changes_needed = False
     # put upgrade code here
-    cfg.last_loaded_version = cfg.version
-    cfg.save()
+    cfg.last_version_loaded = cfg.version
+    cfg.save(cfgonly=True)
     return changes_needed
