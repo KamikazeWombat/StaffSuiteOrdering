@@ -1046,14 +1046,23 @@ def export_dept_orders():
     session = models.new_sesh()
     dept_orders = session.query(models.dept_order.DeptOrder).all()
     do_for_export = list()
+
     for do in dept_orders:
+        if do.start_time:
+            start_time = do.start_time.strftime(cfg.date_format),
+        else:
+            start_time = ""
+        if do.completed_time:
+            completed_time = do.completed_time.strftime(cfg.date_format)
+        else:
+            completed_time = ""
         do_for_export.append({"id": do.id,
                               "dept_id": do.dept_id,
                               "meal_id": do.meal_id,
                               "started": do.started,
-                              "start_time": do.start_time.strftime(cfg.date_format),
+                              "start_time": start_time,
                               "completed": do.completed,
-                              "completed_time": do.completed_time.strftime(cfg.date_format),
+                              "completed_time": completed_time,
                               "slack_channel": do.slack_channel,
                               "slack_contact": do.slack_contact,
                               "sms_contact": do.sms_contact,
