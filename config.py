@@ -97,6 +97,12 @@ class Config:
         cdata = json.load(configfile)
         configfile.close()
 
+        self.version = ''
+        try:
+            self.last_version_loaded = cdata['last_version_loaded']
+        except KeyError:
+            self.last_version_loaded = "0.0.0"
+
         self.admin_list = ''
         self.staffer_list = ''
         self.food_managers = ''
@@ -179,8 +185,9 @@ class Config:
         else:
             return False
         
-    def save(self, admin_list, staffer_list, manager_list):
+    def save(self, admin_list="", staffer_list="", manager_list="", cfgonly=False):
         cdata = {
+            'last_version_loaded': self.last_version_loaded,
             'api_endpoint': self.api_endpoint,
             'uber_key_location': self.uber_key_location,
             'slack_key_location': self.slack_key_location,
@@ -204,7 +211,9 @@ class Config:
         configfile = open(self.config_file_in_use, 'w')
         json.dump(cdata, configfile, indent=2)
         configfile.close()
-        
+        if cfgonly:  # cfgonly indicates that we are not attempting to update user role lists
+            return
+
         adminfile = open('admin_list.cfg', 'w')
         adminfile.write(admin_list)
         adminfile.close()
