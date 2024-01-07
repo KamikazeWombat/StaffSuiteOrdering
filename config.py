@@ -97,6 +97,8 @@ class Config:
         cdata = json.load(configfile)
         configfile.close()
 
+        self.version = ''
+
         self.admin_list = ''
         self.staffer_list = ''
         self.food_managers = ''

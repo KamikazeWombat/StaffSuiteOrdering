@@ -975,3 +975,19 @@ def is_vip(badge, session=None):
             return True
 
     return False
+
+
+def older_than_current_version(comparable_version):
+    """
+    Compares version numbers and returns True if supplied version is older than current version
+    """
+    current_list = cfg.version.split('.')
+    standard_list = comparable_version.split('.')
+
+    for cur, std in current_list, standard_list:
+        if int(std) < int(cur):
+            return True
+        if int(std) > int(cur):
+            return False
+
+    return False  # if the versions are the same

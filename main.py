@@ -28,6 +28,7 @@ def load_http_server():
 def main():
     load_departments()
     load_http_server()
+    cfg.version = "1.2.0"
     cherrypy.quickstart(webcode.Root(), '/', cfg.cherrypy)
 
 
