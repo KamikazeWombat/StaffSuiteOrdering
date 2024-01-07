@@ -2061,3 +2061,40 @@ class Root:
                                session=get_session_info(),
                                c=c,
                                cfg=cfg)
+
+
+    @cherrypy.expose
+    @admin_req
+    def import_export(self):
+        """
+        Page for importing or exporting DB stuf
+        """
+
+        template = env.get_template('import_export.html')
+        return template.render(session=get_session_info(),
+                               c=c,
+                               cfg=cfg,)
+
+    @cherrypy.expose
+    @admin_req
+    def process_export(self, choice=""):
+        export = {
+            "version": cfg.version,
+            "export_date": datetime.now().strftime(cfg.date_format)
+        }
+        cherrypy.response.headers['content-type'] = 'text/json'
+
+        if choice == "meals":
+            cherrypy.response.headers['content-disposition'] = 'attachment; filename=meals_export.json'
+            export["meals"] = shared_functions.export_meals()
+
+        if choice == "all":
+            cherrypy.response.headers['content-disposition'] = 'attachment; filename=everything_export.json'
+            export["attendees"] = shared_functions.export_attendees()
+            export["checkins"] = shared_functions.export_checkins()
+            export["dept_order"] = shared_functions.export_dept_orders()
+            export["ingredient"] = shared_functions.export_ingredients()
+            export["meals"] = shared_functions.export_meals()
+            export["orders"] = shared_functions.export_orders()
+
+        return json.dumps(export, indent=2)

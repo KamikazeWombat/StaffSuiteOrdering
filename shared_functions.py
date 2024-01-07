@@ -1002,3 +1002,132 @@ def do_upgrade():
     cfg.last_version_loaded = cfg.version
     cfg.save(cfgonly=True)
     return changes_needed
+
+
+def export_attendees():
+    """
+    Export attendees to a list, for later importing to another server
+    """
+    session = models.new_sesh()
+    attendees = session.query(models.attendee.Attendee).all()
+    attendees_for_export = list()
+    for att in attendees:
+        attendees_for_export.append({"badge_num": att.badge_num,
+                                     "public_id": att.public_id,
+                                     "full_name": att.full_name,
+                                     "webhook_url": att.webhook_url,
+                                     "webhook_data": att.webhook_data,
+                                     "is_vip": att.is_vip
+                                     })
+    return attendees_for_export
+
+
+def export_checkins():
+    """
+    Export ingredients to a list, for later importing to another server
+    """
+    session = models.new_sesh()
+    checkins = session.query(models.checkin.Checkin).all()
+    checkins_for_export = list()
+    for checkin in checkins:
+        checkins_for_export.append({"id": checkin.id,
+                                    "attendee_id": checkin.attendee_id,
+                                    "meal_id": checkin.meal_id,
+                                    "timestamp": checkin.timestamp.strftime(cfg.date_format),
+                                    "duplicate": checkin.duplicate
+                                    })
+    return checkins_for_export
+
+
+def export_dept_orders():
+    """
+    Export ingredients to a list, for later importing to another server
+    """
+    session = models.new_sesh()
+    dept_orders = session.query(models.dept_order.DeptOrder).all()
+    do_for_export = list()
+    for do in dept_orders:
+        do_for_export.append({"id": do.id,
+                              "dept_id": do.dept_id,
+                              "meal_id": do.meal_id,
+                              "started": do.started,
+                              "start_time": do.start_time.strftime(cfg.date_format),
+                              "completed": do.completed,
+                              "completed_time": do.completed_time.strftime(cfg.date_format),
+                              "slack_channel": do.slack_channel,
+                              "slack_contact": do.slack_contact,
+                              "sms_contact": do.sms_contact,
+                              "email_contact": do.email_contact,
+                              "other_contact": do.other_contact,
+                              })
+        return do_for_export
+
+
+def export_ingredients():
+    """
+    Export ingredients to a list, for later importing to another server
+    """
+    session = models.new_sesh()
+    ingredients = session.query(models.ingredient.Ingredient).all()
+    ingredients_for_export = list()
+    for ing in ingredients:
+        ingredients_for_export.append({"id": ing.id,
+                                       "label": ing.label,
+                                       "description": ing.description
+                                       })
+    return ingredients_for_export
+
+
+def export_meals():
+    """
+    Export meals to a list, for later importing to another server
+    """
+    session = models.new_sesh()
+
+    meals = session.query(models.meal.Meal).all()
+    meals_for_export = list()
+    for meal in meals:
+        meals_for_export.append({"id": meal.id,
+                                 "meal_name": meal.meal_name,
+                                 "start_time": meal.start_time.strftime(cfg.date_format),
+                                 "end_time": meal.end_time.strftime(cfg.date_format),
+                                 "cutoff": meal.cutoff.strftime(cfg.date_format),
+                                 "description": meal.description,
+                                 "detail_link": meal.detail_link,
+                                 "toggle1": meal.toggle1,
+                                 "toggle1_title": meal.toggle1_title,
+                                 "toggle2": meal.toggle2,
+                                 "toggle2_title": meal.toggle2_title,
+                                 "toggle3": meal.toggle3,
+                                 "toggle3_title": meal.toggle3_title,
+                                 "toppings1": meal.toppings1,
+                                 "toppings1_title": meal.toppings1_title,
+                                 "toppings2": meal.toppings2,
+                                 "toppings2_title": meal.toppings2_title
+                                 })
+    return meals_for_export
+
+
+def export_orders():
+    """
+    Export ingredients to a list, for later importing to another server
+    """
+    session = models.new_sesh()
+    orders = session.query(models.order.Order).all()
+    orders_for_export = list()
+    for order in orders:
+        orders_for_export.append({"id": order.id,
+                                  "attendee_id": order.attendee_id,
+                                  "department_id": order.department_id,
+                                  "meal_id": order.meal_id,
+                                  "overridden": order.overridden,
+                                  "locked": order.locked,
+                                  "toggle1": order.toggle1,
+                                  "toggle2": order.toggle2,
+                                  "toggle3": order.toggle3,
+                                  "toppings1": order.toppings1,
+                                  "toppings2": order.toppings2,
+                                  "notes": order.notes
+                                  })
+    return orders_for_export
+

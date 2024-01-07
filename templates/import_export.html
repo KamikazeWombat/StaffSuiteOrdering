@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% set admin_area=True %}
+{% block title %}Settings Config{% endblock %}
+{% block page_styles %}
+
+{% endblock %}
+{% block backlink %}{% endblock %}
+{% block content %}
+<div class="container">
+  <h2 class="form-signin-heading">Import / Export</h2>
+  <div id="message"></div>
+  <p><a href="process_export?choice=meals" target="_blank"><button class="btn btn-lg btn-primary">Export Meals</button></a>
+      All currently existing meals</p>
+
+
+  <p><a href="process_export?choice=all" target="_blank"><button class="btn btn-lg btn-primary">Export Everything</button></a>
+      Export everything (can be used as backup)</p>
+
+</div>
+{% endblock content %}
