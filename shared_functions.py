@@ -991,3 +991,15 @@ def older_than_current_version(comparable_version):
             return False
 
     return False  # if the versions are the same
+
+
+def do_upgrade():
+    """
+    Runs any potentially needed upgrades,
+    then saves CFG to show current server version so it doesn't need to run next time.
+    """
+    changes_needed = False
+    # put upgrade code here
+    cfg.last_loaded_version = cfg.version
+    cfg.save()
+    return changes_needed

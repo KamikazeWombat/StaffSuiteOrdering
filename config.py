@@ -98,6 +98,10 @@ class Config:
         configfile.close()
 
         self.version = ''
+        try:
+            self.last_loaded_version = cdata['last_loaded_version']
+        except KeyError:
+            self.last_loaded_version = "0.0.0"
 
         self.admin_list = ''
         self.staffer_list = ''
