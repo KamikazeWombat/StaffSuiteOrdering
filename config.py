@@ -242,7 +242,6 @@ class Uberconfig:
         request_data = {'method': 'config.info'}
         request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
         response = json.loads(request.text)
-        
         if 'error' in response:
             print("----------Error loading config from Uber----------")
             print(response)
@@ -250,7 +249,10 @@ class Uberconfig:
         response = response['result']
         self.EVENT_NAME = response['EVENT_NAME']
         self.EVENT_URL_ROOT = response['URL_ROOT']
-        self.EVENT_TIMEZONE = pytz.timezone(response['EVENT_TIMEZONE'])
+        if response['EVENT_TIMEZONE'] == 'US/Eastern':
+            self.EVENT_TIMEZONE = pytz.timezone('America/New_York')
+        else:
+            self.EVENT_TIMEZONE = pytz.timezone(response['EVENT_TIMEZONE'])
         self.EVENT_TZ = self.EVENT_TIMEZONE
         EPOCH = response['EPOCH']
         EPOCH = parse(EPOCH)
