@@ -1922,10 +1922,11 @@ class Root:
         ERASES ALL EXISTING MEALS AND ORDERS
         """
         session = models.new_sesh()
-
-        meals = session.query(models.meal.Meal).delete()
-        toppings = session.query(models.ingredient.Ingredient).delete()
+        dept_orders = session.query(models.dept_order.DeptOrder).delete()
         orders = session.query(models.order.Order).delete()
+        toppings = session.query(models.ingredient.Ingredient).delete()
+        meals = session.query(models.meal.Meal).delete()
+
         print("deleted " + str(meals) + " meals from database")
         print("deleted " + str(toppings) + " ingredients from database")
         print("deleted " + str(orders) + " orders from database")
@@ -2078,6 +2079,9 @@ class Root:
     @cherrypy.expose
     @admin_req
     def process_export(self, choice=""):
+        """
+        Handles top level of exports
+        """
         export = {
             "version": cfg.version,
             "export_date": datetime.now().strftime(cfg.date_format)
@@ -2092,9 +2096,20 @@ class Root:
             cherrypy.response.headers['content-disposition'] = 'attachment; filename=everything_export.json'
             export["attendees"] = shared_functions.export_attendees()
             export["checkins"] = shared_functions.export_checkins()
-            export["dept_order"] = shared_functions.export_dept_orders()
-            export["ingredient"] = shared_functions.export_ingredients()
+            export["dept_orders"] = shared_functions.export_dept_orders()
+            export["ingredients"] = shared_functions.export_ingredients()
             export["meals"] = shared_functions.export_meals()
             export["orders"] = shared_functions.export_orders()
 
         return json.dumps(export, indent=2)
+
+    @cherrypy.expose
+    @admin_req
+    def process_import(self, jsondata, **params):
+        """
+        Handles top level of imports
+        """
+        if params['meals']:
+            shared_functions.import_meals(jsondata['meals'], replace_all=params['replace_meals_list'])
+
+        return
