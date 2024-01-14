@@ -234,7 +234,7 @@ class Root:
         Processes checkin requests for walk-ins
         """
         # remove accidental whitespace
-        badge.strip()
+        badge = badge.strip()
 
         # if badge is blank
         if not badge:
