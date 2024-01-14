@@ -233,6 +233,14 @@ class Root:
         """
         Processes checkin requests for walk-ins
         """
+        # remove accidental whitespace
+        badge.strip()
+
+        # if badge is blank
+        if not badge:
+            return json.dumps({"success": False, "badge": badge, "reason": "scan field blank?"})
+
+        # barcode on badges starts with ~
         if badge[0] == "~":
             badge = shared_functions.barcode_to_badge(badge)
         else:
@@ -240,7 +248,8 @@ class Root:
                 badge = int(badge)
             except ValueError:
                 return json.dumps({"success": False, "badge": badge, "reason": "Not a number?"})
-            
+
+        # badge will be none if lookup fails
         if not badge:
             return json.dumps({"success": False, "badge": badge, "reason": "Could not locate badge."})
         session = models.new_sesh()
