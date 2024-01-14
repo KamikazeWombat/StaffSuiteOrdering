@@ -34,32 +34,47 @@ div {
     <label style="font-size:32pt;font-family:Tahoma, Verdona;">{{ date }}</label>
   </div>
   {% for order in orders %}
-  <div class="label-page{% if not loop.last %} new-page{% endif %}">
+  {% if (order.allergies) or not order.notes == ""%}
+    <div class="label-page new-page">
+      <div>
+        # {{ order.attendee.badge_num }} {{ ' ' + order.attendee.full_name }}
+        <label style="float:right;">{{ date }}</label>
+        <br/>
+        <label style="float:right;text-align:right;width:200px;height:15px;padding-right:5px;">{{ dept_name }}</label>
+      </div>
+      {% if order.allergies %}
+        <div style="padding-left:5px;padding-right:5px;" class="border">
+          Allergies: {{ macros.display_allergies(order.allergies, view_only=True, color=False) }}
+        </div>
+      {% endif %}
+      {% if not order.notes == "" %}
+        <div style="padding-left:5px;padding-right:5px;" class="border">
+          {{ order.notes }}
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}<!-- end of if order.allergies or not order.notes -->
+  <div class="label-page{% if not loop.last %} new-page{% endif %}{% if order.allergies or not order.notes == ""%} border{% endif %}">
     <div>
       # {{ order.attendee.badge_num }} {{ ' ' + order.attendee.full_name }}
       <label style="float:right;">{{ date }}</label>
       <br/>
-      <label style="float:right;text-align:right;width:200px;height:50px;padding-right:5px;">{{ dept_name }}</label>
+      <label style="float:right;text-align:right;width:200px;height:15px;padding-right:5px;">{{ dept_name }}</label>
     </div>
-    {% if order.allergies %}
-      <div style="padding-left:5px;padding-right:5px;" class="border">
-        Allergies: {{ macros.display_allergies(order.allergies, view_only=True, color=False) }}
-      </div>
-    {% endif %}
 
     <div>
       {% if not meal.toggle1_title == "" %}
-        <label>{{ order.toggle1[0][1] }}</label>
+        <label style="width:200px">{{ order.toggle1[0][1] }}</label>
         <br/>
       {% endif %}
 
       {% if not meal.toggle2_title == "" %}
-        <label>{{ order.toggle2[0][1] }}</label>
+        <label style="width:430px">{{ order.toggle2[0][1] }}</label>
         <br/>
       {% endif %}
 
       {% if not meal.toggle3_title == "" %}
-        <label>{{ order.toggle3[0][1] }}</label>
+        <label style="width:430px">{{ order.toggle3[0][1] }}</label>
       {% endif %}
     </div>
 
@@ -74,11 +89,6 @@ div {
         {{ macros.toppings_list(order.toppings2) }}
       {% endif %}
     </div>
-    {% if not order.notes == "" %}
-      <div style="padding-left:5px;padding-right:5px;" class="border">
-        {{ order.notes }}
-      </div>
-    {% endif %}
   </div>
   {% endfor %}
   </body>

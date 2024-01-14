@@ -455,12 +455,20 @@ def meal_join(session, params, field):
                     desc = ''
     
                 if new_ing or fieldid == '':
-                    ing = Ingredient()
-                    ing.label = label
-                    ing.description = desc
-                    session.add(ing)
-                    session.commit()
-                    # saves ing to DB so it gets an id, then puts result where it can be returned
+                    failed_adding = True
+                    # keeps attempting to add if the Key already exists; this can be cause by importing meals
+                    while failed_adding:
+                        ing = Ingredient()
+                        ing.label = label
+                        ing.description = desc
+                        session.add(ing)
+                        try:
+                            session.commit()
+                            failed_adding = False
+                        except sqlalchemy.exc.IntegrityError:
+                            session.rollback()
+
+                    # above saves ing to DB so it gets an id, then puts result where it can be returned
                     fieldid = ing.id
                 else:
                     # if not a new ingredient, but the label and description are both blank
@@ -1101,6 +1109,7 @@ def export_meals():
                                  "start_time": meal.start_time.strftime(cfg.date_format),
                                  "end_time": meal.end_time.strftime(cfg.date_format),
                                  "cutoff": meal.cutoff.strftime(cfg.date_format),
+                                 "locked": meal.locked,
                                  "description": meal.description,
                                  "detail_link": meal.detail_link,
                                  "toggle1": meal.toggle1,
@@ -1140,3 +1149,50 @@ def export_orders():
                                   })
     return orders_for_export
 
+
+def import_meals(jsondata, replace_all=False):
+    """
+    Imports meals from JSON into the database
+    """
+    session = models.new_sesh()
+    if replace_all:
+        dept_oreers = session.query(models.dept_order.DeptOrder).all().delete()
+        orders = session.query(models.order.Order).all().delete()
+        toppings = session.query(models.ingredient.Ingredient).all().delete()
+        meals = session.query(models.meal.Meal).all().delete()
+
+    importdata = json.loads(jsondata)
+
+    for index, export in enumerate(importdata['meals']):
+        meal = models.meal.Meal()
+        print(export)
+        meal.meal_name = export['meal_name']
+        meal.start_time = parse_utc(export['start_time'])
+        meal.end_time = parse_utc(export['end_time'])
+        meal.cutoff = parse_utc(export['cutoff'])
+        meal.description = export['description']
+        meal.detail_link = export['detail_link']
+
+        meal.toggle1 = export['toggle1']
+        meal.toggle1_title = export['toggle1_title']
+        meal.toggle2 = export['toggle2']
+        meal.toggle2_title = export['toggle2_title']
+        meal.toggle3 = export['toggle3']
+        meal.toggle3_title = export['toggle3_title']
+
+        meal.toppings1 = export['toppings1']
+        meal.toppings1_title = export['toppings1_title']
+        meal.toppings2 = export['toppings2']
+        meal.toppings2_title = export['toppings2_title']
+        session.add(meal)
+
+    for index, export in enumerate(importdata['ingredients']):
+        topping = models.ingredient.Ingredient()
+        topping.id = export['id']
+        topping.label = export['label']
+        topping.description = export['description']
+        session.add(topping)
+
+    session.commit()
+    session.close()
+    return json.dumps(export, indent=2)

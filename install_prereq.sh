@@ -8,14 +8,21 @@ apt install -y libjpeg-turbo
 # sudo apt install -y ./wkhtmltox_0.12.6-1.focal_amd64.deb
 sudo apt-get -y install wkhtmltopdf
 sudo apt-get -y install postgresql
-pip3 install cherrypy
-pip3 install python-dateutil
+pip3 install cherrypy --break-system-packages
+pip3 install python-dateutil --break-system-packages
 pip3 install jinja2
 pip3 install requests
 pip3 install pdfkit
 pip3 install sqlalchemy
 pip3 install twilio
-pip3 install psycopg2-binary
+pip3 install psycopg2-binary --break-system-packages
+
+apt install -y python3-jinja2
+apt install -y python3-requests
+apt install -y python3-pdfkit
+apt install -y python3-sqlalchemy
+apt install -y python3-twilio
+
 apt-get update
 sudo apt install -y certbot
 apt-get install software-properties-common
