@@ -28,7 +28,7 @@ def load_http_server():
 def main():
     load_departments()
     load_http_server()
-    cfg.version = "1.1.8"
+    cfg.version = "1.1.9"
 
     older = older_than_current_version(cfg.last_version_loaded)
     if older:

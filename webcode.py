@@ -1167,7 +1167,7 @@ class Root:
 
         for meal in meals:
             rd = relativedelta(now_utc(), meal.end_time)
-            if rd.days < 0 and rd.hours < 0 and rd.minutes < 0 or show_all:
+            if rd.days <= 0 and rd.hours <= 0 and rd.minutes <= 0 or show_all:
                 meal.start_time = con_tz(meal.start_time)
                 meal.end_time = con_tz(meal.end_time)
                 meal.cutoff = con_tz(meal.cutoff)
