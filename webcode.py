@@ -286,6 +286,11 @@ class Root:
                 attend.full_name = response['result']['full_name']
                 session.add(attend)
                 session.commit()
+        except sqlalchemy.exc.MultipleResultsFound:
+            messageforslack = "Someone's Checkin lookup for multiple badges somehow.  " + str(badge)
+            slack_bot.send_message("@wombat3", messageforslack)
+            return json.dumps(
+                {"success": False, "badge": badge, "reason": "Found multiple matching badges?".format(badge)})
 
         if meal:
             # check for existing carryout order for this meal period
