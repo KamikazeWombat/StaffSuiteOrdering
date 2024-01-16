@@ -38,7 +38,7 @@ class Root:
     
     @restricted
     @cherrypy.expose
-    def index(self):
+    def index(self, **kwargs):
         raise HTTPRedirect('staffer_meal_list')
         
     @cherrypy.expose
@@ -251,16 +251,23 @@ class Root:
 
         # badge will be none if lookup fails
         if not badge:
+            print('------------------------after all this badge not found------------------------')
             return json.dumps({"success": False, "badge": badge, "reason": "Could not locate badge."})
         session = models.new_sesh()
-
+        print('---------------done trying to find badge------------------------------')
         now = now_utc()
         meal = session.query(Meal).filter(Meal.start_time < now, Meal.end_time > now).order_by(Meal.end_time).one_or_none()
 
         try:
             attend = session.query(Attendee).filter_by(badge_num=badge).one()
+
+            print(attend.public_id)
+            print(attend.badge_num)
+            print(attend.full_name)
+            print('------------------------------done printing found badges---------------')
             # checks if attendee already in DB
         except sqlalchemy.orm.exc.NoResultFound:
+            print('-------------------no result found-------------------')
             response = shared_functions.lookup_attendee(badge)
             if 'error' in response:
                 session.close()
@@ -279,7 +286,7 @@ class Root:
                 attend.full_name = response['result']['full_name']
                 session.add(attend)
                 session.commit()
-            
+
         if meal:
             # check for existing carryout order for this meal period
             order = session.query(Order).filter(Order.attendee_id == attend.public_id,
