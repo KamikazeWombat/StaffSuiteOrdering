@@ -77,7 +77,7 @@
     {% endif %}
     <br/>
     Notes
-    <textarea name="notes" cols="50" rows="4" maxlength="150"{% if order.locked %} disabled{% endif %}
+    <textarea name="notes" cols="50" rows="4" maxlength="120"{% if order.locked %} disabled{% endif %}
               placeholder="Notes/requests. No guarantees that requests will be honored due to lack of time and staff for order processing, please be aware of your own allergies."
     >{{ order.notes }}</textarea>
     <br/>
