@@ -233,6 +233,7 @@ class Root:
         """
         Processes checkin requests for walk-ins
         """
+        badge = badge.replace('plussign', '+')
         # remove accidental whitespace
         badge = badge.strip()
 
@@ -243,6 +244,7 @@ class Root:
         # barcode on badges starts with ~
         if badge[0] == "~":
             badge = shared_functions.barcode_to_badge(badge)
+
         else:
             try:
                 badge = int(badge)
@@ -252,7 +254,7 @@ class Root:
         # badge will be none if lookup fails
         if not badge:
             print('------------------------after all this badge not found------------------------')
-            return json.dumps({"success": False, "badge": badge, "reason": "Could not locate badge."})
+            return json.dumps({"success": False, "badge": '', "reason": "Could not locate badge."})
         session = models.new_sesh()
         print('---------------done trying to find badge------------------------------')
         now = now_utc()
