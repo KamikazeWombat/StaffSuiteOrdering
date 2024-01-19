@@ -13,7 +13,7 @@
         message = document.getElementById("message");
         message.innerHTML = "Loading...";
         allergy.innerHTML = "";
-        fetch("checkin_badge?badge=" + barcode.value, {credentials: "include"}, ).then((response) => {
+        fetch("checkin_badge?badge=" + barcode.value.replace('+', 'plussign'), {credentials: "include"}, ).then((response) => {
             return response.json();
         }).then((response) => {
             barcode.value = "";
