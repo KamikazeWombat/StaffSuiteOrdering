@@ -8,9 +8,9 @@ import sqlalchemy.exc
 
 from config import cfg, dec_base
 from models import meal, attendee, order, ingredient, department, dept_order, checkin
+from shared_functions import create_my_db_engine
 
-# todo: hardcoded for now, needs to be added to config
-engine = create_engine(cfg.database_location, pool_size=25, max_overflow=50)
+engine = create_my_db_engine()
 
 new_sesh = sessionmaker(bind=engine)
 
@@ -20,6 +20,7 @@ try:
 except sqlalchemy.exc.OperationalError as e:
     print('------------------Operational error here means either no database exists or bad user/pass----------------')
     print("Attempting to create blank database")
+    # todo: why is all the names and passwords hardcoded? lol
     con = psycopg2.connect(dbname='postgres',
                            user='postgres', host='',
                            password='password')
