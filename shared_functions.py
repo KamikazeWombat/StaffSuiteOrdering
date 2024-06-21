@@ -1002,7 +1002,8 @@ def create_my_db_engine():
     """
     engine = None
     if "pool_size" in cfg.db_config and "max_overflow" in cfg.db_config:
-        engine = create_engine(cfg.database_location, pool_size=25, max_overflow=50)
+        engine = create_engine(cfg.database_location, pool_size=cfg.db_config.pool_size,
+                               max_overflow=cfg.db_config.max_overflow)
     else:
         engine = create_engine(cfg.database_location)
     return engine
