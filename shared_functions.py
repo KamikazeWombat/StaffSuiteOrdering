@@ -11,7 +11,6 @@ from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzlocal
 import pytz
-from sqlalchemy import create_engine
 import sqlalchemy.orm.exc
 import sqlalchemy.exc
 
@@ -19,7 +18,7 @@ from config import cfg, c
 import models
 from models.ingredient import Ingredient
 from models.department import Department
-
+from models import create_my_db_engine
 
 class HTTPRedirect(cherrypy.HTTPRedirect):
     #copied from https://github.com/magfest/ubersystem/blob/132143b385442677cb08178e16f714180ad75413/uber/errors.py
@@ -994,19 +993,6 @@ def is_vip(badge, session=None):
             return True
 
     return False
-
-
-def create_my_db_engine():
-    """
-    Creates DB engine based on config settings
-    """
-    engine = None
-    if "pool_size" in cfg.db_config and "max_overflow" in cfg.db_config:
-        engine = create_engine(cfg.database_location, pool_size=cfg.db_config.pool_size,
-                               max_overflow=cfg.db_config.max_overflow)
-    else:
-        engine = create_engine(cfg.database_location)
-    return engine
 
 
 def first_older_than_second(first_version, second_version=False):

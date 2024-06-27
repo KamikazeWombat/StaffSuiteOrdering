@@ -97,11 +97,11 @@ class Config:
         cdata = json.load(configfile)
         configfile.close()
 
-        self.version = ''
-        try:
+        self.version = "1.1.10"  # code version
+        if 'last_version_loaded' in cdata:
             self.last_version_loaded = cdata['last_version_loaded']
-        except KeyError:
-            self.last_version_loaded = "0.0.0"
+        else:
+            self.last_version_loaded = self.version
 
         self.admin_list = ''
         self.staffer_list = ''
@@ -116,6 +116,10 @@ class Config:
         self.twilio_key_location = cdata['twilio_key_location']
 
         self.database_location = cdata['database_location']
+        if 'db_config' in cdata:
+            self.db_config = cdata['db_config']
+        else:
+            self.db_config = None
         self.local_print = int(cdata['local_print'])
         self.remote_print = int(cdata['remote_print'])
         self.multi_select_count = int(cdata['multi_select_count'])
@@ -123,8 +127,10 @@ class Config:
         self.schedule_tolerance = int(cdata['schedule_tolerance'])
         self.date_format = cdata['date_format']
         self.ss_hours = int(cdata['ss_hours'])
-        self.early_login_enabled = cdata['early_login_enabled']
-
+        if 'early_login_enabled' in cdata:
+            self.early_login_enabled = cdata['early_login_enabled']
+        else:
+            self.early_login_enabled = False
         self.room_location = str(cdata['room_location'])
         self.location_url = str(cdata['location_url'])
         self.ss_url = str(cdata['ss_url'])
@@ -194,6 +200,7 @@ class Config:
             'aws_key_location': self.aws_key_location,
             'twilio_key_location': self.twilio_key_location,
             'database_location': self.database_location,
+            'db_config': self.database_location,
             'local_print': self.local_print,
             'remote_print': self.remote_print,
             'multi_select_count': self.multi_select_count,

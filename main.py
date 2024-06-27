@@ -28,7 +28,6 @@ def load_http_server():
 def main():
     load_departments()
     load_http_server()
-    cfg.version = "1.1.10"  # code version
 
     older = first_older_than_second(cfg.last_version_loaded, cfg.version)
     if older:
