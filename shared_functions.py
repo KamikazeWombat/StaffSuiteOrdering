@@ -18,7 +18,7 @@ from config import cfg, c
 import models
 from models.ingredient import Ingredient
 from models.department import Department
-
+from models import create_my_db_engine
 
 class HTTPRedirect(cherrypy.HTTPRedirect):
     #copied from https://github.com/magfest/ubersystem/blob/132143b385442677cb08178e16f714180ad75413/uber/errors.py
@@ -333,7 +333,8 @@ def order_split(session, choices, orders=""):
         # this happens if no toppings in list
         return []
 
-    choices_list = session.query(Ingredient).filter(Ingredient.id.in_(choices_list)).all()
+    # sorts so that choices will be displayed in correct order when editing existing orders
+    choices_list = session.query(Ingredient).filter(Ingredient.id.in_(choices_list)).order_by(Ingredient.sort_by).all()
     tuple_list = []
     
     if orders:
@@ -344,12 +345,12 @@ def order_split(session, choices, orders=""):
     
     for choice in choices_list:
         if choice in orders_list:
-            mytuple = (1, choice.label, choice.description, choice.id)
+            mytuple = (1, choice.label, choice.description, choice.id, choice.sort_by)
         else:
-            mytuple = ('', choice.label, choice.description, choice.id)
+            mytuple = ('', choice.label, choice.description, choice.id, choice.sort_by)
             
         tuple_list.append(mytuple)
-    
+
     return tuple_list
 
 
@@ -453,6 +454,12 @@ def meal_join(session, params, field):
                     desc = params[desc]
                 except KeyError:
                     desc = ''
+
+                try:
+                    sort = field + 'sort' + str(count)
+                    sort = params[sort]
+                except KeyError:
+                    sort = 0
     
                 if new_ing or fieldid == '':
                     failed_adding = True
@@ -461,6 +468,7 @@ def meal_join(session, params, field):
                         ing = Ingredient()
                         ing.label = label
                         ing.description = desc
+                        ing.sort = sort
                         session.add(ing)
                         try:
                             session.commit()
@@ -479,9 +487,10 @@ def meal_join(session, params, field):
 
                     ing = session.query(Ingredient).filter_by(id=fieldid).one()
                     # if changed saves to DB
-                    if not (ing.label == label and ing.description == desc):
+                    if not (ing.label == label and ing.description == desc and ing.sort_by ==sort):
                         ing.label = label
                         ing.description = desc
+                        ing.sort_by = sort
                         session.commit()
                 
                 result.append(str(fieldid))
@@ -505,6 +514,7 @@ def meal_split(session, toppings):
     except ValueError:
         # this happens if no toppings in list
         return []
+
     try:
         # somehow blank items get in the list sometimes
         id_list.remove('')
@@ -515,7 +525,7 @@ def meal_split(session, toppings):
     ing_list = session.query(Ingredient).filter(Ingredient.id.in_(id_list)).all()
     tuple_list = []
     for ing in ing_list:
-        mytuple = (ing.id, ing.label, ing.description)
+        mytuple = (ing.id, ing.label, ing.description, ing.sort_by)
         tuple_list.append(mytuple)
         
     return tuple_list
@@ -529,7 +539,7 @@ def meal_blank_toppings(toppings, count):
     """
     
     while len(toppings) < count:
-        toppings.append(('', '', ''))
+        toppings.append(('', '', '', ''))
         
     return toppings
 
@@ -985,17 +995,21 @@ def is_vip(badge, session=None):
     return False
 
 
-def older_than_current_version(comparable_version):
+def first_older_than_second(first_version, second_version=False):
     """
-    Compares version numbers and returns True if supplied version is older than current version
+    Compares version numbers and returns True if first supplied version is older (smaller) than second version
     """
-    current_list = cfg.version.split('.')
-    standard_list = comparable_version.split('.')
+    # uses last version number from config if none supplied, for backwards compatibility
+    if second_version:
+        second_list = second_version.split('.')
+    else:
+        second_list = cfg.version.split('.')
+    first_list = first_version.split('.')
 
-    for cur, std in zip(current_list, standard_list):
-        if int(std) < int(cur):
+    for first, second in zip(first_list, second_list):
+        if int(first) < int(second):
             return True
-        if int(std) > int(cur):
+        if int(first) > int(second):
             return False
     return False  # if the versions are the same
 
@@ -1003,12 +1017,24 @@ def older_than_current_version(comparable_version):
 def do_upgrade():
     """
     Runs any potentially needed upgrades,
-    then saves CFG to show current server version so it doesn't need to run next time.
+    then saves CFG to show current server version so that it doesn't need to run next time.
+
+    I have chosen to put the version update and cfg save code in each section to reduce possibility of problems
+    being caused by re-running a section of code that already ran if a later version update fails while doing multiple.
     """
     changes_needed = False
     # put upgrade code here
-    cfg.last_version_loaded = cfg.version
-    cfg.save(cfgonly=True)
+    if first_older_than_second("1.1.10", cfg.last_version_loaded):
+        # Added sort_by field to Ingredient table so that we can choose what order they show instead of being random
+        engine = create_my_db_engine()
+        connection = engine.connect()
+        query = f'ALTER TABLE ingredient ADD sort_by INTEGER ;'
+        connection.execute(query)
+        connection.close()
+        engine.dispose()
+        cfg.last_version_loaded = "1.1.10"
+        cfg.save(cfgonly=True)
+
     return changes_needed
 
 
