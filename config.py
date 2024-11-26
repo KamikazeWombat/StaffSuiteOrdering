@@ -115,7 +115,6 @@ class Config:
         self.aws_key_location = cdata['aws_key_location']
         self.twilio_key_location = cdata['twilio_key_location']
 
-        self.database_location = cdata['database_location']
         if 'db_config' in cdata:
             self.db_config = cdata['db_config']
         else:
