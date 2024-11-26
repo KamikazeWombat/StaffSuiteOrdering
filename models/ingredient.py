@@ -12,3 +12,4 @@ class Ingredient(dec_base):
     # meal_id = Column(Integer, ForeignKey('meal.id'))
     label = Column('label', String)
     description = Column('description', String)
+    sort_by = Column('sort_by', Integer)
