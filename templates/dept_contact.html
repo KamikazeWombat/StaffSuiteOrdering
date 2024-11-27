@@ -4,29 +4,41 @@
 {% block content %}
 
 <div class="container">
-  <h2 class="form-signin-heading">Default Contact Details for {{ dept.name }}</h2>
-  <h3>This is the contact info that will be used when your Department's order bundles are processed if no meal-specific contact info has been specified.</h3>
+  {% if dept %}
+    <h2 class="form-signin-heading">Contact Details for {{ dept.name }}</h2>
+  {% else %}
+    <h2 class="form-signin-heading">Please choose your department{{ dept.name }}</h2>
+  {% endif %}
+  <h3>This is the contact info that will be used when your Department's order bundles are ready.</h3>
+  <form>
+    {{ macros.dropdown(field='dept_id_dropdown', options=depts) }}
+    {% if not dept %}
+      <button class="btn btn-lg btn-primary " type="submit">Choose Department</button>
+    {% else %}
+      <button class="btn btn-lg btn-primary " type="submit">Switch Department</button>
+    {% endif %}
+  </form>
   <form role="form">
     <input type="hidden" name="dept_id" value="{{ dept.id }}"/>
     <input type="hidden" name="original_location" value="{{ original_location }}"/>
     <div class="section-border">
       <p>Slack Channel   : <textarea name="slack_channel" cols="50" rows="1"
-                placeholder="Where to send the message"
+                placeholder="Where to send the message"{% if not dept %} disabled{% endif %}
       >{{ dept.slack_channel }}</textarea>
         <br/>What channel or DM to post in, eg 'staffsuiteordering, #bottesting, @wombat3'
         <br/>Must be <b>comma separated</b> if more than one. If the channel is private you must invite @Tuber Eats to the channel before it can post there</p>
 
-      <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"
+      <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"{% if not dept %} disabled {% endif %}
                 placeholder="Who to ping in Slack?"
       >{{ dept.slack_contact }}</textarea><br/>Who to ping in Slack? (pings not required, will send message with or without this)</p>
     </div>
     <div class="section-border">
-      <p>SMS           : <textarea name="sms_contact" cols="50" rows="4"
+      <p>SMS           : <textarea name="sms_contact" cols="50" rows="4"{% if not dept %} disabled {% endif %}
                 placeholder="Phone numbers to send SMS messages to, comma separated"
       >{{ dept.sms_contact }}</textarea><br/>Phone numbers to send SMS messages to, <b>comma separated</b></p>
     </div>
     <div class="section-border">
-      <p>Email           : <textarea name="email_contact" cols="50" rows="4"
+      <p>Email           : <textarea name="email_contact" cols="50" rows="4"{% if not dept %} disabled {% endif %}
                 placeholder="Email addresses to send emails to, comma separated"
       >{{ dept.email_contact }}</textarea><br/>Email addresses to send emails to, <b>comma separated</b></p>
     </div>
@@ -35,6 +47,7 @@
                        placeholder="How you else would like to be contacted for order pickup.  Text, email, phone call..."
       >{{ dept.other_contact }}</textarea></p>
     </div>-->
+
     <button class="btn btn-lg btn-primary " type="submit">Update Department's Default Contact Info</button>
   </form>
   <a href="{{ original_location }}&skip_contact=true" class="btn btn-lg btn-primary ">Return to previous page</a>

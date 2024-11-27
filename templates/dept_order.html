@@ -7,15 +7,17 @@
   <h2 class="form-signin-heading">View/Edit Department Order Bundle for {{ meal.meal_name }} for {{ dept.name }}</h2>
   {% if no_contact %}
     <div class="section-border" style="color:red;">
-      <h4>Please add contact info for your department. </h4>
+      <h4>Please add contact info for your department <a href="dept_contact?dept_id_dropdown={{ dept_order.dept_id }}">here</a>. </h4>
     </div>
   {% endif %}
+  <!-- removing contact info form from this page, it has its own page now
   <div class="section-border">
     <form role="form">
     <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
     <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
     <h3>{{ dept.name }} Department's contact info for order completion</h3>
     <p>Notification is automatically sent to any info submitted below when Staff Suite marks your Dept's order ready for pickup.</p>
+
     <p>Slack Channel   : <textarea name="slack_channel" cols="50" rows="1"
               placeholder="Where to send the Slack message"
       {% if dept_order.completed %} disabled {% endif %}
@@ -37,23 +39,23 @@
               placeholder="Email addresses to send emails to, comma separated"
       {% if dept.completed %} disabled {% endif %}
     >{{ dept.email_contact }}</textarea><br/>Email addresses to send emails to, comma separated</p>
-<!--
+
     <p>Other Contact   : <textarea name="other_contact" cols="50" rows="4"
                      placeholder="How you else would like to be contacted for order pickup.  Please remember that fulfilment staff are busy so automated contact options above are preferred."
       {% if dept_order.completed %} disabled {% endif %}
     >{{ dept_order.other_contact }}</textarea></p>
--->
-    <p>The above contact info is the default for meal order bundle completion for this department.  </p>
-    <p>All contact info sections are optional</p>
+
+    <p>The above contact info is for meal order bundle completion for this department.</p>
+    <p>All contact methods are optional, but we recommend you fill at least one.</p>
     <button class="btn btn-lg btn-primary" type="submit">Update Department's Contact Info</button>
   </form></div>
-
+-->
 
 
   {% if not session.is_food_manager or session.is_dh or session.is_admin %}
     <form class="section-border">
       <h3>Add someone as a Food Manager</h3>
-      A food manager can create orders for others and manage order overrides for order which are not otherwise eligible, same as what a DH can do in the Tuber Eats system
+      A food manager can create orders for others and manage order overrides for orders which are not otherwise eligible, same as what a DH can do in the Tuber Eats system
       <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}"/>
       <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}"/>
       <br/>
@@ -66,18 +68,15 @@
   {% if not dept_order.started %}
     <div  class="section-border">
       <h3>Create Meal Order for other attendee:</h3>
-    <form>
-      <table><tr>
-        <td>
-          <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}">
-          <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}">
-          {{ macros.dropdown(field='order_department', options=departments, is_required=True) }}
-        </td>
-        <td>Badge Number: <input type="text" name="order_badge"/></td>
-        <td><button class="btn btn-lg btn-primary" type="submit">Create Order</button></td>
-      </tr></table>
-    </form>
-      </div>
+      <form>
+        <input type="hidden" name="meal_id" value="{{ dept_order.meal_id }}">
+        <input type="hidden" name="dept_id" value="{{ dept_order.dept_id }}">
+        {{ macros.dropdown(field='order_department', options=departments, is_required=True) }}
+
+        Badge Number: <input type="text" name="order_badge"/>
+        <button class="btn btn-lg btn-primary" type="submit">Create Order</button>
+      </form>
+    </div>
   {% endif %}
   
   {% if dept_order.started %}<br/><h3 style="color:darkgreen;">Meal Prep Started: {{ dept_order.start_time }} </h3>{% endif %}
