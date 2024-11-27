@@ -1772,7 +1772,7 @@ class Root:
     
     @dh_or_staffer
     @cherrypy.expose
-    def dept_contact(self, dept_id, message="", original_location=None, **params):
+    def dept_contact(self, dept_id="", message="", original_location=None, **params):
         """
         Displays and allows updating of Department's default contact info
         """
@@ -1786,9 +1786,25 @@ class Root:
 
         original_location = shared_functions.create_valid_user_supplied_redirect_url(original_location,
                                                                                      default_url='staffer_meal_list')
+
         session = models.new_sesh()
-        dept = session.query(Department).filter_by(id=dept_id).one()
-        
+
+        if dept_id:
+            # Submitting main form
+            dept = session.query(Department).filter_by(id=dept_id).one()
+            dept_id_dropdown = dept_id
+            departments = department_split(session)
+        elif "dept_id_dropdown" in params:
+            # Choosing department from dropdown
+            dept = session.query(Department).filter_by(id=params['dept_id_dropdown']).one()
+            dept_id_dropdown = params['dept_id_dropdown']
+            departments = department_split(session, dept_id_dropdown)
+        else:
+            # When going to page without having already chosen a dept
+            dept = ""
+            dept_id_dropdown = ""
+            departments = department_split(session)
+
         if 'slack_channel' in params:
             # save record
             dept.slack_contact = params['slack_contact']
@@ -1804,6 +1820,8 @@ class Root:
         session.close()
         template = env.get_template('dept_contact.html')
         return template.render(dept=dept,
+                               dept_id_dropdown=dept_id_dropdown,
+                               depts=departments,
                                original_location=original_location,
                                messages=messages,
                                session=session_info,

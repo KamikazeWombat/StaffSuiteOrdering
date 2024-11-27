@@ -130,18 +130,19 @@
             <tr>
               <td><a href="staffer_meal_list">My Order List</a> |</td>
               {% if session.is_ss_staffer or session.is_admin %}
-              <td><a href="ssf_meal_list">Fulfilment</a> |</td>
-              <td><a href="dinein_checkin">Dine-In Check-In</a> |</td>
-              <td><a href="custom_label">Custom Label</a> |</td>
+                  <td><a href="ssf_meal_list">Fulfilment</a> |</td>
+                  <td><a href="dinein_checkin">Dine-In Check-In</a> |</td>
+                  <td><a href="custom_label">Custom Label</a> |</td>
               {% endif %}
               {% if session.is_dh or session.is_admin %}
-              <td><a href="dept_order_selection">Dept Orders |</a></td>
+                <td><a href="dept_contact">Dept Contact Info</a> |</td>
+                <td><a href="dept_order_selection">Dept Orders</a> |</td>
               {% endif %}
               {% if session.is_admin %}
-              <td><a href="manage_vip">Manage VIPS</a> |</td>
-              <td><a href="meal_setup_list">Admin Meal List</a> |</td>
-              <td><a href="import_export">Import/Export</a> |</td>
-              <td><a href="config">Config</a> |</td>
+                <td><a href="manage_vip">Manage VIPS</a> |</td>
+                <td><a href="meal_setup_list">Admin Meal List</a> |</td>
+                <td><a href="import_export">Import/Export</a> |</td>
+                <td><a href="config">Config</a> |</td>
               {% endif %}
 
 
