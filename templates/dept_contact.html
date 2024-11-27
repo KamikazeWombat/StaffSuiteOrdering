@@ -10,8 +10,9 @@
     <h2 class="form-signin-heading">Please choose your department{{ dept.name }}</h2>
   {% endif %}
   <h3>This is the contact info that will be used when your Department's order bundles are ready.</h3>
+  <p>Notification is automatically sent to any info submitted below when Staff Suite marks your Dept's order ready for pickup.</p>
   <form>
-    {{ macros.dropdown(field='dept_id_dropdown', options=depts) }}
+    {{ macros.dropdown(field='dept_id_dropdown', options=depts, is_required=True) }}
     {% if not dept %}
       <button class="btn btn-lg btn-primary " type="submit">Choose Department</button>
     {% else %}
@@ -26,7 +27,8 @@
                 placeholder="Where to send the message"{% if not dept %} disabled{% endif %}
       >{{ dept.slack_channel }}</textarea>
         <br/>What channel or DM to post in, eg 'staffsuiteordering, #bottesting, @wombat3'
-        <br/>Must be <b>comma separated</b> if more than one. If the channel is private you must invite @Tuber Eats to the channel before it can post there</p>
+        <br/>Must be <b>comma separated</b> if more than one. If the channel is private you must invite @Tuber Eats to the channel before it can post there
+      <br/>If DMing someone or pinging someone please put in the username <i>you will actually have in January<i/></p>
 
       <p>Slack Contact(s): <textarea name="slack_contact" cols="50" rows="4"{% if not dept %} disabled {% endif %}
                 placeholder="Who to ping in Slack?"
