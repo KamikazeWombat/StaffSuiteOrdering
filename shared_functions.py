@@ -999,7 +999,7 @@ def first_older_than_second(first_version, second_version=False):
     """
     Compares version numbers and returns True if first supplied version is older (smaller) than second version
     """
-    # uses last version number from config if none supplied, for backwards compatibility
+    # uses current version number from config if none supplied, for backwards compatibility
     if second_version:
         second_list = second_version.split('.')
     else:
@@ -1024,12 +1024,12 @@ def do_upgrade():
     """
     changes_needed = False
     # put upgrade code here
-    if first_older_than_second("1.1.10", cfg.last_version_loaded):
+    if first_older_than_second(cfg.last_version_loaded, "1.1.10"):
         # Added sort_by field to Ingredient table so that we can choose what order they show instead of being random
         engine = create_my_db_engine()
         connection = engine.connect()
-        query = f'ALTER TABLE ingredient ADD sort_by INTEGER ;'
-        connection.execute(query)
+        query = 'ALTER TABLE ingredient ADD sort_by INTEGER;'
+        connection.execute(sqlalchemy.text(query))
         connection.close()
         engine.dispose()
         cfg.last_version_loaded = "1.1.10"

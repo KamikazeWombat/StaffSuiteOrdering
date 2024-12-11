@@ -2,7 +2,11 @@
 {% block title %}Edit Meal{% endblock %}
 {% block backlink %}{% endblock %}
 {% block content %}
-
+<style>
+  .form-section{
+   display: flex;
+  }
+</style>
 <div class="container">
   <h2>{% if meal.id %}Edit Meal{% else %}Create Meal{% endif %}</h2>
     <div class="section-border">
@@ -11,60 +15,61 @@
       Toggle lets the staffer choose only one of the options, Multi-Select gives a group of check boxes any combination of which can be checked.<br/>
     </div>
   <form role="form">
-    <table style="width:100%">
-      <tr> <td> <input type="hidden" name="id" value ="{{ meal.id }}">Meal Name</td>
-        <td> <input type="text" class="form-control" placeholder="Meal Name" name="meal_name" value="{{ meal.meal_name }}" required autofocus /> </td>
-      </tr>
-      <tr> <td>Start Time</td>
-        <td> <input type="datetime-local" class="form-control" placeholder="Start Time" name="start_time"
-                    {% if meal.start_time %}value="{{ meal.start_time.isoformat() }}"{% endif %} required /> </td>
-      </tr>
-      <tr><td>End Time</td>
-      <td> <input type="datetime-local" class="form-control" placeholder="End Time" name="end_time"
-                  {% if meal.end_time %}value="{{ meal.end_time.isoformat() }}"{% endif %}} required /></td>
-      </tr>
-      <tr><td>Order Cutoff Time</td>
-      <td>
-        <input type="datetime-local" class="form-control" placeholder="Cutoff time for ordering" name="cutoff"
-                 {% if meal.cutoff %} value="{{ meal.cutoff.isoformat() }}"{% endif %} required /></td>
-      </tr>
-      <tr><td>Meal Description</td>
-        <td><input type="text" class="form-control" placeholder="Description" name="description" value="{{ meal.description }}" required /></td>
-      </tr>
-      <tr><td>
-        <p>------------</p>
-        <input type="text" class="form-control" placeholder="First Toggle Select Title" name="toggle1_title" value="{{ meal.toggle1_title }}"/>
-        {{ macros.textbox_list('toggle1', toggles1, 'First Toggle Option') }}
-      </td></tr>
-      <tr><td>
-        <p>------------</p>
-        <input type="text" class="form-control" placeholder="Second Toggle Select Title" name="toggle2_title" value="{{ meal.toggle2_title }}"/>
-        {{ macros.textbox_list('toggle2', toggles2, 'Second Toggle Option') }}
-      </td></tr>
-      <tr><td>
-        <p>------------</p>
-        <input type="text" class="form-control" placeholder="Third Toggle Select Title" name="toggle3_title" value="{{ meal.toggle3_title }}"/>
-        {{ macros.textbox_list('toggle3', toggles3, 'Third Toggle Option') }}
-      </td></tr>
-      <tr><td>
-        <p>------------</p>
-        <input type="text" class="form-control" placeholder="Multi-Select 1 Title" name="toppings1_title" value="{{ meal.toppings1_title }}"/>
-      </td></tr>
-        {{ macros.textbox_list('toppings1', toppings1, 'Multiple Select 1 Option') }}
-      <tr><td>
-        <p>------------</p>
-        <input type="text" class="form-control" placeholder="Multi-Select 2 Title" name="toppings2_title" value="{{ meal.toppings2_title }}"/>
-      </td></tr>
-        {{ macros.textbox_list('toppings2', toppings2, 'Multiple Select 2 Option') }}
-      <tr><td><button class="btn btn-lg btn-primary " type="submit">Submit</button>
-        ----
-      <button class="btn btn-lg btn-primary " onclick="window.location.href = 'meal_setup_list';">Cancel</button>
-      {% if meal.id %}
-        ----
-        <a class="btn btn-lg btn-primary" href="meal_delete_confirm?meal_id={{ meal.id }}">Delete</a></td></tr>
-      {% endif %}
-    </table>
-    
+    <div class="form-section">
+      <input type="hidden" name="id" value ="{{ meal.id }}">
+      <label>Meal Name</label>
+      <input type="text" class="form-control" placeholder="Meal Name" name="meal_name" value="{{ meal.meal_name }}" required autofocus />
+    </div>
+    <div class="form-section">
+      <label>Start Time</label>
+      <input type="datetime-local" class="form-control" placeholder="Start Time" name="start_time"
+                  {% if meal.start_time %}value="{{ meal.start_time.isoformat() }}"{% endif %} required />
+    </div>
+    <div class="form-section">
+      <label>End Time</label>
+      <input type="datetime-local" class="form-control" placeholder="End Time" name="end_time"
+              {% if meal.end_time %}value="{{ meal.end_time.isoformat() }}"{% endif %}} required />
+    </div>
+    <div class="form-section">
+      <label>Order Cutoff Time</label>
+      <input type="datetime-local" class="form-control" placeholder="Cutoff time for ordering" name="cutoff"
+               {% if meal.cutoff %} value="{{ meal.cutoff.isoformat() }}"{% endif %} required />
+    </div>
+    <div class="form-section">
+      Meal Description
+      <input type="text" class="form-control" placeholder="Description" name="description" value="{{ meal.description }}" required />
+    </div>
+
+    <div class="section-border">
+      <input type="text" class="form-control" placeholder="First Toggle Select Title" name="toggle1_title" value="{{ meal.toggle1_title }}"/>
+      {{ macros.textbox_list('toggle1', toggles1, 'First Toggle Option') }}
+    </div>
+    <div class="section-border">
+      <input type="text" class="form-control" placeholder="Second Toggle Select Title" name="toggle2_title" value="{{ meal.toggle2_title }}"/>
+      {{ macros.textbox_list('toggle2', toggles2, 'Second Toggle Option') }}
+    </div>
+    <div class="section-border">
+      <input type="text" class="form-control" placeholder="Third Toggle Select Title" name="toggle3_title" value="{{ meal.toggle3_title }}"/>
+      {{ macros.textbox_list('toggle3', toggles3, 'Third Toggle Option') }}
+    </div>
+    <div class="section-border">
+      <input type="text" class="form-control" placeholder="Multi-Select 1 Title" name="toppings1_title" value="{{ meal.toppings1_title }}"/>
+      {{ macros.textbox_list('toppings1', toppings1, 'Multiple Select 1 Option') }}
+    </div>
+    <div class="section-border">
+      <input type="text" class="form-control" placeholder="Multi-Select 2 Title" name="toppings2_title" value="{{ meal.toppings2_title }}"/>
+      {{ macros.textbox_list('toppings2', toppings2, 'Multiple Select 2 Option') }}
+    </div>
+
+  <button class="btn btn-lg btn-primary " type="submit">Submit</button>
+    ----
+  <button class="btn btn-lg btn-primary " onclick="window.location.href = 'meal_setup_list';">Cancel</button>
+  {% if meal.id %}
+    ----
+    <a class="btn btn-lg btn-primary" href="meal_delete_confirm?meal_id={{ meal.id }}">Delete</a>
+  {% endif %}
+
+
   </form>
 </div>
 {% endblock content %}

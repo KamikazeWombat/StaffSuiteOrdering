@@ -2165,10 +2165,15 @@ class Root:
         session = models.new_sesh()
         depts = session.query(models.department.Department).order_by(models.department.Department.name).all()
 
-        export = "Name,is_Shiftless,SMS,Slack_Channel,Slack_Contact,Other\n"
+        export = "Name,has_some_contact_info,is_Shiftless,SMS,Slack_Channel,Slack_Contact,Other\n"
         for dept in depts:
             export += dept.name
             export += ","
+            if(dept.sms_contact or dept.slack_channel or dept.other_contact):
+                export += "True"
+            else:
+                export += "False"
+            export += ','
             export += str(dept.is_shiftless)
             export += ','
             export += str(dept.sms_contact)
