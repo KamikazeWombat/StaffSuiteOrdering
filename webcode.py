@@ -10,6 +10,7 @@ from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzlocal
 import pdfkit
 import pytz
+import re
 from sqlalchemy import desc
 import sqlalchemy.orm.exc
 from sqlalchemy.orm import joinedload, subqueryload
@@ -2174,15 +2175,15 @@ class Root:
             else:
                 export += "False"
             export += ','
-            export += str(dept.is_shiftless)
+            export += re.sub(r'[\r\n;,]', ' ', str(dept.is_shiftless))
             export += ','
-            export += str(dept.sms_contact)
+            export += re.sub(r'[\r\n;,]', ' ', str(dept.sms_contact))
             export += ','
-            export += dept.slack_channel
+            export += re.sub(r'[\r\n;,]', ' ', str(dept.slack_channel))
             export += ','
-            export += dept.slack_contact
+            export += re.sub(r'[\r\n;,]', ' ', str(dept.slack_contact))
             export += ','
-            export += str(dept.other_contact)
+            export += re.sub(r'[\r\n;,]', ' ', str(dept.other_contact))
             export += '\n'
 
         exportfile = open('pdfs/contact_completion_export.csv', 'w', encoding='utf-8')
