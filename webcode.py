@@ -2154,3 +2154,35 @@ class Root:
             shared_functions.import_meals(jsondata['meals'], replace_all=params['replace_meals_list'])
 
         return
+
+
+    @cherrypy.expose
+    @admin_req
+    def export_contact_completion(self):
+        """
+        Exports CSV of contact info completion, so we can harrass departments who haven't done it yet.
+        """
+        session = models.new_sesh()
+        depts = session.query(models.department.Department).order_by(models.department.Department.name).all()
+
+        export = "Name,is_Shiftless,SMS,Slack_Channel,Slack_Contact,Other\n"
+        for dept in depts:
+            export += dept.name
+            export += ","
+            export += str(dept.is_shiftless)
+            export += ','
+            export += str(dept.sms_contact)
+            export += ','
+            export += dept.slack_channel
+            export += ','
+            export += dept.slack_contact
+            export += ','
+            export += str(dept.other_contact)
+            export += '\n'
+
+        exportfile = open('pdfs/contact_completion_export.csv', 'w', encoding='utf-8')
+        exportfile.write(export)
+        exportfile.close()
+
+        session.close()
+        raise HTTPRedirect('pdfs/contact_completion_export.csv')
