@@ -468,7 +468,7 @@ def meal_join(session, params, field):
                         ing = Ingredient()
                         ing.label = label
                         ing.description = desc
-                        ing.sort = sort
+                        ing.sort_by = sort
                         session.add(ing)
                         try:
                             session.commit()
@@ -487,7 +487,7 @@ def meal_join(session, params, field):
 
                     ing = session.query(Ingredient).filter_by(id=fieldid).one()
                     # if changed saves to DB
-                    if not (ing.label == label and ing.description == desc and ing.sort_by ==sort):
+                    if not (ing.label == label and ing.description == desc and ing.sort_by == sort):
                         ing.label = label
                         ing.description = desc
                         ing.sort_by = sort
