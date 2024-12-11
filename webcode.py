@@ -470,11 +470,11 @@ class Root:
             try:
                 # tries to load id from params, if not there or blank does new meal
                 id = params['id']
-                message = 'Meal succesfully updated!'
+                message = 'Meal succesfully added!'
                 if not id == '' and not id == 'None':
                     thismeal = session.query(Meal).filter_by(id=id).one()
                     
-                    message = 'Meal succesfully added!'
+                    message = 'Meal succesfully updated!'
                 else:
                     thismeal = Meal()
             except KeyError:
@@ -2165,10 +2165,15 @@ class Root:
         session = models.new_sesh()
         depts = session.query(models.department.Department).order_by(models.department.Department.name).all()
 
-        export = "Name,is_Shiftless,SMS,Slack_Channel,Slack_Contact,Other\n"
+        export = "Name,has_some_contact_info,is_Shiftless,SMS,Slack_Channel,Slack_Contact,Other\n"
         for dept in depts:
             export += dept.name
             export += ","
+            if(dept.sms_contact or dept.slack_channel or dept.other_contact):
+                export += "True"
+            else:
+                export += "False"
+            export += ','
             export += str(dept.is_shiftless)
             export += ','
             export += str(dept.sms_contact)
