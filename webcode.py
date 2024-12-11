@@ -470,11 +470,11 @@ class Root:
             try:
                 # tries to load id from params, if not there or blank does new meal
                 id = params['id']
-                message = 'Meal succesfully updated!'
+                message = 'Meal succesfully added!'
                 if not id == '' and not id == 'None':
                     thismeal = session.query(Meal).filter_by(id=id).one()
                     
-                    message = 'Meal succesfully added!'
+                    message = 'Meal succesfully updated!'
                 else:
                     thismeal = Meal()
             except KeyError:
