@@ -539,7 +539,7 @@ def meal_blank_toppings(toppings, count):
     """
     
     while len(toppings) < count:
-        toppings.append(('', '', '', ''))
+        toppings.append(('', '', '', 100))
         
     return toppings
 
