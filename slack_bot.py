@@ -48,3 +48,36 @@ def send_message(channels, message, is_error_message=False):
                              str(e), is_error_message=True)
 
     return
+
+
+def load_userlist_page(cursor=""):
+    """
+    Loads page of users.list with optional cursor
+    """
+    if not cfg.slack_authkey:
+        print("----------Slack API key missing so user list request not sent.----------")
+        return
+
+    # according to official docs Slack API returns cursor with an '=' at the end which has to be replaced with '%3D'
+    # testing shows it returns an error if I actually do the replacement they say is required?  lol
+    # cursor = re.sub(r'=', '%3D', cursor)
+
+    headers = {'Content-type': 'application/json'}
+    data = {'token': cfg.slack_authkey,
+            'limit': 100}
+    if cursor:
+        data["cursor"] = cursor
+        print("--------------cursor: " + cursor + " ------------")
+
+    try:
+        response = requests.post('https://slack.com/api/users.list', data, headers)
+
+    except Exception as e:
+        send_message("@wombat3", "General Error loading Slack user list" + '\r\n' +
+                     str(e), is_error_message=True)
+
+    if json.loads(response.text)['ok']:
+        return json.loads(response.text)
+    else:
+        send_message("#bottesting", "Error loading Slack user list" + ' - \r\n' + response.text,
+                     is_error_message=True)

@@ -112,6 +112,8 @@ padding-bottom: 3px;
       <input type="text" name="delete_order"{% if not session.is_super_admin %} disabled {% endif %}>
       <button type="submit"{% if not session.is_super_admin %} disabled {% endif %}>Delete Order</button>
     </form>
+    <br>
+    <a{% if session.is_super_admin %} href="slack_userlist_reset"{% endif %}>Reset and reload Slack User List</a><br/>
   </div>
 
   <div class="section-border">
