@@ -1030,10 +1030,27 @@ def do_upgrade():
         connection = engine.connect()
         query = 'ALTER TABLE ingredient ADD sort_by INTEGER;'
         connection.execute(sqlalchemy.text(query))
+        connection.commit()
         connection.close()
         engine.dispose()
         cfg.last_version_loaded = "1.1.10"
         cfg.save(cfgonly=True)
+        changes_needed = True
+
+    if first_older_than_second(cfg.last_version_loaded, "1.1.13"):
+        # add table for Slack users
+        print("--------------Upgrading to 1.1.13-------------")
+        engine = create_my_db_engine()
+        connection = engine.connect()
+        query = ('CREATE TABLE IF NOT EXISTS slack_user ('
+                 'id VARCHAR PRIMARY KEY NOT NULL, name VARCHAR, display_name VARCHAR, real_name VARCHAR);')
+        connection.execute(sqlalchemy.text(query))
+        connection.commit()
+        connection.close()
+        engine.dispose()
+        cfg.last_version_loaded = "1.1.13"
+        cfg.save(cfgonly=True)
+        changes_needed = True
 
     return changes_needed
 
