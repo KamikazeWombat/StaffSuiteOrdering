@@ -531,15 +531,21 @@ def meal_split(session, toppings):
     return tuple_list
 
 
-def meal_blank_toppings(toppings, count):
+def meal_blank_toppings(toppings_input, count):
     """
     Adds blank toppings to end of list to make added spaces when editing
     :param toppings: list of tuples in format needed for display on meal screens
     :param count: How many lines do you want
     """
-    
+    toppings = list()
+    for topping in toppings_input:
+        if not topping[3]:
+            topping = (topping[0], topping[1], topping[2], 0)
+            toppings.append(topping)
+        else:
+            toppings.append(topping)
     while len(toppings) < count:
-        toppings.append(('', '', '', 100))
+        toppings.append(('', '', '', 999))
         
     return toppings
 
