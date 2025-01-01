@@ -894,9 +894,14 @@ class Root:
             redir = 'meal_setup_list?message=Meal ' + thismeal.meal_name + ' has been Deleted.'
             # orders related to the meal must also be deleted to prevent future conflicts if a new meal gets the same ID
             orders = session.query(Order).filter_by(meal_id=meal_id).all()
+            dept_orders = session.query(DeptOrder).filter_by(meal_id=meal_id).all()
             session.delete(thismeal)
             if orders:
-                session.delete(orders)
+                for order in orders:
+                    session.delete(order)
+            if dept_orders:
+                for dept_order in dept_orders:
+                    session.delete(dept_order)
             session.commit()
             session.close()
             raise HTTPRedirect(redir)
@@ -938,7 +943,7 @@ class Root:
                             'If you work in a non-shift capacity, please click the "Show all meals" button below '
                             'to submit a carryout order.  You will need to have a DH Override your order '
                             'after it has been created or if your department is a non-shift department you can request '
-                            'this change in Slack #Super-Staff-Suite-Ordering.')
+                            'this change in Slack #Super-Staff-Suite-Ordering-App.')
 
         attendee = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
         
