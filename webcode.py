@@ -8,6 +8,7 @@ from datetime import datetime
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzlocal
+import hmac
 import pdfkit
 import pytz
 import re
@@ -2232,8 +2233,14 @@ class Root:
 
 
     @cherrypy.expose
-    def slack_events(self, challenge=""):
+    def slack_events(self, **params):
         """
         Receives incoming events from Slack
         """
-        return challenge
+        print("---------------starting slack_events-----------------------")
+        # print(challenge)
+        for item in params:
+           print(item)
+        print("---------------finish slack_events-----------------")
+
+        return # json.dumps(challenge)
