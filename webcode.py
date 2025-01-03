@@ -1955,6 +1955,7 @@ class Root:
             export['ingredients'][index]['id'] = topping.id
             export['ingredients'][index]['label'] = topping.label
             export['ingredients'][index]['description'] = topping.description
+            export['ingredients'][index]['sort_by'] = topping.sort_by
 
         session.close()
         fileexport = open("pdfs/meal_export.json", 'w')
@@ -1984,7 +1985,6 @@ class Root:
 
         for index, export in enumerate(importdata['meals']):
             meal = Meal()
-            print(export)
             meal.meal_name = export['meal_name']
             meal.start_time = shared_functions.parse_utc(export['start_time'])
             meal.end_time = shared_functions.parse_utc(export['end_time'])
@@ -2011,6 +2011,7 @@ class Root:
             topping.id = export['id']
             topping.label = export['label']
             topping.description = export['description']
+            topping.sort_by = export['sort_by']
             session.add(topping)
 
         session.commit()
