@@ -1,14 +1,11 @@
 # sections of this are copied from https://github.com/magfest/ubersystem/blob/master/uber/site_sections/signups.py
 # then modified for my needs.
 import json
-import requests
-
-import cherrypy
 from datetime import datetime
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzlocal
-import hmac
+
 import pdfkit
 import pytz
 import re
