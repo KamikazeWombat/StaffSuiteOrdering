@@ -97,7 +97,7 @@ class Config:
         cdata = json.load(configfile)
         configfile.close()
 
-        self.version = "1.1.12"  # code version
+        self.version = "1.1.13"  # code version
         if 'last_version_loaded' in cdata:
             self.last_version_loaded = cdata['last_version_loaded']
         else:
@@ -134,8 +134,11 @@ class Config:
         self.location_url = str(cdata['location_url'])
         self.ss_url = str(cdata['ss_url'])
 
+        self.cherrypy_global = cdata['cherrypy_global']
         self.cherrypy = cdata['cherrypy']
         self.cherrypy['/']['tools.staticdir.root'] = os.path.abspath(os.getcwd())
+
+        self.slackapp = cdata['slackapp']
 
         # Uber auth key is needed for login, so no skipping if file does not exist.  Others can be added later
         uber_authfile = open(self.uber_key_location, 'r')
@@ -145,8 +148,9 @@ class Config:
 
         try:
             slack_authfile = open(self.slack_key_location, 'r')
-            self.slack_authkey = slack_authfile.read()
-            self.slack_authkey = self.slack_authkey.strip()
+            slack_data = json.load(slack_authfile)
+            self.slack_authkey = slack_data['token'].strip()
+            self.slack_signing_secret = slack_data['signing_secret'].strip()
             slack_authfile.close()
         except FileNotFoundError:
             pass
@@ -210,7 +214,9 @@ class Config:
             'room_location': self.room_location,
             'location_url': self.location_url,
             'ss_url': self.ss_url,
-            'cherrypy': self.cherrypy
+            'cherrypy_global': self.cherrypy_global,
+            'cherrypy': self.cherrypy,
+            'slackapp': self.slackapp
         }
         
         configfile = open(self.config_file_in_use, 'w')
