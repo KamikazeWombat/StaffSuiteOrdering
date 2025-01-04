@@ -97,7 +97,7 @@ class Config:
         cdata = json.load(configfile)
         configfile.close()
 
-        self.version = "1.2.0"  # code version
+        self.version = "1.2.1"  # code version
         if 'last_version_loaded' in cdata:
             self.last_version_loaded = cdata['last_version_loaded']
         else:
@@ -145,6 +145,8 @@ class Config:
         self.uber_authkey = uber_authfile.read()
         self.uber_authkey = self.uber_authkey.strip()
         uber_authfile.close()
+
+        self.log_conf = cdata['log_conf']
 
         try:
             slack_authfile = open(self.slack_key_location, 'r')
@@ -216,7 +218,8 @@ class Config:
             'ss_url': self.ss_url,
             'cherrypy_global': self.cherrypy_global,
             'cherrypy': self.cherrypy,
-            'slackapp': self.slackapp
+            'slackapp': self.slackapp,
+            'log_conf': self.log_conf
         }
         
         configfile = open(self.config_file_in_use, 'w')
