@@ -1,13 +1,11 @@
 # sections of this are copied from https://github.com/magfest/ubersystem/blob/master/uber/site_sections/signups.py
 # then modified for my needs.
 import json
-import requests
-
-import cherrypy
 from datetime import datetime
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzlocal
+
 import pdfkit
 import pytz
 import re
@@ -15,7 +13,6 @@ from sqlalchemy import desc
 import sqlalchemy.orm.exc
 from sqlalchemy.orm import joinedload, subqueryload
 
-import aws_bot
 from config import env, cfg, c
 from decorators import *
 import models
@@ -33,7 +30,6 @@ from shared_functions import api_login, HTTPRedirect, order_split, order_selecti
                      con_tz, utc_tz, now_utc, now_contz, is_admin, is_ss_staffer, is_dh, is_super_admin, \
                      get_session_info, get_vip_list, is_vip
 import slack_bot
-import twilio_bot
 
 
 class Root:
@@ -291,7 +287,7 @@ class Root:
                 session.add(attend)
                 session.commit()
         except sqlalchemy.exc.MultipleResultsFound:
-            messageforslack = "Someone's Checkin lookup for multiple badges somehow.  " + str(badge)
+            messageforslack = "Someone's Checkin lookup retured multiple badges somehow.  " + str(badge)
             slack_bot.send_message("@wombat3", messageforslack)
             return json.dumps(
                 {"success": False, "badge": badge, "reason": "Found multiple matching badges?".format(badge)})
@@ -895,9 +891,14 @@ class Root:
             redir = 'meal_setup_list?message=Meal ' + thismeal.meal_name + ' has been Deleted.'
             # orders related to the meal must also be deleted to prevent future conflicts if a new meal gets the same ID
             orders = session.query(Order).filter_by(meal_id=meal_id).all()
+            dept_orders = session.query(DeptOrder).filter_by(meal_id=meal_id).all()
             session.delete(thismeal)
             if orders:
-                session.delete(orders)
+                for order in orders:
+                    session.delete(order)
+            if dept_orders:
+                for dept_order in dept_orders:
+                    session.delete(dept_order)
             session.commit()
             session.close()
             raise HTTPRedirect(redir)
@@ -939,7 +940,7 @@ class Root:
                             'If you work in a non-shift capacity, please click the "Show all meals" button below '
                             'to submit a carryout order.  You will need to have a DH Override your order '
                             'after it has been created or if your department is a non-shift department you can request '
-                            'this change in Slack #Super-Staff-Suite-Ordering.')
+                            'this change in Slack #Super-Staff-Suite-Ordering-App.')
 
         attendee = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
 
@@ -1693,28 +1694,7 @@ class Root:
                 return
             raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                                '&message=This Bundle is now marked Complete.')
-
-        dept = session.query(Department).filter_by(id=dept_id).one()
-        meal = session.query(Meal).filter_by(id=meal_id).one()
-        contact_details = shared_functions.load_d_o_contact_details(dept_order, dept)
-
-        if contact_details.slack_channel:
-            message = 'Your food order bundle for ' + meal.meal_name + ' for ' + dept.name + \
-                      ' is ready, please pickup from Staff Suite in ' + cfg.room_location + '.  ' + \
-                      contact_details.slack_contact
-            slack_bot.send_message(contact_details.slack_channel, message)
-
-        if contact_details.sms_contact:
-            twilio_bot.send_message(contact_details.sms_contact, dept.name, meal.meal_name)
-
-        if contact_details.email_contact:
-            aws_bot.send_message(contact_details.email_contact, dept.name, meal.meal_name)
-
-        orders = session.query(Order).filter_by(department_id=dept_order.dept_id, meal_id=dept_order.meal_id) \
-            .options(subqueryload(Order.attendee)).all()
-        for order in orders:
-            if order.attendee.webhook_url:
-                shared_functions.send_webhook(order.attendee.webhook_url, order.attendee.webhook_data)
+        shared_functions.send_completion_messages(dept_id, meal_id)
 
         if dept_order.other_contact:
             session.commit()
@@ -1774,7 +1754,7 @@ class Root:
 
     @dh_or_staffer
     @cherrypy.expose
-    def dept_contact(self, dept_id="", message="", original_location=None, **params):
+    def dept_contact(self, dept_id="", message="", original_location=None, send_test=False, **params):
         """
         Displays and allows updating of Department's default contact info
         """
@@ -1795,7 +1775,7 @@ class Root:
             # Submitting main form
             dept = session.query(Department).filter_by(id=dept_id).one()
             dept_id_dropdown = dept_id
-            departments = department_split(session)
+            departments = department_split(session, dept_id_dropdown)
         elif "dept_id_dropdown" in params:
             # Choosing department from dropdown
             dept = session.query(Department).filter_by(id=params['dept_id_dropdown']).one()
@@ -1814,12 +1794,14 @@ class Root:
             dept.sms_contact = params['sms_contact']
             dept.email_contact = params['email_contact']
             # dept.other_contact = params['other_contact']
-
             session.commit()
-            session.close()
-            raise HTTPRedirect(original_location)
+            dept = session.query(Department).filter_by(id=dept_id).one()
+
+        if send_test:
+            shared_functions.send_completion_messages(dept_id, session=session)
 
         session.close()
+
         template = env.get_template('dept_contact.html')
         return template.render(dept=dept,
                                dept_id_dropdown=dept_id_dropdown,
@@ -1951,6 +1933,7 @@ class Root:
             export['ingredients'][index]['id'] = topping.id
             export['ingredients'][index]['label'] = topping.label
             export['ingredients'][index]['description'] = topping.description
+            export['ingredients'][index]['sort_by'] = topping.sort_by
 
         session.close()
         fileexport = open("pdfs/meal_export.json", 'w')
@@ -1980,7 +1963,6 @@ class Root:
 
         for index, export in enumerate(importdata['meals']):
             meal = Meal()
-            print(export)
             meal.meal_name = export['meal_name']
             meal.start_time = shared_functions.parse_utc(export['start_time'])
             meal.end_time = shared_functions.parse_utc(export['end_time'])
@@ -2007,6 +1989,7 @@ class Root:
             topping.id = export['id']
             topping.label = export['label']
             topping.description = export['description']
+            topping.sort_by = export['sort_by']
             session.add(topping)
 
         session.commit()
@@ -2229,11 +2212,3 @@ class Root:
         print("-------------------finished loading users-----------------")
 
         raise HTTPRedirect('config')
-
-
-    @cherrypy.expose
-    def slack_events(self, challenge=""):
-        """
-        Receives incoming events from Slack
-        """
-        return challenge

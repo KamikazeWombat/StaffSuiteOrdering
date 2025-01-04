@@ -2,10 +2,15 @@ import json
 import re
 import requests
 
+import sqlalchemy.orm.exc
+from sqlalchemy import or_
+
+import models
+from models.slack_user import Slack_User
 from config import cfg
 
 
-def send_message(channels, message, is_error_message=False):
+def send_message(channels, message, pings="", is_error_message=False):
     """
     sends given message to all given channels / users
     is_error_message is there because otherwise an error sending an error message creates a loop
@@ -14,10 +19,38 @@ def send_message(channels, message, is_error_message=False):
     if not cfg.slack_authkey:
         print("----------Slack API key missing so message not sent.----------")
         return
-    channels = re.sub(r'[\r\n; ]', ',', channels)
+    channels = re.sub(r'[\r\n;]', ',', channels)
     channel_list = channels.split(',')
 
     headers = {'Content-type': 'application/json'}
+
+    pings = re.sub(r'[\r\n;]', ',', pings)
+    pings = re.sub(r'[@]', '', pings)
+    pings = pings.split(',')
+    ping_final = ""
+    session = models.new_sesh()
+
+    for user in pings:
+        # look up people in user DB and convert to userids
+        user = user.strip()
+        try:
+            record = session.query(Slack_User).filter(or_(
+                Slack_User.name.icontains(user),
+                Slack_User.display_name.icontains(user)
+            )).one()
+
+            ping_final = ping_final + '@' + record.name + " "
+
+        except sqlalchemy.exc.MultipleResultsFound:
+            # todo: make this return what gave error for test button
+            # go ahead and append whatever failed lookup too in case someone included extra info in their message
+            ping_final = ping_final + user
+
+        except sqlalchemy.orm.exc.NoResultFound:
+            # if nothing matched also go ahead and attach whatever failed lookup in case it's just extra info
+            ping_final = ping_final + user
+
+    message = message + ping_final
 
     for chan in channel_list:
         chan.strip()
