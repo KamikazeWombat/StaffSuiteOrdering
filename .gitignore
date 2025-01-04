@@ -16,3 +16,4 @@ pdfs/
 *.csv
 ~$readme.rtf
 my docs/
+logs/

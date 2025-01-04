@@ -10,7 +10,7 @@ import models
 from models.slack_user import Slack_User
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 app = App(token=cfg.slack_authkey,
           signing_secret=cfg.slack_signing_secret)

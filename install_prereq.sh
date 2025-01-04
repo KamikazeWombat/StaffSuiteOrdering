@@ -16,6 +16,7 @@ pip3 install pdfkit
 pip3 install sqlalchemy
 pip3 install twilio
 pip3 install psycopg2-binary --break-system-packages
+pip3 install slack_bolt --break-system-packages
 
 apt install -y python3-jinja2
 apt install -y python3-requests

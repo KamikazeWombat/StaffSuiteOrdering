@@ -1,5 +1,7 @@
 
 import cherrypy
+import logging
+import logging.config
 
 from config import cfg, c
 from shared_functions import load_departments, first_older_than_second, do_upgrade
@@ -38,6 +40,8 @@ def main():
     cherrypy.tree.mount(SlackApp(), '/slack', cfg.slackapp)
 
     cherrypy.tree.mount(webcode.Root(), '/', cfg.cherrypy)
+    cherrypy.engine.unsubscribe('graceful', cherrypy.log.reopen_files)
+    logging.config.dictConfig(cfg.log_conf)
 
     cherrypy.engine.start()
     cherrypy.engine.block()

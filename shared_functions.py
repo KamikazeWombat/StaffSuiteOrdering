@@ -1274,7 +1274,7 @@ def send_completion_messages(dept_id, meal_id=None, session=None):
             if order.attendee.webhook_url:
                 send_webhook(order.attendee.webhook_url, order.attendee.webhook_data)
     else:
-        meal_name = "<This is a test meal>"
+        meal_name = "<This is a test message>"
 
     contact_details = load_d_o_contact_details(dept)
 
