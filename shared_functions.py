@@ -12,13 +12,20 @@ from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzlocal
 import pytz
 import sqlalchemy.orm.exc
+from sqlalchemy.orm import subqueryload
 import sqlalchemy.exc
 
+import aws_bot
 from config import cfg, c
 import models
-from models.ingredient import Ingredient
-from models.department import Department
 from models import create_my_db_engine
+from models.department import Department
+from models.dept_order import DeptOrder
+from models.ingredient import Ingredient
+from models.meal import Meal
+from models.order import Order
+import slack_bot
+import twilio_bot
 
 class HTTPRedirect(cherrypy.HTTPRedirect):
     #copied from https://github.com/magfest/ubersystem/blob/132143b385442677cb08178e16f714180ad75413/uber/errors.py
@@ -925,7 +932,7 @@ def dummy_data(count, startorder):
     return
 
 
-def load_d_o_contact_details(dept_order, dept):
+def load_d_o_contact_details(dept, dept_order=None):
     """
     Returns best available contact details for the provided department order bundle
     """
@@ -1239,3 +1246,39 @@ def import_meals(jsondata, replace_all=False):
     session.commit()
     session.close()
     return json.dumps(export, indent=2)
+
+
+def send_completion_messages(dept_id, meal_id=None, session=None):
+    """
+    Sends completion messages for a meal
+    """
+    if not session:
+        session = models.new_sesh()
+    dept = session.query(Department).filter_by(id=dept_id).one()
+
+    if meal_id:
+        # if no meal_id is given then this is a test and webhooks should not be sent
+        meal = session.query(Meal).filter_by(id=meal_id).one()
+        meal_name = meal.meal_name
+        dept_order = session.query(DeptOrder).filter_by(meal_id=meal_id, dept_id=dept_id).one()
+
+        orders = session.query(Order).filter_by(department_id=dept_order.dept_id, meal_id=dept_order.meal_id) \
+            .options(subqueryload(Order.attendee)).all()
+        for order in orders:
+            if order.attendee.webhook_url:
+                send_webhook(order.attendee.webhook_url, order.attendee.webhook_data)
+    else:
+        meal_name = "<This is a test meal>"
+
+    contact_details = load_d_o_contact_details(dept)
+
+    if contact_details.slack_channel:
+        message = 'Your food order bundle for ' + meal_name + ' for ' + dept.name + \
+                  ' is ready, please pickup from Staff Suite in ' + cfg.room_location + '.  \r\n'
+        slack_bot.send_message(contact_details.slack_channel, message, contact_details.slack_contact)
+
+    if contact_details.sms_contact:
+        twilio_bot.send_message(contact_details.sms_contact, dept.name, meal_name)
+
+    if contact_details.email_contact:
+        aws_bot.send_message(contact_details.email_contact, dept.name, meal_name)
