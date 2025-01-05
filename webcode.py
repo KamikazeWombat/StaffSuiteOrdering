@@ -1758,7 +1758,7 @@ class Root:
         """
         Displays and allows updating of Department's default contact info
         """
-
+        print("")
         messages = []
         if message:
             text = message
@@ -1798,7 +1798,9 @@ class Root:
             dept = session.query(Department).filter_by(id=dept_id).one()
 
         if send_test:
-            shared_functions.send_completion_messages(dept_id, session=session)
+            errors = shared_functions.send_completion_messages(dept_id, session=session)
+            if errors:
+                messages.append("One or more of your contact methods produced an error: " + errors)
 
         session.close()
 
