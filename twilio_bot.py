@@ -12,6 +12,7 @@ def send_message(phone_numbers, dept_name, meal_name):
     """
     Sends message to list of phone numbers
     """
+    errors = ""
     client = Client(cfg.twilio_authkey, cfg.twilio_authsecret, cfg.twilio_account_sid)
 
     # If people put new lines, or for some reason semicolons to separate phone numbers this converts them to commas
@@ -47,8 +48,9 @@ def send_message(phone_numbers, dept_name, meal_name):
                              )
 
         except TwilioRestException as e:
-            slack_bot.send_message('@wombat3', 'Error sending SMS message to ' + original_phone +
-                                   '\r\nFor ' + str(meal_name) + " for " + str(dept_name) + '\r\n'
-                                   + str(e))
+            error = ('Error sending SMS message to ' + original_phone + '\r\nFor ' + str(meal_name)
+                     + " for " + str(dept_name) + '\r\n' + str(e))
+            slack_bot.send_message('@wombat3', error)
+            errors = errors + error + "\r\n"
 
-    return
+    return errors

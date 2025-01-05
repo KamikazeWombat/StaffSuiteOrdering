@@ -1258,6 +1258,8 @@ def send_completion_messages(dept_id, meal_id=None, session=None):
     """
     Sends completion messages for a meal
     """
+    errors = ""
+
     if not session:
         session = models.new_sesh()
     dept = session.query(Department).filter_by(id=dept_id).one()
@@ -1281,10 +1283,18 @@ def send_completion_messages(dept_id, meal_id=None, session=None):
     if contact_details.slack_channel:
         message = 'Your food order bundle for ' + meal_name + ' for ' + dept.name + \
                   ' is ready, please pickup from Staff Suite in ' + cfg.room_location + '.  \r\n'
-        slack_bot.send_message(contact_details.slack_channel, message, contact_details.slack_contact)
+        error = slack_bot.send_message(contact_details.slack_channel, message, contact_details.slack_contact)
+        if error:
+            errors = errors + error + "\r\n"
 
     if contact_details.sms_contact:
-        twilio_bot.send_message(contact_details.sms_contact, dept.name, meal_name)
+        error = twilio_bot.send_message(contact_details.sms_contact, dept.name, meal_name)
+        if error:
+            errors = errors + error + "\r\n"
 
     if contact_details.email_contact:
-        aws_bot.send_message(contact_details.email_contact, dept.name, meal_name)
+        error = aws_bot.send_message(contact_details.email_contact, dept.name, meal_name)
+        if error:
+            errors = errors + error + "\r\n"
+
+    return errors

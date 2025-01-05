@@ -13,7 +13,8 @@ from config import cfg
 def send_message(channels, message, pings="", is_error_message=False):
     """
     sends given message to all given channels / users
-    is_error_message is there because otherwise an error sending an error message creates a loop
+    is_error_message is there because otherwise an error sending an error message creates a loop|
+    returns string showing any errors that came up
     """
 
     if not cfg.slack_authkey:
@@ -29,6 +30,7 @@ def send_message(channels, message, pings="", is_error_message=False):
     pings = pings.split(',')
     ping_final = ""
     session = models.new_sesh()
+    errors = ""
 
     for user in pings:
         # look up people in user DB and convert to userids
@@ -72,15 +74,17 @@ def send_message(channels, message, pings="", is_error_message=False):
             response = requests.post('https://slack.com/api/chat.postMessage', data, headers)
 
             if not json.loads(response.text)['ok'] and not is_error_message:
-                send_message("#bottesting", "Error sending Slack message to " + chan + ' - \r\n' + response.text,
-                             is_error_message=True)
+                error = "Error sending Slack message to " + chan + ' - \r\n' + response.text
+                send_message("#bottesting", error, is_error_message=True)
+                errors = errors + error + "\r\n"
 
         except Exception as e:
             if not is_error_message:
-                send_message("@wombat3", "General Error sending Slack message to " + chan + '\r\n' +
-                             str(e), is_error_message=True)
+                error = "General Error sending Slack message to " + chan + '\r\n' + str(e)
+                send_message("@wombat3", error, is_error_message=True)
+                errors = errors + error + "\r\n"
 
-    return
+    return errors
 
 
 def load_userlist_page(cursor=""):

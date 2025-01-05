@@ -938,7 +938,7 @@ class Root:
                             'or you have not had your first shift marked as Worked.  '
                             'You will need to get a Department Head to authorize any orders you place.  '
                             'If you work in a non-shift capacity, please click the "Show all meals" button below '
-                            'to submit a carryout order.  You will need to have a DH Override your order '
+                            'to submit a carryout order.  You will need to have a DH Approve your order '
                             'after it has been created or if your department is a non-shift department you can request '
                             'this change in Slack #Super-Staff-Suite-Ordering-App.')
 
@@ -1006,7 +1006,7 @@ class Root:
         if len(meal_display) == 0 and eligible:
             messages.append('You are not signed up for any shifts that overlap with meal times. '
                             'If you work in a non-shift capacity, please click the "Show all meals" button below '
-                            'to submit a carryout order.  You will need to have a DH Override your order '
+                            'to submit a carryout order.  You will need to have a DH Approve your order '
                             'after it has been created or if your department is a non-shift department you can request '
                             'this change in Slack #Super-Staff-Suite-Ordering.')
 
@@ -1345,10 +1345,10 @@ class Root:
         order = session.query(Order).filter_by(id=order_id).options(subqueryload(Order.attendee)).one()
         if remove_override:
             order.overridden = False
-            message = 'Override removed for ' + str(order.attendee.badge_num) + ', ' + str(order.attendee.full_name)
+            message = 'Approval removed for ' + str(order.attendee.badge_num) + ', ' + str(order.attendee.full_name)
         else:
             order.overridden = True
-            message = 'Override added for ' + str(order.attendee.badge_num) + ', ' + str(order.attendee.full_name)
+            message = 'Approval added for ' + str(order.attendee.badge_num) + ', ' + str(order.attendee.full_name)
         session.commit()
         session.close()
         raise HTTPRedirect('dept_order?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
@@ -1758,7 +1758,7 @@ class Root:
         """
         Displays and allows updating of Department's default contact info
         """
-
+        print("")
         messages = []
         if message:
             text = message
@@ -1798,7 +1798,9 @@ class Root:
             dept = session.query(Department).filter_by(id=dept_id).one()
 
         if send_test:
-            shared_functions.send_completion_messages(dept_id, session=session)
+            errors = shared_functions.send_completion_messages(dept_id, session=session)
+            if errors:
+                messages.append("One or more of your contact methods produced an error: " + errors)
 
         session.close()
 
