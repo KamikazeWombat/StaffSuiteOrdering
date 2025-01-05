@@ -21,7 +21,7 @@
       <br/><textbox disabled {% if color %}style="color:red; font-size:20px;"{% endif %}>{{ allergies.freeform }}</textbox>
     {% endif %}
     {% if not view_only %}
-    <br/><h3>We take allergies very seriously.  Please only indicate allergies, not preferences, for <a href="{{ c.EVENT_URL_ROOT }}staffing/food_restrictions" target="_blank">your dietary restrictions.</a></h3>
+    <br/><h3>We take allergies very seriously.  Please only indicate allergies, not preferences, for <a href="{{ c.EVENT_URL_ROOT }}/staffing/food_restrictions" target="_blank">your dietary restrictions.</a></h3>
     {% endif %}
 {% endmacro %}
 
@@ -126,7 +126,7 @@
     {% set sort = box.3 %}
       <div style="display: flex;">
         <input type="hidden" name="{{ field_name }}id{{ loop.index }}" value="{{ id }}">
-        <input type="number" name="{{ field_name }}sort{{ loop.index }}" required value="{% if sort == 100 or sort == '' %}{{ loop.index * 5 }}{% else %}{{ sort }}{% endif %}" min="-99" max="99">
+        <input type="number" name="{{ field_name }}sort{{ loop.index }}" required value="{% if sort == 999 or sort == '' %}{{ loop.index * 5 }}{% else %}{{ sort }}{% endif %}" min="-99" max="99">
 
         <input type="text" class="form-control" placeholder="{{ placeholder }} label" name="{{ field_name }}{{ loop.index }}"
                   value="{{ name }}"/>
