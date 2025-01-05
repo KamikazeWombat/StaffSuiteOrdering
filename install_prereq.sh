@@ -1,5 +1,6 @@
 mkdir pdfs
 mkdir secure
+mkdir logs
 apt-get install -y python3
 apt install -y python3-pip
 apt install -y libjpeg-turbo
