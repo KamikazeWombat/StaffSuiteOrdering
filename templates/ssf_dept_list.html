@@ -8,9 +8,7 @@
   <a class="btn btn-lg btn-primary " href="ssf_meal_list">Back to Meals list</a>
   <p>Total orders for all departments for this meal: {{ total }}</p>
   <p>Remaining for all departments for this meal: {{ remaining }}</p>
-  {% if no_remaining_orders and order_fulfilment_completed == False %}
-    <a class="btn btn-lg btn-primary " href="ssf_dept_list?meal_id={{ meal_id }}&meal_name={{ meal_name }}&complete_remaining=True">Complete remaining empty Dept orders</a></td>
-  {% endif %}
+  <a class="btn btn-lg btn-primary " href="ssf_dept_list?meal_id={{ meal_id }}&meal_name={{ meal_name }}&complete_remaining=True">Complete remaining empty Dept orders</a></td>
 
   {% for dept in depts %}
     {% set name = dept[0] %}

@@ -13,7 +13,7 @@ def send_message(recipients, dept_name, meal_name):
     """
     Send message to list of emails using Amazon AWS
     """
-
+    errors = ""
     recipients = re.sub(r'[\r\n; ]', ',', recipients)
     recipients = recipients.split(',')
 
@@ -71,8 +71,10 @@ def send_message(recipients, dept_name, meal_name):
         server.close()
 
     except Exception as e:
-        slack_bot.send_message("@Wombat3", "General error sending emails, not tied to a specific email address"
-                               + " from " + str(dept_name) + " for " + str(meal_name) +
-                               " \r\n" + str(e) +
-                               " \r\n" + str(type(e)))
-    return
+        error = ("General error sending emails, not tied to a specific email address"
+                 + " from " + str(dept_name) + " for " + str(meal_name) +
+                 " \r\n" + str(e) + " \r\n" + str(type(e)))
+        slack_bot.send_message("@Wombat3", error)
+        errors = errors + error + "\r\n"
+
+    return errors
