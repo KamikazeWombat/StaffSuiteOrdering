@@ -10,9 +10,9 @@
 <div class="container">
   <h2>{% if meal.id %}Edit Meal{% else %}Create Meal{% endif %}</h2>
     <div class="section-border">
-      You can leave any of the toggle and multi-select fields blank if not needed.<br/>
+      You can leave any of the select-one and multi-select fields blank if not needed.<br/>
       More options can be added if desired, both more choices under a question and more questions.<br/>
-      Toggle lets the staffer choose only one of the options, Multi-Select gives a group of check boxes any combination of which can be checked.<br/>
+      Select-One lets the staffer choose only one of the options, Multi-Select gives a group of check boxes any combination of which can be checked.<br/>
     </div>
   <form role="form">
     <div class="form-section">
@@ -41,16 +41,20 @@
     </div>
 
     <div class="section-border">
-      <input type="text" class="form-control" placeholder="First Toggle Select Title" name="toggle1_title" value="{{ meal.toggle1_title }}"/>
-      {{ macros.textbox_list('toggle1', toggles1, 'First Toggle Option') }}
+      <input type="text" class="form-control" placeholder="First Select-One Title" name="toggle1_title" value="{{ meal.toggle1_title }}"/>
+      {{ macros.textbox_list('toggle1', toggles1, 'First Select-One Option') }}
     </div>
     <div class="section-border">
-      <input type="text" class="form-control" placeholder="Second Toggle Select Title" name="toggle2_title" value="{{ meal.toggle2_title }}"/>
-      {{ macros.textbox_list('toggle2', toggles2, 'Second Toggle Option') }}
+      <input type="text" class="form-control" placeholder="Second Select-One Title" name="toggle2_title" value="{{ meal.toggle2_title }}"/>
+      {{ macros.textbox_list('toggle2', toggles2, 'Second Select-One Option') }}
     </div>
     <div class="section-border">
-      <input type="text" class="form-control" placeholder="Third Toggle Select Title" name="toggle3_title" value="{{ meal.toggle3_title }}"/>
-      {{ macros.textbox_list('toggle3', toggles3, 'Third Toggle Option') }}
+      <input type="text" class="form-control" placeholder="Third Select-One Title" name="toggle3_title" value="{{ meal.toggle3_title }}"/>
+      {{ macros.textbox_list('toggle3', toggles3, 'Third Select-One Option') }}
+    </div>
+    <div class="section-border">
+      <input type="text" class="form-control" placeholder="Fourth Select-One Title" name="toggle4_title" value="{{ meal.toggle4_title }}"/>
+      {{ macros.textbox_list('toggle4', toggles4, 'Fourth Select-One Option') }}
     </div>
     <div class="section-border">
       <input type="text" class="form-control" placeholder="Multi-Select 1 Title" name="toppings1_title" value="{{ meal.toppings1_title }}"/>

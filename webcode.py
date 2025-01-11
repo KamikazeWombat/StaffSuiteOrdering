@@ -490,6 +490,9 @@ class Root:
             thismeal.toggle2 = meal_join(session, params, field='toggle2')
             thismeal.toggle3_title = params['toggle3_title']
             thismeal.toggle3 = meal_join(session, params, field='toggle3')
+            thismeal.toggle4_title = params['toggle4_title']
+            thismeal.toggle4 = meal_join(session, params, field='toggle4')
+
             thismeal.toppings1_title = params['toppings1_title']
             thismeal.toppings1 = meal_join(session, params, field='toppings1')
             thismeal.toppings2_title = params['toppings2_title']
@@ -513,6 +516,10 @@ class Root:
                 toggles1 = meal_blank_toppings(meal_split(session, thismeal.toggle1), cfg.radio_select_count)
                 toggles2 = meal_blank_toppings(meal_split(session, thismeal.toggle2), cfg.radio_select_count)
                 toggles3 = meal_blank_toppings(meal_split(session, thismeal.toggle3), cfg.radio_select_count)
+                toggles4 = meal_blank_toppings(meal_split(session, thismeal.toggle4), cfg.radio_select_count)
+                if not thismeal.toggle4_title:
+                    thismeal.toggle4_title = ""
+
                 toppings1 = meal_blank_toppings(meal_split(session, thismeal.toppings1), cfg.multi_select_count)
                 toppings2 = meal_blank_toppings(meal_split(session, thismeal.toppings2), cfg.multi_select_count)
             except sqlalchemy.orm.exc.NoResultFound:
@@ -523,6 +530,7 @@ class Root:
             session.close()
 
         else:
+            # create blank meal
             thismeal = Meal()
             thismeal.meal_name = ''
             thismeal.description = ''
@@ -531,10 +539,12 @@ class Root:
             thismeal.toggle1_title = ''
             thismeal.toggle2_title = ''
             thismeal.toggle3_title = ''
+            thismeal.toggle4_title = ''
             # make blank boxes for new meal.
             toggles1 = meal_blank_toppings([], cfg.radio_select_count)
             toggles2 = meal_blank_toppings([], cfg.radio_select_count)
             toggles3 = meal_blank_toppings([], cfg.radio_select_count)
+            toggles4 = meal_blank_toppings([], cfg.radio_select_count)
             toppings1 = meal_blank_toppings([], cfg.multi_select_count)
             toppings2 = meal_blank_toppings([], cfg.multi_select_count)
 
@@ -545,6 +555,7 @@ class Root:
                                toggles1=toggles1,
                                toggles2=toggles2,
                                toggles3=toggles3,
+                               toggles4=toggles4,
                                toppings1=toppings1,
                                toppings2=toppings2,
                                messages=messages,
@@ -649,6 +660,8 @@ class Root:
             thisorder.toggle1 = order_selections(field='toggle1', params=params, is_toggle=True)
             thisorder.toggle2 = order_selections(field='toggle2', params=params, is_toggle=True)
             thisorder.toggle3 = order_selections(field='toggle3', params=params, is_toggle=True)
+            thisorder.toggle4 = order_selections(field='toggle4', params=params, is_toggle=True)
+
             thisorder.toppings1 = order_selections(field='toppings1', params=params)
             thisorder.toppings2 = order_selections(field='toppings2', params=params)
             thisorder.notes = notes
@@ -712,6 +725,8 @@ class Root:
             toggles1 = order_split(session, choices=thismeal.toggle1, orders=thisorder.toggle1)
             toggles2 = order_split(session, choices=thismeal.toggle2, orders=thisorder.toggle2)
             toggles3 = order_split(session, choices=thismeal.toggle3, orders=thisorder.toggle3)
+            toggles4 = order_split(session, choices=thismeal.toggle4, orders=thisorder.toggle4)
+
             toppings1 = order_split(session, choices=thismeal.toppings1, orders=thisorder.toppings1)
             toppings2 = order_split(session, choices=thismeal.toppings2, orders=thisorder.toppings2)
             departments = department_split(session, thisorder.department_id)
@@ -723,6 +738,7 @@ class Root:
                                    toggles1=toggles1,
                                    toggles2=toggles2,
                                    toggles3=toggles3,
+                                   toggles4=toggles4,
                                    toppings1=toppings1,
                                    toppings2=toppings2,
                                    departments=departments,
@@ -821,6 +837,7 @@ class Root:
             toggles1 = order_split(session, thismeal.toggle1)
             toggles2 = order_split(session, thismeal.toggle2)
             toggles3 = order_split(session, thismeal.toggle3)
+            toggles4 = order_split(session, thismeal.toggle4)
             toppings1 = order_split(session, thismeal.toppings1)
             toppings2 = order_split(session, thismeal.toppings2)
 
@@ -837,6 +854,7 @@ class Root:
                                    toggles1=toggles1,
                                    toggles2=toggles2,
                                    toggles3=toggles3,
+                                   toggles4=toggles4,
                                    toppings1=toppings1,
                                    toppings2=toppings2,
                                    departments=departments,
@@ -1526,6 +1544,8 @@ class Root:
             order.toggle1 = return_selected_only(session, choices=thismeal.toggle1, orders=order.toggle1)
             order.toggle2 = return_selected_only(session, choices=thismeal.toggle2, orders=order.toggle2)
             order.toggle3 = return_selected_only(session, choices=thismeal.toggle3, orders=order.toggle3)
+            order.toggle4 = return_selected_only(session, choices=thismeal.toggle4, orders=order.toggle4)
+
             order.toppings1 = return_selected_only(session, choices=thismeal.toppings1, orders=order.toppings1)
             order.toppings2 = return_selected_only(session, choices=thismeal.toppings2, orders=order.toppings2)
 
@@ -1536,6 +1556,9 @@ class Root:
                 thismeal.toggle2_title = ''
             if len(order.toggle3) == 0:
                 thismeal.toggle3_title = ''
+            if len(order.toggle4) == 0:
+                thismeal.toggle4_title = ''
+
             if len(order.toppings1) == 0:
                 thismeal.toppings1_title = ''
             if len(order.toppings2) == 0:
@@ -1922,6 +1945,8 @@ class Root:
             export['meals'][index]['toggle2_title'] = meal.toggle2_title
             export['meals'][index]['toggle3'] = meal.toggle3
             export['meals'][index]['toggle3_title'] = meal.toggle3_title
+            export['meals'][index]['toggle4'] = meal.toggle4
+            export['meals'][index]['toggle4_title'] = meal.toggle4_title
 
             export['meals'][index]['toppings1'] = meal.toppings1
             export['meals'][index]['toppings1_title'] = meal.toppings1_title
@@ -1979,6 +2004,8 @@ class Root:
             meal.toggle2_title = export['toggle2_title']
             meal.toggle3 = export['toggle3']
             meal.toggle3_title = export['toggle3_title']
+            meal.toggle4 = export['toggle4']
+            meal.toggle4_title = export['toggle4_title']
 
             meal.toppings1 = export['toppings1']
             meal.toppings1_title = export['toppings1_title']
