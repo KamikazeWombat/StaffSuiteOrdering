@@ -40,10 +40,11 @@ div {
         # {{ order.attendee.badge_num }} {{ ' ' + order.attendee.full_name }}
         <label style="float:right;">{{ date }}</label>
         <br/>
-        <label style="float:right;text-align:right;width:200px;height:15px;padding-right:5px;">{{ dept_name }}</label>
+        <label style="float:right;text-align:right;width:400px;height:10px;padding-right:5px;">{{ dept_name }}</label>
       </div>
       {% if order.allergies %}
-        <div style="padding-left:5px;padding-right:5px;" class="border">
+        <br/>
+        <div style="float:left;padding-left:5px;padding-right:5px;" class="border">
           Allergies: {{ macros.display_allergies(order.allergies, view_only=True, color=False) }}
         </div>
       {% endif %}
@@ -78,7 +79,7 @@ div {
       {% endif %}
 
       {% if not meal.toggle4_title == "" %}
-        <label style="width:430px">{{ order.toggle4[0][1] }}</label>
+        <label style="width:430px">, {{ order.toggle4[0][1] }}</label>
       {% endif %}
     </div>
 

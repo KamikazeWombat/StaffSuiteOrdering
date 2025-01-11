@@ -1507,6 +1507,8 @@ class Root:
 
         session_info = get_session_info()
 
+        rendered_template = None
+
         messages = []
         if message:
             text = message
@@ -1599,6 +1601,24 @@ class Root:
                 for char in replacement_list:
                     dept_name = dept_name.replace(char, '-')
 
+                # render page before changing list page uses to render
+                template = env.get_template('ssf_orders.html')
+                rendered_template = template.render(dept_order=dept_order,
+                                dept_name=dept_name,
+                                dept_id=dept_id,
+                                order_list=order_list,
+                                meal=thismeal,
+                                messages=messages,
+                                session=session_info,
+                                c=c,
+                                cfg=cfg)
+
+                for order in order_list:
+                    #if len(order.notes) > 100:
+                     #   order.notes = "<<< Notes too long for printing, please look at order fulfilment page to read >>>"
+                    if len(order.allergies['freeform']) > 100:
+                        order.allergies['freeform'] = "<<< Allergies too long for printing, please look at order fulfilment page to read >>>"
+
                 if cfg.env == "dev":  # Windows todo: change this to detect OS instead
                     # for some reason the silly system decided to not find wkhtmltopdf automatically anymore on Windows
                     path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
@@ -1625,18 +1645,19 @@ class Root:
         if dept_order.completed:
             dept_order.completed_time = con_tz(dept_order.completed_time).strftime(cfg.date_format)
 
+        if not rendered_template:
+            template = env.get_template('ssf_orders.html')
+            rendered_template = template.render(dept_order=dept_order,
+                                                dept_name=dept_name,
+                                                dept_id=dept_id,
+                                                order_list=order_list,
+                                                meal=thismeal,
+                                                messages=messages,
+                                                session=session_info,
+                                                c=c,
+                                                cfg=cfg)
 
-
-        template = env.get_template('ssf_orders.html')
-        return template.render(dept_order=dept_order,
-                               dept_name=dept_name,
-                               dept_id=dept_id,
-                               order_list=order_list,
-                               meal=thismeal,
-                               messages=messages,
-                               session=session_info,
-                               c=c,
-                               cfg=cfg)
+        return rendered_template
 
     @cherrypy.expose
     @ss_staffer
