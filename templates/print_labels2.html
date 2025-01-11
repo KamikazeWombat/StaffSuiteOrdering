@@ -43,7 +43,8 @@ div {
         <label style="float:right;text-align:right;width:200px;height:15px;padding-right:5px;">{{ dept_name }}</label>
       </div>
       {% if order.allergies %}
-        <div style="padding-left:5px;padding-right:5px;" class="border">
+        <br/> <br/>
+        <div style="float:left;padding-left:5px;padding-right:5px;" class="border">
           Allergies: {{ macros.display_allergies(order.allergies, view_only=True, color=False) }}
         </div>
       {% endif %}
