@@ -36,11 +36,11 @@ div {
   {% for order in orders %}
   {% if (order.allergies) or not order.notes == ""%}
     <div class="label-page new-page">
-      <div>
+      <div style="padding-bottom:5px">
         # {{ order.attendee.badge_num }} {{ ' ' + order.attendee.full_name }}
         <label style="float:right;">{{ date }}</label>
         <br/>
-        <label style="float:right;text-align:right;width:400px;height:10px;padding-right:5px;">{{ dept_name }}</label>
+        <label style="float:right;text-align:right;height:15px;padding-right:5px;">{{ dept_name }}</label>
       </div>
       {% if order.allergies %}
         <br/>
