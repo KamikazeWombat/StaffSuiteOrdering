@@ -24,14 +24,17 @@ div {
     border-style: solid;
     border-radius: 3px;
     }
+label, textbox {
+      font-family:sans-serif;
+}
   </style>
 </head>
 
 <body>
   <div style="text-align:center;" class="label-page new-page">
-    <label style="font-size:32pt;font-family:Tahoma, Verdona;">{{ dept_name }}</label>
+    <label style="font-size:32pt;">{{ dept_name }}</label>
     <br/>
-    <label style="font-size:32pt;font-family:Tahoma, Verdona;">{{ date }}</label>
+    <label style="font-size:32pt;">{{ date }}</label>
   </div>
   {% for order in orders %}
   {% if (order.allergies) or not order.notes == ""%}

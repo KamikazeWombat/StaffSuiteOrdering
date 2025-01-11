@@ -1614,9 +1614,12 @@ class Root:
                                 cfg=cfg)
 
                 for order in order_list:
-                    #if len(order.notes) > 100:
-                     #   order.notes = "<<< Notes too long for printing, please look at order fulfilment page to read >>>"
-                    if len(order.allergies['freeform']) > 100:
+                    if (len(order.notes) > 80) and (len(order.allergies['freeform']) > 80):
+                        order.notes = "<<< Notes too long for printing, please look at order fulfilment page to read >>>"
+                        order.allergies['freeform'] = "<<< Allergies too long for printing, please look at order fulfilment page to read >>>"
+                    if len(order.notes) > 140:
+                        order.notes = "<<< Notes too long for printing, please look at order fulfilment page to read >>>"
+                    if len(order.allergies['freeform']) > 140:
                         order.allergies['freeform'] = "<<< Allergies too long for printing, please look at order fulfilment page to read >>>"
 
                 if cfg.env == "dev":  # Windows todo: change this to detect OS instead
