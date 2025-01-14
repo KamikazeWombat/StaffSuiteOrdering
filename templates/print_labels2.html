@@ -24,26 +24,30 @@ div {
     border-style: solid;
     border-radius: 3px;
     }
+label, textbox {
+      font-family:sans-serif;
+}
   </style>
 </head>
 
 <body>
   <div style="text-align:center;" class="label-page new-page">
-    <label style="font-size:32pt;font-family:Tahoma, Verdona;">{{ dept_name }}</label>
+    <label style="font-size:32pt;">{{ dept_name }}</label>
     <br/>
-    <label style="font-size:32pt;font-family:Tahoma, Verdona;">{{ date }}</label>
+    <label style="font-size:32pt;">{{ date }}</label>
   </div>
   {% for order in orders %}
   {% if (order.allergies) or not order.notes == ""%}
     <div class="label-page new-page">
-      <div>
+      <div style="padding-bottom:5px">
         # {{ order.attendee.badge_num }} {{ ' ' + order.attendee.full_name }}
         <label style="float:right;">{{ date }}</label>
         <br/>
-        <label style="float:right;text-align:right;width:200px;height:15px;padding-right:5px;">{{ dept_name }}</label>
+        <label style="float:right;text-align:right;height:15px;padding-right:5px;">{{ dept_name }}</label>
       </div>
       {% if order.allergies %}
-        <div style="padding-left:5px;padding-right:5px;" class="border">
+        <br/>
+        <div style="float:left;padding-left:5px;padding-right:5px;" class="border">
           Allergies: {{ macros.display_allergies(order.allergies, view_only=True, color=False) }}
         </div>
       {% endif %}
@@ -75,6 +79,10 @@ div {
 
       {% if not meal.toggle3_title == "" %}
         <label style="width:430px">{{ order.toggle3[0][1] }}</label>
+      {% endif %}
+
+      {% if not meal.toggle4_title == "" %}
+        <label style="width:430px">, {{ order.toggle4[0][1] }}</label>
       {% endif %}
     </div>
 

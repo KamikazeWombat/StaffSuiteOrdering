@@ -53,6 +53,9 @@
             {% if not meal.toggle3_title == "" %}
               <label>{{ order.toggle3[0][1] }}</label><br/>
             {% endif %}
+            {% if not meal.toggle4_title == "" %}
+              <label>{{ order.toggle4[0][1] }}</label><br/>
+            {% endif %}
           </td>
         </tr>
         <tr>
@@ -67,7 +70,7 @@
         </tr>
         {% if not order.notes == "" %}
         <tr>
-          <td>{{ order.notes }}</td>
+          <td style="color:red; font-size:20px;">{{ order.notes }}</td>
         </tr>
         {% endif %}
       </table>

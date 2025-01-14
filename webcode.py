@@ -490,6 +490,9 @@ class Root:
             thismeal.toggle2 = meal_join(session, params, field='toggle2')
             thismeal.toggle3_title = params['toggle3_title']
             thismeal.toggle3 = meal_join(session, params, field='toggle3')
+            thismeal.toggle4_title = params['toggle4_title']
+            thismeal.toggle4 = meal_join(session, params, field='toggle4')
+
             thismeal.toppings1_title = params['toppings1_title']
             thismeal.toppings1 = meal_join(session, params, field='toppings1')
             thismeal.toppings2_title = params['toppings2_title']
@@ -513,6 +516,10 @@ class Root:
                 toggles1 = meal_blank_toppings(meal_split(session, thismeal.toggle1), cfg.radio_select_count)
                 toggles2 = meal_blank_toppings(meal_split(session, thismeal.toggle2), cfg.radio_select_count)
                 toggles3 = meal_blank_toppings(meal_split(session, thismeal.toggle3), cfg.radio_select_count)
+                toggles4 = meal_blank_toppings(meal_split(session, thismeal.toggle4), cfg.radio_select_count)
+                if not thismeal.toggle4_title:
+                    thismeal.toggle4_title = ""
+
                 toppings1 = meal_blank_toppings(meal_split(session, thismeal.toppings1), cfg.multi_select_count)
                 toppings2 = meal_blank_toppings(meal_split(session, thismeal.toppings2), cfg.multi_select_count)
             except sqlalchemy.orm.exc.NoResultFound:
@@ -523,6 +530,7 @@ class Root:
             session.close()
 
         else:
+            # create blank meal
             thismeal = Meal()
             thismeal.meal_name = ''
             thismeal.description = ''
@@ -531,10 +539,12 @@ class Root:
             thismeal.toggle1_title = ''
             thismeal.toggle2_title = ''
             thismeal.toggle3_title = ''
+            thismeal.toggle4_title = ''
             # make blank boxes for new meal.
             toggles1 = meal_blank_toppings([], cfg.radio_select_count)
             toggles2 = meal_blank_toppings([], cfg.radio_select_count)
             toggles3 = meal_blank_toppings([], cfg.radio_select_count)
+            toggles4 = meal_blank_toppings([], cfg.radio_select_count)
             toppings1 = meal_blank_toppings([], cfg.multi_select_count)
             toppings2 = meal_blank_toppings([], cfg.multi_select_count)
 
@@ -545,6 +555,7 @@ class Root:
                                toggles1=toggles1,
                                toggles2=toggles2,
                                toggles3=toggles3,
+                               toggles4=toggles4,
                                toppings1=toppings1,
                                toppings2=toppings2,
                                messages=messages,
@@ -649,6 +660,8 @@ class Root:
             thisorder.toggle1 = order_selections(field='toggle1', params=params, is_toggle=True)
             thisorder.toggle2 = order_selections(field='toggle2', params=params, is_toggle=True)
             thisorder.toggle3 = order_selections(field='toggle3', params=params, is_toggle=True)
+            thisorder.toggle4 = order_selections(field='toggle4', params=params, is_toggle=True)
+
             thisorder.toppings1 = order_selections(field='toppings1', params=params)
             thisorder.toppings2 = order_selections(field='toppings2', params=params)
             thisorder.notes = notes
@@ -712,6 +725,8 @@ class Root:
             toggles1 = order_split(session, choices=thismeal.toggle1, orders=thisorder.toggle1)
             toggles2 = order_split(session, choices=thismeal.toggle2, orders=thisorder.toggle2)
             toggles3 = order_split(session, choices=thismeal.toggle3, orders=thisorder.toggle3)
+            toggles4 = order_split(session, choices=thismeal.toggle4, orders=thisorder.toggle4)
+
             toppings1 = order_split(session, choices=thismeal.toppings1, orders=thisorder.toppings1)
             toppings2 = order_split(session, choices=thismeal.toppings2, orders=thisorder.toppings2)
             departments = department_split(session, thisorder.department_id)
@@ -723,6 +738,7 @@ class Root:
                                    toggles1=toggles1,
                                    toggles2=toggles2,
                                    toggles3=toggles3,
+                                   toggles4=toggles4,
                                    toppings1=toppings1,
                                    toppings2=toppings2,
                                    departments=departments,
@@ -821,6 +837,7 @@ class Root:
             toggles1 = order_split(session, thismeal.toggle1)
             toggles2 = order_split(session, thismeal.toggle2)
             toggles3 = order_split(session, thismeal.toggle3)
+            toggles4 = order_split(session, thismeal.toggle4)
             toppings1 = order_split(session, thismeal.toppings1)
             toppings2 = order_split(session, thismeal.toppings2)
 
@@ -837,6 +854,7 @@ class Root:
                                    toggles1=toggles1,
                                    toggles2=toggles2,
                                    toggles3=toggles3,
+                                   toggles4=toggles4,
                                    toppings1=toppings1,
                                    toppings2=toppings2,
                                    departments=departments,
@@ -1489,6 +1507,8 @@ class Root:
 
         session_info = get_session_info()
 
+        rendered_template = None
+
         messages = []
         if message:
             text = message
@@ -1526,6 +1546,8 @@ class Root:
             order.toggle1 = return_selected_only(session, choices=thismeal.toggle1, orders=order.toggle1)
             order.toggle2 = return_selected_only(session, choices=thismeal.toggle2, orders=order.toggle2)
             order.toggle3 = return_selected_only(session, choices=thismeal.toggle3, orders=order.toggle3)
+            order.toggle4 = return_selected_only(session, choices=thismeal.toggle4, orders=order.toggle4)
+
             order.toppings1 = return_selected_only(session, choices=thismeal.toppings1, orders=order.toppings1)
             order.toppings2 = return_selected_only(session, choices=thismeal.toppings2, orders=order.toppings2)
 
@@ -1536,6 +1558,9 @@ class Root:
                 thismeal.toggle2_title = ''
             if len(order.toggle3) == 0:
                 thismeal.toggle3_title = ''
+            if len(order.toggle4) == 0:
+                thismeal.toggle4_title = ''
+
             if len(order.toppings1) == 0:
                 thismeal.toppings1_title = ''
             if len(order.toppings2) == 0:
@@ -1576,6 +1601,27 @@ class Root:
                 for char in replacement_list:
                     dept_name = dept_name.replace(char, '-')
 
+                # render page before changing list page uses to render
+                template = env.get_template('ssf_orders.html')
+                rendered_template = template.render(dept_order=dept_order,
+                                dept_name=dept_name,
+                                dept_id=dept_id,
+                                order_list=order_list,
+                                meal=thismeal,
+                                messages=messages,
+                                session=session_info,
+                                c=c,
+                                cfg=cfg)
+
+                for order in order_list:
+                    if (len(order.notes) > 80) and (len(order.allergies['freeform']) > 80):
+                        order.notes = "<<< Notes too long for printing, please look at order fulfilment page to read >>>"
+                        order.allergies['freeform'] = "<<< Allergies too long for printing, please look at order fulfilment page to read >>>"
+                    if len(order.notes) > 140:
+                        order.notes = "<<< Notes too long for printing, please look at order fulfilment page to read >>>"
+                    if len(order.allergies['freeform']) > 140:
+                        order.allergies['freeform'] = "<<< Allergies too long for printing, please look at order fulfilment page to read >>>"
+
                 if cfg.env == "dev":  # Windows todo: change this to detect OS instead
                     # for some reason the silly system decided to not find wkhtmltopdf automatically anymore on Windows
                     path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
@@ -1602,18 +1648,19 @@ class Root:
         if dept_order.completed:
             dept_order.completed_time = con_tz(dept_order.completed_time).strftime(cfg.date_format)
 
+        if not rendered_template:
+            template = env.get_template('ssf_orders.html')
+            rendered_template = template.render(dept_order=dept_order,
+                                                dept_name=dept_name,
+                                                dept_id=dept_id,
+                                                order_list=order_list,
+                                                meal=thismeal,
+                                                messages=messages,
+                                                session=session_info,
+                                                c=c,
+                                                cfg=cfg)
 
-
-        template = env.get_template('ssf_orders.html')
-        return template.render(dept_order=dept_order,
-                               dept_name=dept_name,
-                               dept_id=dept_id,
-                               order_list=order_list,
-                               meal=thismeal,
-                               messages=messages,
-                               session=session_info,
-                               c=c,
-                               cfg=cfg)
+        return rendered_template
 
     @cherrypy.expose
     @ss_staffer
@@ -1922,6 +1969,8 @@ class Root:
             export['meals'][index]['toggle2_title'] = meal.toggle2_title
             export['meals'][index]['toggle3'] = meal.toggle3
             export['meals'][index]['toggle3_title'] = meal.toggle3_title
+            export['meals'][index]['toggle4'] = meal.toggle4
+            export['meals'][index]['toggle4_title'] = meal.toggle4_title
 
             export['meals'][index]['toppings1'] = meal.toppings1
             export['meals'][index]['toppings1_title'] = meal.toppings1_title
@@ -1979,6 +2028,8 @@ class Root:
             meal.toggle2_title = export['toggle2_title']
             meal.toggle3 = export['toggle3']
             meal.toggle3_title = export['toggle3_title']
+            meal.toggle4 = export['toggle4']
+            meal.toggle4_title = export['toggle4_title']
 
             meal.toppings1 = export['toppings1']
             meal.toppings1_title = export['toppings1_title']
@@ -2186,8 +2237,6 @@ class Root:
         """
         Clears internal Slack user list and reloads full list from Slack server
         """
-        # todo: subscribe to user updates, message code needs to check userids against db
-        print("-----------------starting to load users-------------------")
         session = models.new_sesh()
         data = slack_bot.load_userlist_page()
         users = data["members"]
@@ -2195,8 +2244,11 @@ class Root:
         session.query(Slack_User).delete()
         users_to_load = True
         while users_to_load:
-            print("--------------loading next group-------------")
             for user in users:
+                if user["deleted"]:
+                    # do not import deleted users
+                    continue
+
                 new_user = Slack_User()
                 new_user.id = user["id"]
                 new_user.name = user["name"]
@@ -2209,8 +2261,19 @@ class Root:
 
             data = slack_bot.load_userlist_page(data["response_metadata"]["next_cursor"])
             users = data["members"]
+
+        data = slack_bot.load_group_list()
+        groups = data["usergroups"]
+        for user in groups:
+            # it says user instead of group so I can just copy the code from above
+            new_user = Slack_User()
+            new_user.id = user["id"]
+            new_user.name = user["handle"]
+            new_user.display_name = user["name"]
+            new_user.real_name = ""
+            session.add(new_user)
+
         session.commit()
         session.close()
-        print("-------------------finished loading users-----------------")
 
         raise HTTPRedirect('config')

@@ -63,6 +63,13 @@
       </div>
     {% endif %}
 
+    {% if not meal.toggle4_title == '' %}
+      <div class="section-border">
+        <h4>{{ meal.toggle4_title }}</h4>
+        {{ macros.button_radio_opts('toggle4', toggles4, is_required=True, is_readonly=order.locked) }}
+      </div>
+    {% endif %}
+
     {% if not meal.toppings1_title == '' %}
       <div class="section-border">
         <h4>{{ meal.toppings1_title }}</h4>

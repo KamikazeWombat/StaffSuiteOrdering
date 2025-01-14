@@ -516,6 +516,10 @@ def meal_split(session, toppings):
     :param toppings: list of ingredient IDs
     :return:
     """
+    if not toppings:
+        # if the topping is None; I think this only happens when editing a meal that had fewer fields when created
+        return []
+
     try:
         id_list = sorted(toppings.split(','))
     except ValueError:
@@ -1039,6 +1043,7 @@ def do_upgrade():
     # put upgrade code here
     if first_older_than_second(cfg.last_version_loaded, "1.1.10"):
         # Added sort_by field to Ingredient table so that we can choose what order they show instead of being random
+        print("--------------Upgrading to 1.1.10-------------")
         engine = create_my_db_engine()
         connection = engine.connect()
         query = 'ALTER TABLE ingredient ADD sort_by INTEGER;'
@@ -1062,6 +1067,24 @@ def do_upgrade():
         connection.close()
         engine.dispose()
         cfg.last_version_loaded = "1.1.13"
+        cfg.save(cfgonly=True)
+        changes_needed = True
+
+    if first_older_than_second(cfg.last_version_loaded, "1.2.3"):
+        # add toggle4 fields
+        print("--------------Upgrading to 1.2.3-------------")
+        engine = create_my_db_engine()
+        connection = engine.connect()
+        query = 'ALTER TABLE meal ADD toggle4 VARCHAR;'
+        connection.execute(sqlalchemy.text(query))
+        query = 'ALTER TABLE meal ADD toggle4_name VARCHAR;'
+        connection.execute(sqlalchemy.text(query))
+        query = 'ALTER TABLE "order" ADD toggle4 VARCHAR;'
+        connection.execute(sqlalchemy.text(query))
+        connection.commit()
+        connection.close()
+        engine.dispose()
+        cfg.last_version_loaded = "1.2.3"
         cfg.save(cfgonly=True)
         changes_needed = True
 
@@ -1174,6 +1197,8 @@ def export_meals():
                                  "toggle2_title": meal.toggle2_title,
                                  "toggle3": meal.toggle3,
                                  "toggle3_title": meal.toggle3_title,
+                                 "toggle4": meal.toggle4,
+                                 "toggle4_title": meal.toggle4_title,
                                  "toppings1": meal.toppings1,
                                  "toppings1_title": meal.toppings1_title,
                                  "toppings2": meal.toppings2,
@@ -1199,6 +1224,7 @@ def export_orders():
                                   "toggle1": order.toggle1,
                                   "toggle2": order.toggle2,
                                   "toggle3": order.toggle3,
+                                  "toggle4": order.toggle4,
                                   "toppings1": order.toppings1,
                                   "toppings2": order.toppings2,
                                   "notes": order.notes
@@ -1235,6 +1261,8 @@ def import_meals(jsondata, replace_all=False):
         meal.toggle2_title = export['toggle2_title']
         meal.toggle3 = export['toggle3']
         meal.toggle3_title = export['toggle3_title']
+        meal.toggle4 = export['toggle4']
+        meal.toggle4_title = export['toggle4_title']
 
         meal.toppings1 = export['toppings1']
         meal.toppings1_title = export['toppings1_title']

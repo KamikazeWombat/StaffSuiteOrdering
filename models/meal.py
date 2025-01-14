@@ -24,6 +24,8 @@ class Meal(dec_base):
     toggle2_title = Column('toggle2_name', String)
     toggle3 = Column('toggle3', String)
     toggle3_title = Column('toggle3_name', String)
+    toggle4 = Column('toggle4', String)
+    toggle4_title = Column('toggle4_name', String)
 
     toppings1 = Column('toppings1', String)
     toppings1_title = Column('toppings1_title', String)
