@@ -26,7 +26,6 @@ def send_message(channels, message, pings="", is_error_message=False):
     headers = {'Content-type': 'application/json'}
 
     pings = re.sub(r'[\r\n;]', ',', pings)
-    pings = re.sub(r'[@]', '', pings)
     pings = pings.split(',')
     ping_final = ""
     session = models.new_sesh()
@@ -34,19 +33,42 @@ def send_message(channels, message, pings="", is_error_message=False):
 
     for user in pings:
         # look up people in user DB and convert to userids
-        user = user.strip()
+
+        user_no_at = re.sub(r'[@]', '', user)
+        user_no_at = user_no_at.strip()
+        if not user_no_at:
+            continue
         try:
             record = session.query(Slack_User).filter(or_(
-                Slack_User.name.icontains(user),
-                Slack_User.display_name.icontains(user)
+                Slack_User.name.icontains(user_no_at),
+                Slack_User.display_name.icontains(user_no_at),
+                Slack_User.real_name.icontains(user_no_at)
             )).one()
 
             ping_final = ping_final + '@' + record.name + " "
 
         except sqlalchemy.exc.MultipleResultsFound:
-            # todo: make this return what gave error for test button
             # go ahead and append whatever failed lookup too in case someone included extra info in their message
-            ping_final = ping_final + user
+            record_list = session.query(Slack_User).filter(or_(
+                Slack_User.name.icontains(user_no_at),
+                Slack_User.display_name.icontains(user_no_at),
+                Slack_User.real_name.icontains(user_no_at)
+            )).all()
+            matches_found = 0
+            exact_matches = list()
+            for record in record_list:
+                if (record.name.lower() == user_no_at.lower() or
+                        record.display_name.lower() == user_no_at.lower() or
+                        record.real_name.lower() == user_no_at.lower()):
+                    # in the case of multiple matches checks to see if one is the actual username and includes it if so.
+                    exact_matches.append('@' + record.name + " ")
+                    matches_found += 1
+            if matches_found > 1:
+                ping_final = ping_final + user
+            if matches_found == 0:
+                ping_final = ping_final + user
+            if matches_found == 1:
+                ping_final = ping_final + exact_matches[0]
 
         except sqlalchemy.orm.exc.NoResultFound:
             # if nothing matched also go ahead and attach whatever failed lookup in case it's just extra info
@@ -118,3 +140,30 @@ def load_userlist_page(cursor=""):
     else:
         send_message("#bottesting", "Error loading Slack user list" + ' - \r\n' + response.text,
                      is_error_message=True)
+    return
+
+
+def load_group_list():
+    """
+    Loads list 0f groups - this seems to return all rather than just a page.
+    """
+    if not cfg.slack_authkey:
+        print("----------Slack API key missing so group list request not sent.----------")
+        return
+
+    headers = {'Content-type': 'application/json'}
+    data = {'token': cfg.slack_authkey}
+
+    try:
+        response = requests.post('https://slack.com/api/usergroups.list', data, headers)
+
+    except Exception as e:
+        send_message("@wombat3", "General Error loading Slack group list" + '\r\n' +
+                     str(e), is_error_message=True)
+
+    if json.loads(response.text)['ok']:
+        return json.loads(response.text)
+    else:
+        send_message("#bottesting", "Error loading Slack group list" + ' - \r\n' + response.text,
+                     is_error_message=True)
+    return

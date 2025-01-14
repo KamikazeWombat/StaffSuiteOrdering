@@ -2237,8 +2237,6 @@ class Root:
         """
         Clears internal Slack user list and reloads full list from Slack server
         """
-        # todo: subscribe to user updates, message code needs to check userids against db
-        print("-----------------starting to load users-------------------")
         session = models.new_sesh()
         data = slack_bot.load_userlist_page()
         users = data["members"]
@@ -2246,8 +2244,11 @@ class Root:
         session.query(Slack_User).delete()
         users_to_load = True
         while users_to_load:
-            print("--------------loading next group-------------")
             for user in users:
+                if user["deleted"]:
+                    # do not import deleted users
+                    continue
+
                 new_user = Slack_User()
                 new_user.id = user["id"]
                 new_user.name = user["name"]
@@ -2260,8 +2261,19 @@ class Root:
 
             data = slack_bot.load_userlist_page(data["response_metadata"]["next_cursor"])
             users = data["members"]
+
+        data = slack_bot.load_group_list()
+        groups = data["usergroups"]
+        for user in groups:
+            # it says user instead of group so I can just copy the code from above
+            new_user = Slack_User()
+            new_user.id = user["id"]
+            new_user.name = user["handle"]
+            new_user.display_name = user["name"]
+            new_user.real_name = ""
+            session.add(new_user)
+
         session.commit()
         session.close()
-        print("-------------------finished loading users-----------------")
 
         raise HTTPRedirect('config')
