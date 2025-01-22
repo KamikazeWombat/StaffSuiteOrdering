@@ -228,10 +228,10 @@ def add_access(badge, usertype=None):
     if usertype == 'food_manager' and attend.public_id not in cfg.food_managers:
         if is_dh(attend.public_id):
             session.close()
-            raise HTTPRedirect("dept_order_selection?message=Badge " + str(badge) + "is already a Department Head")
+            raise HTTPRedirect("dept_order_selection?message=Badge " + str(badge) + " is already a Department Head")
         if is_admin(attend.public_id):
             session.close()
-            raise HTTPRedirect("dept_order_selection?message=Badge " + str(badge) + "is already a Tuber Eats Admin")
+            raise HTTPRedirect("dept_order_selection?message=Badge " + str(badge) + " is already a Tuber Eats Admin")
 
         cfg.food_managers.append(attend.public_id)
         manager_list = ',\n'.join(cfg.food_managers)
@@ -649,19 +649,21 @@ def ss_eligible(badge_num):
     if response['result']['public_id'] in cfg.food_managers:
         return True
 
-
     session = models.new_sesh()
 
     if is_vip(attendee['badge_num'], session):
+        session.close()
         return True
 
     # shiftless departments are exempt from eligibility requirements
     depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
     for dept in depts:
         if dept.name in attendee['assigned_depts_labels']:
+            session.close()
             return True
 
     # if nothing above matches, not eligible.
+    session.close()
     return False
 
 
@@ -807,6 +809,7 @@ def carryout_eligible(shifts, response, meal_start, meal_end):
     session = models.new_sesh()
 
     if is_vip(response['result']['badge_num'], session):
+        session.close()
         return True
 
     shiftless_depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
@@ -994,6 +997,7 @@ def get_vip_list():
     for vip in vips:
         vip_list.append(str(vip.badge_num) + ", " + vip.full_name)
 
+    session.close()
     return vip_list
 
 
@@ -1001,10 +1005,15 @@ def is_vip(badge, session=None):
     """
     Checks if provided badge is in VIP list
     """
+    created_session = False
     if not session:
         session = models.new_sesh()
+        created_session = True
 
     vip_list = session.query(models.attendee.Attendee).filter_by(is_vip=True).all()
+    if created_session:
+        session.close()
+
     for vip in vip_list:
         if badge == vip.badge_num:
             return True
@@ -1106,6 +1115,7 @@ def export_attendees():
                                      "webhook_data": att.webhook_data,
                                      "is_vip": att.is_vip
                                      })
+    session.close()
     return attendees_for_export
 
 
@@ -1123,6 +1133,7 @@ def export_checkins():
                                     "timestamp": checkin.timestamp.strftime(cfg.date_format),
                                     "duplicate": checkin.duplicate
                                     })
+    session.close()
     return checkins_for_export
 
 
@@ -1156,6 +1167,7 @@ def export_dept_orders():
                               "email_contact": do.email_contact,
                               "other_contact": do.other_contact,
                               })
+        session.close()
         return do_for_export
 
 
@@ -1171,6 +1183,7 @@ def export_ingredients():
                                        "label": ing.label,
                                        "description": ing.description
                                        })
+    session.close()
     return ingredients_for_export
 
 
@@ -1204,6 +1217,7 @@ def export_meals():
                                  "toppings2": meal.toppings2,
                                  "toppings2_title": meal.toppings2_title
                                  })
+    session.close()
     return meals_for_export
 
 
@@ -1229,6 +1243,7 @@ def export_orders():
                                   "toppings2": order.toppings2,
                                   "notes": order.notes
                                   })
+    session.close()
     return orders_for_export
 
 
@@ -1287,9 +1302,11 @@ def send_completion_messages(dept_id, meal_id=None, session=None):
     Sends completion messages for a meal
     """
     errors = ""
+    created_session = False
 
     if not session:
         session = models.new_sesh()
+        created_session = True
     dept = session.query(Department).filter_by(id=dept_id).one()
 
     if meal_id:
@@ -1325,4 +1342,6 @@ def send_completion_messages(dept_id, meal_id=None, session=None):
         if error:
             errors = errors + error + "\r\n"
 
+    if created_session:
+        session.close()
     return errors
