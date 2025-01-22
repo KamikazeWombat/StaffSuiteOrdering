@@ -251,10 +251,8 @@ class Root:
 
         # badge will be none if lookup fails
         if not badge:
-            print('------------------------after all this badge not found------------------------')
             return json.dumps({"success": False, "badge": '', "reason": "Could not locate badge."})
         session = models.new_sesh()
-        print('---------------done trying to find badge------------------------------')
         now = now_utc()
         meal = session.query(Meal).filter(Meal.start_time < now, Meal.end_time > now).order_by(Meal.end_time).one_or_none()
 
@@ -264,10 +262,8 @@ class Root:
             print(attend.public_id)
             print(attend.badge_num)
             print(attend.full_name)
-            print('------------------------------done printing found badges---------------')
             # checks if attendee already in DB
         except sqlalchemy.orm.exc.NoResultFound:
-            print('-------------------no result found-------------------')
             response = shared_functions.lookup_attendee(badge)
             if 'error' in response:
                 session.close()
@@ -289,6 +285,7 @@ class Root:
         except sqlalchemy.exc.MultipleResultsFound:
             messageforslack = "Someone's Checkin lookup retured multiple badges somehow.  " + str(badge)
             slack_bot.send_message("@wombat3", messageforslack)
+            session.close()
             return json.dumps(
                 {"success": False, "badge": badge, "reason": "Found multiple matching badges?".format(badge)})
 
@@ -304,7 +301,6 @@ class Root:
                 # their order is eligible for carryout, they get kicked out
                 if eligible or order.overridden:
                     session.close()
-
                     return json.dumps({"success": False, "badge": badge, "reason": "Attendee has placed a delivery "
                                                                                    "order for this meal.  Do they need "
                                                                                    "to pick it up?".format(badge)})
@@ -436,6 +432,7 @@ class Root:
             attend.is_vip = True
             session.add(attend)
             session.commit()
+            session.close()
             return json.dumps(
                 {"success": True, "badge": badge,
                  "reason": "Badge # {} successfully added to VIPs list".format(badge),
@@ -522,12 +519,11 @@ class Root:
 
                 toppings1 = meal_blank_toppings(meal_split(session, thismeal.toppings1), cfg.multi_select_count)
                 toppings2 = meal_blank_toppings(meal_split(session, thismeal.toppings2), cfg.multi_select_count)
+                session.close()
             except sqlalchemy.orm.exc.NoResultFound:
                 message = 'Requested Meal ID '+meal_id+' not found'
                 session.close()
                 raise HTTPRedirect('meal_setup_list?message='+message)
-
-            session.close()
 
         else:
             # create blank meal
@@ -762,6 +758,7 @@ class Root:
                     response = shared_functions.lookup_attendee(params['badge_number'], full=True)
 
                     if 'error' in response:
+                        session.close()
                         raise HTTPRedirect('dept_order?dept_id=' + str(params['department']) + '&meal_id='+str(meal_id)
                                            + '&message=Problem looking up Attendee, '
                                              'please recheck badge number and try again.')
@@ -866,6 +863,7 @@ class Root:
                                    cfg=cfg)
 
         # if nothing else matched, not creating, loading, saving, or deleting.  therefore, error.
+        session.close()
         raise HTTPRedirect('staffer_meal_list?message=You must specify a meal or order ID to create/edit an order.')
 
     @cherrypy.expose
@@ -889,6 +887,7 @@ class Root:
                 raise HTTPRedirect('staffer_meal_list?message=Order does not belong to you?')
 
         template = env.get_template('order_delete_confirm.html')
+        session.close()
         return template.render(
             order=thisorder,
             session=session_info,
@@ -959,8 +958,10 @@ class Root:
                             'to submit a carryout order.  You will need to have a DH Approve your order '
                             'after it has been created or if your department is a non-shift department you can request '
                             'this change in Slack #Super-Staff-Suite-Ordering-App.')
-
-        attendee = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
+        try:
+            attendee = session.query(Attendee).filter_by(public_id=cherrypy.session['staffer_id']).one()
+        except: # todo: be more specific with exceptions
+            session.close()
 
         if 'webhook_url' in params:
             if cherrypy.session['is_dh'] or cherrypy.session['is_admin']:
@@ -1250,6 +1251,7 @@ class Root:
             else:
                 session = models.new_sesh()
                 attend = session.query(Attendee).filter_by(badge_num=params['food_manager']).one()
+                session.close()
                 if attend.public_id in cfg.food_managers:
                     raise HTTPRedirect('dept_order?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                                        '&message=Food Manager already added to list')
@@ -1468,6 +1470,7 @@ class Root:
                 order_count = session.query(Order).filter_by(department_id=dept[2], meal_id=meal_id).count()
                 if order_count == 0:
                     self.ssf_complete_order(meal_id, dept[2], no_redirect=True)
+            session.close()
             raise HTTPRedirect('ssf_dept_list?meal_id=' + str(meal_id) + '&meal_name=' + meal_name)
 
         if remaining_orders == 0:
