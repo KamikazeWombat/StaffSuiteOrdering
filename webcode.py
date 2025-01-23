@@ -1617,12 +1617,16 @@ class Root:
                                 cfg=cfg)
 
                 for order in order_list:
-                    if (len(order.notes) > 80) and (len(order.allergies['freeform']) > 80):
+                    try:
+                        allergies_freeform = order.allergies['freeform']
+                    except TypeError:
+                        allergies_freeform = ""
+                    if (len(order.notes) > 80) and (len(allergies_freeform) > 80):
                         order.notes = "<<< Notes too long for printing, please look at order fulfilment page to read >>>"
                         order.allergies['freeform'] = "<<< Allergies too long for printing, please look at order fulfilment page to read >>>"
                     if len(order.notes) > 140:
                         order.notes = "<<< Notes too long for printing, please look at order fulfilment page to read >>>"
-                    if len(order.allergies['freeform']) > 140:
+                    if len(allergies_freeform) > 140:
                         order.allergies['freeform'] = "<<< Allergies too long for printing, please look at order fulfilment page to read >>>"
 
                 if cfg.env == "dev":  # Windows todo: change this to detect OS instead
