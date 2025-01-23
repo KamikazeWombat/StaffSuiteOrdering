@@ -27,7 +27,9 @@ def create_my_db_engine():
                                cfg.db_config['user'] + ":" +
                                cfg.db_config['password'] + "@" +
                                cfg.db_config['location'] + "/" +
-                               cfg.db_config['db_name'])
+                               cfg.db_config['db_name'],
+                               pool_size=cfg.db_config['pool_size'],
+                               max_overflow=cfg.db_config['max_overflow'])
 
     return engine
 
