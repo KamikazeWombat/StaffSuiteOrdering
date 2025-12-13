@@ -1878,7 +1878,7 @@ class Root:
 
         checkins = session.query(models.checkin.Checkin).all()
 
-        export = 'Meal ID,Meal Desc,Badge Number,Timestamp\n'
+        export = 'Meal ID,Meal Desc,Badge Number,Badge Type,Timestamp\n'
         for checkin in checkins:
             if checkin.meal_id:
                 export += str(checkin.meal_id)
@@ -1890,6 +1890,12 @@ class Root:
             export += ','
             export += str(checkin.attendee.badge_num)
             export += ','
+            response = shared_functions.lookup_attendee(checkin.attendee.badge_num, full=True)
+            if "error" in response:
+                export += 'Error,'
+            else:
+                export += str(response['result']['badge_type_label'])
+                export += ','
             checkin.timestamp = con_tz(checkin.timestamp)
             export += checkin.timestamp.strftime(cfg.date_format)
             export += '\n'
@@ -1910,7 +1916,7 @@ class Root:
         session = models.new_sesh()
         start = datetime.utcnow()
         orders = session.query(models.order.Order).all()
-        export = 'Meal Id,Meal Desc,Department,Badge Number,Overridden,Eligible for Carryout,Notes\n'
+        export = 'Meal Id,Meal Desc,Department,Badge Number,Overridden,Eligible for Carryout,Badge Type,Notes\n'
         print('-------------beginning order CSV export-------------')
         for order in orders:
             export += str(order.meal_id)
@@ -1925,9 +1931,11 @@ class Root:
             export += ','
             shifts, response = combine_shifts(order.attendee.badge_num, no_combine=True, full=True)
             if "error" in response:
-                export += 'Error'
+                export += 'Error,' # error for shifts, blank for badge type
             else:
                 export += str(shared_functions.carryout_eligible(shifts, response, order.meal.start_time, order.meal.end_time))
+                export += ','
+                export += str(response['result']['badge_type_label'])
             export += ','
             replacement_list = [',', ';', '\r', '\n', '\t']
             for char in replacement_list:
@@ -1936,7 +1944,7 @@ class Root:
             export += '\n'
 
         end = datetime.utcnow()
-        rd = relativedelta(start, end)
+        rd = relativedelta(end, start)
         print('-------------done generating orders CSV--------------')
         print(str(rd.minutes) + ' minutes, ' + str(rd.seconds) + ' seconds')
 
