@@ -1629,7 +1629,7 @@ class Root:
                     if len(allergies_freeform) > 140:
                         order.allergies['freeform'] = "<<< Allergies too long for printing, please look at order fulfilment page to read >>>"
 
-                if cfg.env == "dev":  # Windows todo: change this to detect OS instead
+                if cfg.is_linux == False:  # Windows
                     # for some reason the silly system decided to not find wkhtmltopdf automatically anymore on Windows
                     path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
                     config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
@@ -2122,7 +2122,7 @@ class Root:
                 # 'print-media-type': None,
                 'dpi': '203'
             }
-            if cfg.env == "dev":  # Windows todo: change this to detect OS instead
+            if cfg.is_linux == False:  # Windows
                 # for some reason the silly system decided to not find wkhtmltopdf automatically anymore on Windows
                 path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
                 config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)

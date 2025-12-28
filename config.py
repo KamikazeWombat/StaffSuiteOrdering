@@ -133,6 +133,7 @@ class Config:
         self.room_location = str(cdata['room_location'])
         self.location_url = str(cdata['location_url'])
         self.ss_url = str(cdata['ss_url'])
+        self.is_linux = cdata['is_linux']
 
         self.cherrypy_global = cdata['cherrypy_global']
         self.cherrypy = cdata['cherrypy']
@@ -216,6 +217,7 @@ class Config:
             'room_location': self.room_location,
             'location_url': self.location_url,
             'ss_url': self.ss_url,
+            'is_linux': self.is_linux,
             'cherrypy_global': self.cherrypy_global,
             'cherrypy': self.cherrypy,
             'slackapp': self.slackapp,
