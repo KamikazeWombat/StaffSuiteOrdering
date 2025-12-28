@@ -370,7 +370,7 @@ def return_selected_only(session, choices, orders):
     for item in mylist:
         if item[0] == 1:
             selected.append(item)
-    
+
     return selected
 
 

@@ -1419,11 +1419,15 @@ class Root:
 
     @cherrypy.expose
     @ss_staffer
-    def ssf_dept_list(self, meal_id, meal_name, **params):
+    def ssf_dept_list(self, meal_id, meal_name, message=[], **params):
         """
         For chosen meal, shows list of departments with how many orders are currently submitted for that department
         Fulfilment staff can select a department to view order details.
         """
+        messages = []
+        if message:
+            text = message
+            messages.append(text)
 
         session_info = get_session_info()
 
@@ -1485,7 +1489,8 @@ class Root:
 
         session.close()
         template = env.get_template('ssf_dept_list.html')
-        return template.render(depts=dept_list,
+        return template.render(messages=messages,
+                               depts=dept_list,
                                meal_id=meal_id,
                                meal_name=meal_name,
                                total=total_orders,
@@ -1535,6 +1540,13 @@ class Root:
         session.close()  # this has to be before the order loop below or you get errors
 
         order_list = list()
+        toggle1_broken = True
+        toggle2_broken = True
+        toggle3_broken = True
+        toggle4_broken = True
+        toppings1_broken = True
+        toppings2_broken = True
+
         for order in orders:
             sorted_shifts, response = combine_shifts(order.attendee.badge_num, full=True, no_combine=True)
             try:
@@ -1550,24 +1562,23 @@ class Root:
             order.toggle2 = return_selected_only(session, choices=thismeal.toggle2, orders=order.toggle2)
             order.toggle3 = return_selected_only(session, choices=thismeal.toggle3, orders=order.toggle3)
             order.toggle4 = return_selected_only(session, choices=thismeal.toggle4, orders=order.toggle4)
-
             order.toppings1 = return_selected_only(session, choices=thismeal.toppings1, orders=order.toppings1)
             order.toppings2 = return_selected_only(session, choices=thismeal.toppings2, orders=order.toppings2)
 
-            # below modifications allows fulfilment to limp along if major meal changes are needed.
-            if len(order.toggle1) == 0:
-                thismeal.toggle1_title = ''
-            if len(order.toggle2) == 0:
-                thismeal.toggle2_title = ''
-            if len(order.toggle3) == 0:
-                thismeal.toggle3_title = ''
-            if len(order.toggle4) == 0:
-                thismeal.toggle4_title = ''
-
-            if len(order.toppings1) == 0:
-                thismeal.toppings1_title = ''
-            if len(order.toppings2) == 0:
-                thismeal.toppings2_title = ''
+            # If none of the orders contain anything from this category it could be an indication of major meal changes.
+            # So, the system assumes the category could be broken unless it finds at least one order with a selection.
+            if len(order.toggle1) > 0:
+                toggle1_broken = False
+            if len(order.toggle2) > 0:
+                toggle2_broken = False
+            if len(order.toggle3) > 0:
+                toggle3_broken = False
+            if len(order.toggle4) > 0:
+                toggle4_broken = False
+            if len(order.toppings1) > 0:
+                toppings1_broken = False
+            if len(order.toppings2) > 0:
+                toppings2_broken = False
 
             try:
                 if response['result']['food_restrictions']:
@@ -1580,6 +1591,21 @@ class Root:
 
             if order.eligible or order.overridden:
                 order_list.append(order)
+
+        # If a section is empty from processing above and therefore possibly broken
+        # blanks title to prevent further processing of this category
+        if toggle1_broken:
+            thismeal.toggle1_title = ''
+        if toggle2_broken:
+            thismeal.toggle2_title = ''
+        if toggle3_broken:
+            thismeal.toggle3_title = ''
+        if toggle4_broken:
+            thismeal.toggle4_title = ''
+        if toppings1_broken:
+            thismeal.toppings1_title = ''
+        if toppings2_broken:
+            thismeal.toppings2_title = ''
 
         if dept_order.started:
             # fix time zone for display
@@ -1629,7 +1655,7 @@ class Root:
                     if len(allergies_freeform) > 140:
                         order.allergies['freeform'] = "<<< Allergies too long for printing, please look at order fulfilment page to read >>>"
 
-                if cfg.env == "dev":  # Windows todo: change this to detect OS instead
+                if cfg.is_linux == False:  # Windows
                     # for some reason the silly system decided to not find wkhtmltopdf automatically anymore on Windows
                     path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
                     config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
@@ -1709,6 +1735,31 @@ class Root:
         raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                            '&message=This order Bundle is now locked.')
 
+    @cherrypy.expose
+    @admin_req
+    def lock_all_confirm(self, meal_id, unlock_order=False, confirm=False):
+        session = models.new_sesh()
+
+        session_info = get_session_info()
+        this_meal = session.query(Meal).filter_by(id=meal_id).one()
+        if unlock_order and not session_info['is_super_admin']:
+            raise HTTPRedirect("ssf_dept_list?meal_id=" + str(meal_id) + "&meal_name=" + this_meal.meal_name +
+                               "&message=You must be super admin to unlock all orders for a meal")
+
+        if confirm:
+            depts = session.query(Department).all()
+            for dept in depts:
+                self.ssf_lock_order(meal_id, dept.id, unlock_order, no_redirect=True)
+            raise HTTPRedirect("ssf_dept_list?meal_id=" + str(meal_id) + "&meal_name=" + this_meal.meal_name +
+                               "&message=All orders for meal " + this_meal.meal_name + " have been locked")
+
+        template = env.get_template('lock_all_confirm.html')
+        session.close()
+        return template.render(
+            meal=this_meal,
+            session=session_info,
+            c=c,
+            cfg=cfg)
 
     @cherrypy.expose
     @ss_staffer
@@ -2122,7 +2173,7 @@ class Root:
                 # 'print-media-type': None,
                 'dpi': '203'
             }
-            if cfg.env == "dev":  # Windows todo: change this to detect OS instead
+            if cfg.is_linux == False:  # Windows
                 # for some reason the silly system decided to not find wkhtmltopdf automatically anymore on Windows
                 path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
                 config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)

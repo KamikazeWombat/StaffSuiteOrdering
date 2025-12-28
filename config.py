@@ -97,7 +97,7 @@ class Config:
         cdata = json.load(configfile)
         configfile.close()
 
-        self.version = "1.2.4"  # code version
+        self.version = "1.2.5"  # code version
         if 'last_version_loaded' in cdata:
             self.last_version_loaded = cdata['last_version_loaded']
         else:
@@ -133,6 +133,7 @@ class Config:
         self.room_location = str(cdata['room_location'])
         self.location_url = str(cdata['location_url'])
         self.ss_url = str(cdata['ss_url'])
+        self.is_linux = cdata['is_linux']
 
         self.cherrypy_global = cdata['cherrypy_global']
         self.cherrypy = cdata['cherrypy']
@@ -216,6 +217,7 @@ class Config:
             'room_location': self.room_location,
             'location_url': self.location_url,
             'ss_url': self.ss_url,
+            'is_linux': self.is_linux,
             'cherrypy_global': self.cherrypy_global,
             'cherrypy': self.cherrypy,
             'slackapp': self.slackapp,
@@ -262,6 +264,7 @@ class Uberconfig:
 
         response = response['result']
         self.EVENT_NAME = response['EVENT_NAME']
+        self.EVENT_YEAR = response['EVENT_YEAR']
         self.EVENT_URL_ROOT = response['URL_ROOT']
         if response['EVENT_TIMEZONE'] == 'US/Eastern':
             self.EVENT_TIMEZONE = pytz.timezone('America/New_York')

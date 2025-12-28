@@ -6,9 +6,13 @@
 <div class="container">
   <h2 class="form-signin-heading">Department Order List for {{ meal_name }}</h2>
   <a class="btn btn-lg btn-primary " href="ssf_meal_list">Back to Meals list</a>
+
   <p>Total orders for all departments for this meal: {{ total }}</p>
   <p>Remaining for all departments for this meal: {{ remaining }}</p>
-  <a class="btn btn-lg btn-primary " href="ssf_dept_list?meal_id={{ meal_id }}&meal_name={{ meal_name }}&complete_remaining=True">Complete remaining empty Dept orders</a></td>
+  <a class="btn btn-lg btn-primary " href="ssf_dept_list?meal_id={{ meal_id }}&meal_name={{ meal_name }}&complete_remaining=True">Lock & Complete empty Dept orders</a>
+    </p>
+  <a class="btn btn-lg btn-primary " href="lock_all_confirm?meal_id={{ meal_id }}">Lock ALL Dept orders for this meal</a>
+    </p>
 
   {% for dept in depts %}
     {% set name = dept[0] %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% set admin_area=True %}
+{% block title %}Confirm Locking All Orders{% endblock %}
+{% block backlink %}{% endblock %}
+{% block content %}
+
+<div class="container">
+  <form role="form">
+    <h2 class="form-signin-heading">Locking ALL orders for this meal</h2>
+    <p>Are you absolutely sure you want to lock all orders for {{ meal.meal_name }}?</p>
+    <table>
+     <tr> <td>
+       <input type="hidden" name="meal_id" value="{{ meal.id }}"/>
+       <input type="hidden" name="confirm" value=True/>
+     </td></tr>
+      <tr><td><button class="btn btn-lg btn-primary " type="submit">Lock All</button>
+      <a class="btn btn-lg btn-primary " href="ssf_dept_list?meal_id={{ meal.id }}&meal_name={{ meal.meal_name }}">Cancel</a></td></tr>
+    </table>
+  </form>
+</div>
+{% endblock content %}
