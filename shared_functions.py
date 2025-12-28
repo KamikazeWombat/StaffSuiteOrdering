@@ -390,6 +390,11 @@ def return_not_selected(session, choices, orders):
     return selected
 
 
+def return_selected_count(session, choices, orders):
+    """
+    Runs return_selected_only and
+    """
+
 def order_selections(field, params, is_toggle=False):
     """
     Takes field name and list of ingredient choice IDs and goes through params to find which of the available choices
