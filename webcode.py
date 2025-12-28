@@ -1419,11 +1419,15 @@ class Root:
 
     @cherrypy.expose
     @ss_staffer
-    def ssf_dept_list(self, meal_id, meal_name, **params):
+    def ssf_dept_list(self, meal_id, meal_name, message=[], **params):
         """
         For chosen meal, shows list of departments with how many orders are currently submitted for that department
         Fulfilment staff can select a department to view order details.
         """
+        messages = []
+        if message:
+            text = message
+            messages.append(text)
 
         session_info = get_session_info()
 
@@ -1485,7 +1489,8 @@ class Root:
 
         session.close()
         template = env.get_template('ssf_dept_list.html')
-        return template.render(depts=dept_list,
+        return template.render(messages=messages,
+                               depts=dept_list,
                                meal_id=meal_id,
                                meal_name=meal_name,
                                total=total_orders,
@@ -1730,6 +1735,31 @@ class Root:
         raise HTTPRedirect('ssf_orders?meal_id=' + str(meal_id) + '&dept_id=' + str(dept_id) +
                            '&message=This order Bundle is now locked.')
 
+    @cherrypy.expose
+    @admin_req
+    def lock_all_confirm(self, meal_id, unlock_order=False, confirm=False):
+        session = models.new_sesh()
+
+        session_info = get_session_info()
+        this_meal = session.query(Meal).filter_by(id=meal_id).one()
+        if unlock_order and not session_info['is_super_admin']:
+            raise HTTPRedirect("ssf_dept_list?meal_id=" + str(meal_id) + "&meal_name=" + this_meal.meal_name +
+                               "&message=You must be super admin to unlock all orders for a meal")
+
+        if confirm:
+            depts = session.query(Department).all()
+            for dept in depts:
+                self.ssf_lock_order(meal_id, dept.id, unlock_order, no_redirect=True)
+            raise HTTPRedirect("ssf_dept_list?meal_id=" + str(meal_id) + "&meal_name=" + this_meal.meal_name +
+                               "&message=All orders for meal " + this_meal.meal_name + " have been locked")
+
+        template = env.get_template('lock_all_confirm.html')
+        session.close()
+        return template.render(
+            meal=this_meal,
+            session=session_info,
+            c=c,
+            cfg=cfg)
 
     @cherrypy.expose
     @ss_staffer
