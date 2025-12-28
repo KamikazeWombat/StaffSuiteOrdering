@@ -97,7 +97,7 @@ class Config:
         cdata = json.load(configfile)
         configfile.close()
 
-        self.version = "1.2.4"  # code version
+        self.version = "1.2.5"  # code version
         if 'last_version_loaded' in cdata:
             self.last_version_loaded = cdata['last_version_loaded']
         else:
@@ -264,6 +264,7 @@ class Uberconfig:
 
         response = response['result']
         self.EVENT_NAME = response['EVENT_NAME']
+        self.EVENT_YEAR = response['EVENT_YEAR']
         self.EVENT_URL_ROOT = response['URL_ROOT']
         if response['EVENT_TIMEZONE'] == 'US/Eastern':
             self.EVENT_TIMEZONE = pytz.timezone('America/New_York')

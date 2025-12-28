@@ -5,7 +5,7 @@ import re
 import smtplib
 import time
 
-from config import cfg
+from config import cfg, c
 import slack_bot
 
 
@@ -26,18 +26,18 @@ def send_message(recipients, dept_name, meal_name):
     BODY_TEXT = ("Your department's order bundle for " + str(meal_name) + " for " + str(dept_name)
                  + " is ready for pickup. \r\n"
                  "Please have someone come get it.  Thanks!\r\n \r\n"
-                 "Staff Suite for 2022 is in " + cfg.room_location + " \r\n"
+                 "Staff Suite for " + str(c.EVENT_YEAR) + " is in " + cfg.room_location + " \r\n"
                  "For help finding Staff Suite or more information about it, please go to " +
                  cfg.location_url)
     BODY_HTML = """<html>
     <body>
         <h1>Your department's order bundle for {dept} for {meal} is ready for pickup.</h1>
         <p>Please have someone come get it.  Thanks!</p>
-        <p>Staff Suite for 2022 is in {room}</p>
+        <p>Staff Suite for {year} is in {room}</p>
         <p>For help finding Staff Suite or more information about it, please go to 
         <a href="{url}">Staff Suite's Notion Page</a></p>
     </body>
-    </html>""".format(dept=dept_name, meal=meal_name, room=cfg.room_location, url=cfg.location_url)
+    </html>""".format(dept=dept_name, meal=meal_name, room=cfg.room_location, url=cfg.location_url, year=c.EVENT_YEAR)
 
     msg = MIMEMultipart('alternative')
     msg['Subject'] = SUBJECT
