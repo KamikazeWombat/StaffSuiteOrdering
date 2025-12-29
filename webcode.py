@@ -1450,7 +1450,7 @@ class Root:
         for dept in depts:
             # todo: make this count only eligible orders, but will require ~30 seconds to load if done by plain loop
             order_count = session.query(Order).filter_by(department_id=dept.id, meal_id=meal_id).count()
-            order_list = session.query(Order).filter_by(department_id=dept.id, meal_id=meal_id).all()
+            """order_list = session.query(Order).filter_by(department_id=dept.id, meal_id=meal_id).all()
             for order in order_list:
                 choices = thismeal.toggle1
                 order.toggle1 = return_selected_only(session, choices, orders=order.toggle1)
@@ -1476,7 +1476,7 @@ class Root:
                 order.toppings1 = return_selected_only(session, choices=thismeal.toppings1, orders=order.toppings1)
                 order.toppings2 = return_selected_only(session, choices=thismeal.toppings2, orders=order.toppings2)
 
-
+            """
 
             try:
                 dept_order = session.query(DeptOrder).filter_by(dept_id=dept.id, meal_id=meal_id).one()
