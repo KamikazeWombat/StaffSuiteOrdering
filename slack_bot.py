@@ -40,9 +40,9 @@ def send_message(channels, message, pings="", is_error_message=False):
             continue
         try:
             record = session.query(Slack_User).filter(or_(
-                Slack_User.name.icontains(user_no_at),
-                Slack_User.display_name.icontains(user_no_at),
-                Slack_User.real_name.icontains(user_no_at)
+                Slack_User.name.ilike(f'%{user_no_at}%'),
+                Slack_User.display_name.ilike(f'%{user_no_at}%'),
+                Slack_User.real_name.ilike(f'%{user_no_at}%')
             )).one()
 
             ping_final = ping_final + '@' + record.name + " "
@@ -50,9 +50,9 @@ def send_message(channels, message, pings="", is_error_message=False):
         except sqlalchemy.exc.MultipleResultsFound:
             # go ahead and append whatever failed lookup too in case someone included extra info in their message
             record_list = session.query(Slack_User).filter(or_(
-                Slack_User.name.icontains(user_no_at),
-                Slack_User.display_name.icontains(user_no_at),
-                Slack_User.real_name.icontains(user_no_at)
+                Slack_User.name.ilike(f'%{user_no_at}%'),
+                Slack_User.display_name.ilike(f'%{user_no_at}%'),
+                Slack_User.real_name.ilike(f'%{user_no_at}%')
             )).all()
             matches_found = 0
             exact_matches = list()

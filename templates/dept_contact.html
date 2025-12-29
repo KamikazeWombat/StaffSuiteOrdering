@@ -11,6 +11,7 @@
   {% endif %}
   <h3>This is the contact info that will be used when your Department's order bundles are ready.</h3>
   <p>Notification is automatically sent to any info submitted below when Staff Suite marks your Dept's order ready for pickup.</p>
+  <p>All sections are optional</p>
   <form>
     {{ macros.dropdown(field='dept_id_dropdown', options=depts, is_required=True) }}
     {% if not dept %}
