@@ -40,12 +40,48 @@ def send_message(channels, message, pings="", is_error_message=False):
             continue
         try:
             record = session.query(Slack_User).filter(or_(
-                Slack_User.name.ilike(f'%{user_no_at}%'),
-                Slack_User.display_name.ilike(f'%{user_no_at}%'),
-                Slack_User.real_name.ilike(f'%{user_no_at}%')
+                Slack_User.name.ilike(user_no_at),
+                Slack_User.display_name.ilike(user_no_at),
+                Slack_User.real_name.ilike(user_no_at)
             )).one()
 
             ping_final = ping_final + '@' + record.name + " "
+
+        except sqlalchemy.orm.exc.NoResultFound:
+            # if nothing matched exact lookup try partial lookup
+            try:
+                record = session.query(Slack_User).filter(or_(
+                    Slack_User.name.ilike(f'%{user_no_at}%'),
+                    Slack_User.display_name.ilike(f'%{user_no_at}%'),
+                    Slack_User.real_name.ilike(f'%{user_no_at}%')
+                )).one()
+
+                ping_final = ping_final + '@' + record.name + " "
+            except sqlalchemy.orm.exc.NoResultFound:
+                # if nothing matched partial lookup also go ahead and attach whatever failed lookup in case it's just extra info
+                ping_final = ping_final + user
+            except sqlalchemy.exc.MultipleResultsFound:
+                # go ahead and append whatever failed lookup too in case someone included extra info in their message
+                record_list = session.query(Slack_User).filter(or_(
+                    Slack_User.name.ilike(f'%{user_no_at}%'),
+                    Slack_User.display_name.ilike(f'%{user_no_at}%'),
+                    Slack_User.real_name.ilike(f'%{user_no_at}%')
+                )).all()
+                matches_found = 0
+                exact_matches = list()
+                for record in record_list:
+                    if (record.name.lower() == user_no_at.lower() or
+                            record.display_name.lower() == user_no_at.lower() or
+                            record.real_name.lower() == user_no_at.lower()):
+                        # in the case of multiple matches checks to see if one is the actual username and includes it if so.
+                        exact_matches.append('@' + record.name + " ")
+                        matches_found += 1
+                if matches_found > 1:
+                    ping_final = ping_final + user
+                if matches_found == 0:
+                    ping_final = ping_final + user
+                if matches_found == 1:
+                    ping_final = ping_final + exact_matches[0]
 
         except sqlalchemy.exc.MultipleResultsFound:
             # go ahead and append whatever failed lookup too in case someone included extra info in their message
@@ -70,9 +106,7 @@ def send_message(channels, message, pings="", is_error_message=False):
             if matches_found == 1:
                 ping_final = ping_final + exact_matches[0]
 
-        except sqlalchemy.orm.exc.NoResultFound:
-            # if nothing matched also go ahead and attach whatever failed lookup in case it's just extra info
-            ping_final = ping_final + user
+
 
     message = message + ping_final
 
