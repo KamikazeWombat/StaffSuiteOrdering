@@ -17,6 +17,7 @@ from config import env, cfg, c
 from decorators import *
 import models
 from models.attendee import Attendee
+from models.ingredient import Ingredient
 from models.meal import Meal
 from models.order import Order
 from models.department import Department
@@ -1441,10 +1442,41 @@ class Root:
         remaining_orders = 0
         no_remaining_orders = False
         order_fulfilment_completed = False
+        order_options = list()
+        thismeal = session.query(Meal).filter_by(id=meal_id).one()
+
+        selection_count_dict = {}
 
         for dept in depts:
             # todo: make this count only eligible orders, but will require ~30 seconds to load if done by plain loop
             order_count = session.query(Order).filter_by(department_id=dept.id, meal_id=meal_id).count()
+            """order_list = session.query(Order).filter_by(department_id=dept.id, meal_id=meal_id).all()
+            for order in order_list:
+                choices = thismeal.toggle1
+                order.toggle1 = return_selected_only(session, choices, orders=order.toggle1)
+                try:
+                    choices_list = sorted(choices.split(','))
+                except ValueError:
+                    # this happens if no toppings in list
+                    return []
+                choices_list = session.query(Ingredient).filter(Ingredient.id.in_(choices_list)).order_by(
+                    Ingredient.sort_by).all()
+
+                for choice in choices_list:
+                    if choice in orders_list:
+                        mytuple = (1, choice.label, choice.description, choice.id, choice.sort_by)
+                    else:
+                        mytuple = ('', choice.label, choice.description, choice.id, choice.sort_by)
+
+                    tuple_list.append(mytuple)
+
+                order.toggle2 = return_selected_only(session, choices=thismeal.toggle2, orders=order.toggle2)
+                order.toggle3 = return_selected_only(session, choices=thismeal.toggle3, orders=order.toggle3)
+                order.toggle4 = return_selected_only(session, choices=thismeal.toggle4, orders=order.toggle4)
+                order.toppings1 = return_selected_only(session, choices=thismeal.toppings1, orders=order.toppings1)
+                order.toppings2 = return_selected_only(session, choices=thismeal.toppings2, orders=order.toppings2)
+
+            """
 
             try:
                 dept_order = session.query(DeptOrder).filter_by(dept_id=dept.id, meal_id=meal_id).one()
