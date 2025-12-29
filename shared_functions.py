@@ -1,5 +1,6 @@
 import copy
 import json
+import psycopg2.errors
 import random
 import requests
 from urllib.parse import quote, urlparse
@@ -1087,14 +1088,26 @@ def do_upgrade():
     if first_older_than_second(cfg.last_version_loaded, "1.2.3"):
         # add toggle4 fields
         print("--------------Upgrading to 1.2.3-------------")
-        engine = create_my_db_engine()
-        connection = engine.connect()
-        query = 'ALTER TABLE meal ADD toggle4 VARCHAR;'
-        connection.execute(sqlalchemy.text(query))
-        query = 'ALTER TABLE meal ADD toggle4_name VARCHAR;'
-        connection.execute(sqlalchemy.text(query))
-        query = 'ALTER TABLE "order" ADD toggle4 VARCHAR;'
-        connection.execute(sqlalchemy.text(query))
+        try:
+            engine = create_my_db_engine()
+            connection = engine.connect()
+            query = 'ALTER TABLE meal ADD toggle4 VARCHAR;'
+            connection.execute(sqlalchemy.text(query))
+        except psycopg2.errors.DuplicateColumn:
+            # if this runs but toggle4 column already exists that's not a problem
+            pass
+        try:
+            query = 'ALTER TABLE meal ADD toggle4_name VARCHAR;'
+            connection.execute(sqlalchemy.text(query))
+        except psycopg2.errors.DuplicateColumn:
+            # if this runs but toggle4 column already exists that's not a problem
+            pass
+        try:
+            query = 'ALTER TABLE "order" ADD toggle4 VARCHAR;'
+            connection.execute(sqlalchemy.text(query))
+        except psycopg2.errors.DuplicateColumn:
+            # if this runs but toggle4 column already exists that's not a problem
+            pass
         connection.commit()
         connection.close()
         engine.dispose()
