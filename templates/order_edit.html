@@ -83,11 +83,11 @@
       </div>
     {% endif %}
     <br/>
-    Notes
+    <!--Notes
     <textarea name="notes" cols="50" rows="4" maxlength="120"{% if order.locked %} disabled{% endif %}
               placeholder="Notes/requests. No guarantees that requests will be honored due to lack of time and staff for order processing, please be aware of your own allergies."
     >{{ order.notes }}</textarea>
-    <br/>
+    <br/>-->
     {% if order.eligible == False %}
       <h3 style="border:5px solid; padding:2px; color:red;">You are not seen as automatically eligible to order for this meal by the food system.
         You will need to get your DH to Approve your order or else go to Staff Suite in {{ cfg.room_location }} for self serve food.
