@@ -623,7 +623,7 @@ def ss_eligible(badge_num):
     response = lookup_attendee(badge_num, full=True)
     
     if "error" in response:
-        print('------------Error looking up attendee eligibility for ' + badge_num + ' --------------')
+        print('------------Error looking up attendee eligibility for ' + str(badge_num) + ' --------------')
         return False
     
     attendee = response['result']
@@ -869,10 +869,11 @@ def allergy_info(badge_num, response=None):
     """
     if not response:
         response = lookup_attendee(badge_num, full=True)
-    if response['result']['food_restrictions']:
+    try:
         allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
                      'freeform': response['result']['food_restrictions']['freeform']}
-    else:
+
+    except KeyError:
         allergies = {'standard_labels': '', 'freeform': ''}
 
     return allergies
