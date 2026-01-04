@@ -1442,41 +1442,57 @@ class Root:
         remaining_orders = 0
         no_remaining_orders = False
         order_fulfilment_completed = False
-        order_options = list()
-        thismeal = session.query(Meal).filter_by(id=meal_id).one()
-
-        selection_count_dict = {}
+        order_selections = {}
 
         for dept in depts:
             # todo: make this count only eligible orders, but will require ~30 seconds to load if done by plain loop
             order_count = session.query(Order).filter_by(department_id=dept.id, meal_id=meal_id).count()
-            """order_list = session.query(Order).filter_by(department_id=dept.id, meal_id=meal_id).all()
-            for order in order_list:
-                choices = thismeal.toggle1
-                order.toggle1 = return_selected_only(session, choices, orders=order.toggle1)
-                try:
-                    choices_list = sorted(choices.split(','))
-                except ValueError:
-                    # this happens if no toppings in list
-                    return []
-                choices_list = session.query(Ingredient).filter(Ingredient.id.in_(choices_list)).order_by(
-                    Ingredient.sort_by).all()
 
-                for choice in choices_list:
-                    if choice in orders_list:
-                        mytuple = (1, choice.label, choice.description, choice.id, choice.sort_by)
+            orders = session.query(Order).filter_by(department_id=dept.id, meal_id=meal_id)
+            for order in orders:
+                # count ingredient choices
+                toggle1_list = order.toggle1.split(',')
+                for choice in toggle1_list:
+                    if choice in order_selections:
+                        order_selections[choice] = order_selections[choice] + 1
                     else:
-                        mytuple = ('', choice.label, choice.description, choice.id, choice.sort_by)
-
-                    tuple_list.append(mytuple)
-
-                order.toggle2 = return_selected_only(session, choices=thismeal.toggle2, orders=order.toggle2)
-                order.toggle3 = return_selected_only(session, choices=thismeal.toggle3, orders=order.toggle3)
-                order.toggle4 = return_selected_only(session, choices=thismeal.toggle4, orders=order.toggle4)
-                order.toppings1 = return_selected_only(session, choices=thismeal.toppings1, orders=order.toppings1)
-                order.toppings2 = return_selected_only(session, choices=thismeal.toppings2, orders=order.toppings2)
-
-            """
+                        # if choice is in toggle1 list but not yet in selections list then add it as count of 1
+                        order_selections[choice] = 1
+                toggle2_list = order.toggle2.split(',')
+                for choice in toggle2_list:
+                    if choice in order_selections:
+                        order_selections[choice] = order_selections[choice] + 1
+                    else:
+                        # if choice is in toggle1 list but not yet in selections list then add it as count of 1
+                        order_selections[choice] = 1
+                toggle3_list = order.toggle3.split(',')
+                for choice in toggle3_list:
+                    if choice in order_selections:
+                        order_selections[choice] = order_selections[choice] + 1
+                    else:
+                        # if choice is in toggle1 list but not yet in selections list then add it as count of 1
+                        order_selections[choice] = 1
+                toggle4_list = order.toggle4.split(',')
+                for choice in toggle4_list:
+                    if choice in order_selections:
+                        order_selections[choice] = order_selections[choice] + 1
+                    else:
+                        # if choice is in toggle1 list but not yet in selections list then add it as count of 1
+                        order_selections[choice] = 1
+                toppings1_list = order.toppings1.split(',')
+                for choice in toppings1_list:
+                    if choice in order_selections:
+                        order_selections[choice] = order_selections[choice] + 1
+                    else:
+                        # if choice is in toggle1 list but not yet in selections list then add it as count of 1
+                        order_selections[choice] = 1
+                toppings2_list = order.toppings2.split(',')
+                for choice in toppings2_list:
+                    if choice in order_selections:
+                        order_selections[choice] = order_selections[choice] + 1
+                    else:
+                        # if choice is in toggle1 list but not yet in selections list then add it as count of 1
+                        order_selections[choice] = 1
 
             try:
                 dept_order = session.query(DeptOrder).filter_by(dept_id=dept.id, meal_id=meal_id).one()
@@ -1515,6 +1531,17 @@ class Root:
         if len(dept_list) == 0 and len(orderless_depts) == 0:
             order_fulfilment_completed = True
 
+        choices_list = session.query(Ingredient).order_by(Ingredient.sort_by).all()
+        # goes through all possible order choices
+        # if they are in the selection count list replaces that item in the list with the details of said item and count
+
+        choices_count = list()
+        for choice in choices_list:
+            if str(choice.id) in order_selections:
+                mytuple = (order_selections[str(choice.id)], choice.label, choice.sort_by)
+                choices_count.append(mytuple)
+                # todo: probably need to add something here to handle when an ingredient was deleted after an order uses
+
         # todo: if remaining orders 0 then offer button to lock and then complete empty depts
         # todo: needs to lock, then check orderless list again if 0 remaining before marking all complete
         # todo: probably sleep 1 between locking and checking for orders to make sure any in-progress commits finish
@@ -1531,6 +1558,7 @@ class Root:
                                orderless_depts=orderless_depts,
                                no_remaining_orders=no_remaining_orders,
                                order_fulfilment_completed=order_fulfilment_completed,
+                               order_selections=choices_count,
                                session=session_info,
                                c=c,
                                cfg=cfg)

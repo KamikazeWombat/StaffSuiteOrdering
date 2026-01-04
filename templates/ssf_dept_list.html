@@ -9,6 +9,16 @@
 
   <p>Total orders for all departments for this meal: {{ total }}</p>
   <p>Remaining for all departments for this meal: {{ remaining }}</p>
+    <table>
+    {% for choice in order_selections %}
+      {% set choice_count = choice[0] %}
+      {% set choice_label = choice[1] %}
+        <tr>
+            <td><label class="form-control">{{ choice_count }}</label></td>
+            <td><label class="form-control">{{ choice_label }}</label></td>
+        </tr>
+    {% endfor %}
+    </table>
   <a class="btn btn-lg btn-primary " href="ssf_dept_list?meal_id={{ meal_id }}&meal_name={{ meal_name }}&complete_remaining=True">Lock & Complete empty Dept orders</a>
     </p>
   <a class="btn btn-lg btn-primary " href="lock_all_confirm?meal_id={{ meal_id }}">Lock ALL Dept orders for this meal</a>
