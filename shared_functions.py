@@ -749,13 +749,13 @@ def carryout_eligible(shifts, response, meal_start, meal_end):
     :return: returns True or False
     """
 
-    if response['result']['is_dept_head']:
+    if 'result' in response and 'is_dept_head' in response['result']:
         return True
 
-    if response['result']['badge_type_label'] in ["Contractor", "Guest"]:
+    if 'result' in response and response['result']['badge_type_label'] in ["Contractor", "Guest"]:
         return True
 
-    if response['result']['public_id'] in cfg.food_managers:
+    if 'result' in response and response['result']['public_id'] in cfg.food_managers:
         return True
 
     # need to check combined if shift starts within <<buffer>> after start of meal time or earlier
@@ -814,7 +814,7 @@ def carryout_eligible(shifts, response, meal_start, meal_end):
 
     session = models.new_sesh()
 
-    if is_vip(response['result']['badge_num'], session):
+    if 'result' in response and is_vip(response['result']['badge_num'], session):
         session.close()
         return True
 
