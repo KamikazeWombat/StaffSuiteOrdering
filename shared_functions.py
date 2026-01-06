@@ -873,7 +873,7 @@ def allergy_info(badge_num, response=None):
         allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
                      'freeform': response['result']['food_restrictions']['freeform']}
 
-    except KeyError:
+    except (KeyError, TypeError):
         allergies = {'standard_labels': '', 'freeform': ''}
 
     return allergies
