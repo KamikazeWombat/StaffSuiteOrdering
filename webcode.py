@@ -67,7 +67,7 @@ class Root:
             raise HTTPRedirect('login?message=Succesfully logged out')
 
         # if login from returns data for all fields, send login request to Uber
-        if first_name and last_name and email and zip_code:
+        if first_name:
             response = api_login(first_name=first_name, last_name=last_name,
                                  email=email, zip_code=zip_code)
 
