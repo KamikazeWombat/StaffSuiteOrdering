@@ -1519,43 +1519,43 @@ class Root:
 
             total_orders += order_count
 
-            # combine each list section to one big list, in order of category
-            for choice in toggle1_selections:
-                if choice in order_selections:
-                    order_selections[choice] = order_selections[choice] + 1
-                else:
-                    # if choice is in list but not yet in selections list then add it as count of 1
-                    order_selections[choice] = 1
-            for choice in toggle2_selections:
-                if choice in order_selections:
-                    order_selections[choice] = order_selections[choice] + 1
-                else:
-                    # if choice is in list but not yet in selections list then add it as count of 1
-                    order_selections[choice] = 1
-            for choice in toggle3_selections:
-                if choice in order_selections:
-                    order_selections[choice] = order_selections[choice] + 1
-                else:
-                    # if choice is in list but not yet in selections list then add it as count of 1
-                    order_selections[choice] = 1
-            for choice in toggle4_selections:
-                if choice in order_selections:
-                    order_selections[choice] = order_selections[choice] + 1
-                else:
-                    # if choice is in list but not yet in selections list then add it as count of 1
-                    order_selections[choice] = 1
-            for choice in toppings1_selections:
-                if choice in order_selections:
-                    order_selections[choice] = order_selections[choice] + 1
-                else:
-                    # if choice is in list but not yet in selections list then add it as count of 1
-                    order_selections[choice] = 1
-            for choice in toppings2_selections:
-                if choice in order_selections:
-                    order_selections[choice] = order_selections[choice] + 1
-                else:
-                    # if choice is in list but not yet in selections list then add it as count of 1
-                    order_selections[choice] = 1
+        # combine each list section to one big list, in order of category
+        for choice in toggle1_selections:
+            if choice in order_selections:
+                order_selections[choice] = order_selections[choice] + toggle1_selections[choice]
+            else:
+                # if choice is in list but not yet in selections list then add it as count of 1
+                order_selections[choice] = toggle1_selections[choice]
+        for choice in toggle2_selections:
+            if choice in order_selections:
+                order_selections[choice] = order_selections[choice] + toggle2_selections[choice]
+            else:
+                # if choice is in list but not yet in selections list then add it as count of 1
+                order_selections[choice] = toggle2_selections[choice]
+        for choice in toggle3_selections:
+            if choice in order_selections:
+                order_selections[choice] = order_selections[choice] + toggle3_selections[choice]
+            else:
+                # if choice is in list but not yet in selections list then add it as count of 1
+                order_selections[choice] = toggle3_selections[choice]
+        for choice in toggle4_selections:
+            if choice in order_selections:
+                order_selections[choice] = order_selections[choice] + toggle4_selections[choice]
+            else:
+                # if choice is in list but not yet in selections list then add it as count of 1
+                order_selections[choice] = toggle4_selections[choice]
+        for choice in toppings1_selections:
+            if choice in order_selections:
+                order_selections[choice] = order_selections[choice] + toppings1_selections[choice]
+            else:
+                # if choice is in list but not yet in selections list then add it as count of 1
+                order_selections[choice] = toppings1_selections[choice]
+        for choice in toppings2_selections:
+            if choice in order_selections:
+                order_selections[choice] = order_selections[choice] + toppings2_selections[choice]
+            else:
+                # if choice is in list but not yet in selections list then add it as count of 1
+                order_selections[choice] = toppings2_selections[choice]
 
         if 'complete_remaining' in params and params['complete_remaining']:
             # locks all remaining orders for dept and meal then checks if any remaining orders for meal
@@ -1576,15 +1576,15 @@ class Root:
             order_fulfilment_completed = True
 
         choices_list = session.query(Ingredient).order_by(Ingredient.sort_by).all()
-        # goes through all possible order choices
-        # if they are in the selection count list replaces that item in the list with the details of said item and count
 
         choices_count = list()
-        for choice in choices_list:
-            if str(choice.id) in order_selections:
-                mytuple = (order_selections[str(choice.id)], choice.label, choice.sort_by)
+        for item in order_selections.items():
+            print(item)
+            if item[0]:
+                ing = session.query(Ingredient).filter_by(id=int(item[0])).one()
+                mytuple = (item[1], ing.label)
+                print(mytuple)
                 choices_count.append(mytuple)
-                # todo: probably need to add something here to handle when an ingredient was deleted after an order uses
 
         # todo: if remaining orders 0 then offer button to lock and then complete empty depts
         # todo: needs to lock, then check orderless list again if 0 remaining before marking all complete
@@ -1751,40 +1751,40 @@ class Root:
         # combine each list section to one big list, in order of category
         for choice in toggle1_selections:
             if choice in order_selections:
-                order_selections[choice] = order_selections[choice] + 1
+                order_selections[choice] = order_selections[choice] + toggle1_selections[choice]
             else:
                 # if choice is in list but not yet in selections list then add it as count of 1
-                order_selections[choice] = 1
+                order_selections[choice] = toggle1_selections[choice]
         for choice in toggle2_selections:
             if choice in order_selections:
-                order_selections[choice] = order_selections[choice] + 1
+                order_selections[choice] = order_selections[choice] + toggle2_selections[choice]
             else:
                 # if choice is in list but not yet in selections list then add it as count of 1
-                order_selections[choice] = 1
+                order_selections[choice] = toggle2_selections[choice]
         for choice in toggle3_selections:
             if choice in order_selections:
-                order_selections[choice] = order_selections[choice] + 1
+                order_selections[choice] = order_selections[choice] + toggle3_selections[choice]
             else:
                 # if choice is in list but not yet in selections list then add it as count of 1
-                order_selections[choice] = 1
+                order_selections[choice] = toggle3_selections[choice]
         for choice in toggle4_selections:
             if choice in order_selections:
-                order_selections[choice] = order_selections[choice] + 1
+                order_selections[choice] = order_selections[choice] + toggle4_selections[choice]
             else:
                 # if choice is in list but not yet in selections list then add it as count of 1
-                order_selections[choice] = 1
+                order_selections[choice] = toggle4_selections[choice]
         for choice in toppings1_selections:
             if choice in order_selections:
-                order_selections[choice] = order_selections[choice] + 1
+                order_selections[choice] = order_selections[choice] + toppings1_selections[choice]
             else:
                 # if choice is in list but not yet in selections list then add it as count of 1
-                order_selections[choice] = 1
+                order_selections[choice] = toppings1_selections[choice]
         for choice in toppings2_selections:
             if choice in order_selections:
-                order_selections[choice] = order_selections[choice] + 1
+                order_selections[choice] = order_selections[choice] + toppings2_selections[choice]
             else:
                 # if choice is in list but not yet in selections list then add it as count of 1
-                order_selections[choice] = 1
+                order_selections[choice] = toppings2_selections[choice]
         choices_list = session.query(Ingredient).order_by(Ingredient.sort_by).all()
         # goes through all possible order choices
         # if they are in the selection count list replaces that item in the list with the details of said item and count
