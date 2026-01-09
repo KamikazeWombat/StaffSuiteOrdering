@@ -1591,11 +1591,9 @@ class Root:
 
         choices_count = list()
         for item in order_selections.items():
-            print(item)
             if item[0]:
                 ing = session.query(Ingredient).filter_by(id=int(item[0])).one()
                 mytuple = (item[1], ing.label)
-                print(mytuple)
                 choices_count.append(mytuple)
 
         # todo: if remaining orders 0 then offer button to lock and then complete empty depts
