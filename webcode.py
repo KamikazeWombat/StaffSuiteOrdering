@@ -690,9 +690,13 @@ class Root:
                     allergies = allergy_info(params['badge_number'])
                 except sqlalchemy.orm.exc.NoResultFound:
                     response = shared_functions.lookup_attendee(params['badge_number'], full=True)
-                    if response['result']['food_restrictions']:
-                        allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
-                                     'freeform': response['result']['food_restrictions']['freeform']}
+                    try:
+                        if response['result']['food_restrictions']:
+                            allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
+                                         'freeform': response['result']['food_restrictions']['freeform']}
+                    except (KeyError, TypeError):
+                        allergies = {'standard_labels': '', 'freeform': ''}
+
                     attend = Attendee()
                     attend.badge_num = response['result']['badge_num']
                     attend.public_id = response['result']['public_id']
@@ -764,9 +768,13 @@ class Root:
                                            + '&message=Problem looking up Attendee, '
                                              'please recheck badge number and try again.')
 
-                    if response['result']['food_restrictions']:
-                        allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
-                                     'freeform': response['result']['food_restrictions']['freeform']}
+                    try:
+                        if response['result']['food_restrictions']:
+                            allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
+                                         'freeform': response['result']['food_restrictions']['freeform']}
+                    except (KeyError, TypeError):
+                        allergies = {'standard_labels': '', 'freeform': ''}
+
                     attend = Attendee()
                     attend.badge_num = response['result']['badge_num']
                     attend.public_id = response['result']['public_id']
@@ -804,9 +812,13 @@ class Root:
                     allergies = allergy_info(params['badge_number'])
                 except sqlalchemy.orm.exc.NoResultFound:
                     response = shared_functions.lookup_attendee(params['badge_number'], full=True)
-                    if response['result']['food_restrictions']:
-                        allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
-                                     'freeform': response['result']['food_restrictions']['freeform']}
+                    try:
+                        if response['result']['food_restrictions']:
+                            allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
+                                         'freeform': response['result']['food_restrictions']['freeform']}
+                    except (KeyError, TypeError):
+                        allergies = {'standard_labels': '', 'freeform': ''}
+
                     attend = Attendee()
                     attend.badge_num = response['result']['badge_num']
                     attend.public_id = response['result']['public_id']
@@ -1742,7 +1754,7 @@ class Root:
                             response['result']['food_restrictions']['freeform']:
                         order.allergies = {'standard_labels': response['result']['food_restrictions']['standard_labels'],
                                            'freeform': response['result']['food_restrictions']['freeform']}
-            except KeyError:
+            except (KeyError, TypeError):
                 pass
 
             if order.eligible or order.overridden:
