@@ -2119,7 +2119,7 @@ class Root:
             dept = session.query(Department).filter_by(id=dept_id).one()
 
         if send_test:
-            errors = shared_functions.send_completion_messages(dept_id, session=session)
+            errors = shared_functions.send_completion_messages(dept_id, session=session, test_message=True)
             if errors:
                 messages.append("One or more of your contact methods produced an error: " + errors)
 
