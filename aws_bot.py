@@ -9,7 +9,7 @@ from config import cfg, c
 import slack_bot
 
 
-def send_message(recipients, dept_name, meal_name):
+def send_message(recipients, dept_name, meal_name, test_message=False):
     """
     Send message to list of emails using Amazon AWS
     """
@@ -22,7 +22,10 @@ def send_message(recipients, dept_name, meal_name):
     HOST = "email-smtp.us-east-1.amazonaws.com"
     PORT = 587
 
-    SUBJECT = "Staff Suite Order Ready"
+    if test_message:
+        SUBJECT = "Staff Suite !! Test Message !!"
+    else:
+        SUBJECT = "Staff Suite Order Ready"
     BODY_TEXT = ("Your department's order bundle for " + str(meal_name) + " for " + str(dept_name)
                  + " is ready for pickup. \r\n"
                  "Please have someone come get it.  Thanks!\r\n \r\n"

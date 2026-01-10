@@ -97,7 +97,7 @@ class Config:
         cdata = json.load(configfile)
         configfile.close()
 
-        self.version = "1.2.8"  # code version
+        self.version = "1.2.9"  # code version
         if 'last_version_loaded' in cdata:
             self.last_version_loaded = cdata['last_version_loaded']
         else:

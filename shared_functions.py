@@ -1316,7 +1316,7 @@ def import_meals(jsondata, replace_all=False):
     return json.dumps(export, indent=2)
 
 
-def send_completion_messages(dept_id, meal_id=None, session=None):
+def send_completion_messages(dept_id, meal_id=None, session=None, test_message=False):
     """
     Sends completion messages for a meal
     """
@@ -1340,14 +1340,14 @@ def send_completion_messages(dept_id, meal_id=None, session=None):
             if order.attendee.webhook_url:
                 send_webhook(order.attendee.webhook_url, order.attendee.webhook_data)
     else:
-        meal_name = "<This is a test message>"
+        meal_name = "!! This is a test message !!"
 
     contact_details = load_d_o_contact_details(dept)
 
     if contact_details.slack_channel:
         message = 'Your food order bundle for ' + meal_name + ' for ' + dept.name + \
                   ' is ready, please pickup from Staff Suite in ' + cfg.room_location + '.  \r\n'
-        error = slack_bot.send_message(contact_details.slack_channel, message, contact_details.slack_contact)
+        error = slack_bot.send_message(contact_details.slack_channel, message, contact_details.slack_contact, dept=dept.name)
         if error:
             errors = errors + error + "\r\n"
 
@@ -1357,7 +1357,7 @@ def send_completion_messages(dept_id, meal_id=None, session=None):
             errors = errors + error + "\r\n"
 
     if contact_details.email_contact:
-        error = aws_bot.send_message(contact_details.email_contact, dept.name, meal_name)
+        error = aws_bot.send_message(contact_details.email_contact, dept.name, meal_name, test_message=test_message)
         if error:
             errors = errors + error + "\r\n"
 

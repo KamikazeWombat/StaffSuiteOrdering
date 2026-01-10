@@ -54,16 +54,16 @@
             {% endif %}
             <input type="hidden" name="order_id" value ="{{ order.id }}">
             <br/>
-            {% if not meal.toggle1_title == "" %}
+            {% if not meal.toggle1_title == "" and order.toggle1|length > 0 %}
               <label>{{ order.toggle1[0][1] }}</label><br/>
             {% endif %}
-            {% if not meal.toggle2_title == "" %}
+            {% if not meal.toggle2_title == "" and order.toggle2|length > 0 %}
               <label>{{ order.toggle2[0][1] }}</label><br/>
             {% endif %}
-            {% if not meal.toggle3_title == "" %}
+            {% if not meal.toggle3_title == "" and order.toggle3|length > 0 %}
               <label>{{ order.toggle3[0][1] }}</label><br/>
             {% endif %}
-            {% if not meal.toggle4_title == "" %}
+            {% if not meal.toggle4_title == "" and order.toggle4|length > 0 %}
               <label>{{ order.toggle4[0][1] }}</label><br/>
             {% endif %}
           </td>
