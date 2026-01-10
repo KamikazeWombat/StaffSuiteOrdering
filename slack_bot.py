@@ -10,7 +10,7 @@ from models.slack_user import Slack_User
 from config import cfg
 
 
-def send_message(channels, message, pings="", is_error_message=False):
+def send_message(channels, message, pings="", is_error_message=False, dept=""):
     """
     sends given message to all given channels / users
     is_error_message is there because otherwise an error sending an error message creates a loop|
@@ -130,13 +130,13 @@ def send_message(channels, message, pings="", is_error_message=False):
             response = requests.post('https://slack.com/api/chat.postMessage', data, headers)
 
             if not json.loads(response.text)['ok'] and not is_error_message:
-                error = "Error sending Slack message to " + chan + ' - \r\n' + response.text
+                error = "Error sending Slack message to " + chan + ' for dept ' + dept + ' - \r\n' + response.text
                 send_message("#bottesting", error, is_error_message=True)
                 errors = errors + error + "\r\n"
 
         except Exception as e:
             if not is_error_message:
-                error = "General Error sending Slack message to " + chan + '\r\n' + str(e)
+                error = "General Error sending Slack message to " + chan + ' for dept ' + dept + '\r\n' + str(e)
                 send_message("@wombat3", error, is_error_message=True)
                 errors = errors + error + "\r\n"
 
