@@ -23,7 +23,7 @@ def send_message(recipients, dept_name, meal_name, test_message=False):
     PORT = 587
 
     if test_message:
-        SUBJECT = "Staff Suite Test Message"
+        SUBJECT = "Staff Suite !! Test Message !!"
     else:
         SUBJECT = "Staff Suite Order Ready"
     BODY_TEXT = ("Your department's order bundle for " + str(meal_name) + " for " + str(dept_name)

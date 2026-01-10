@@ -1347,7 +1347,7 @@ def send_completion_messages(dept_id, meal_id=None, session=None, test_message=F
     if contact_details.slack_channel:
         message = 'Your food order bundle for ' + meal_name + ' for ' + dept.name + \
                   ' is ready, please pickup from Staff Suite in ' + cfg.room_location + '.  \r\n'
-        error = slack_bot.send_message(contact_details.slack_channel, message, contact_details.slack_contact)
+        error = slack_bot.send_message(contact_details.slack_channel, message, contact_details.slack_contact, dept=dept.name)
         if error:
             errors = errors + error + "\r\n"
 
