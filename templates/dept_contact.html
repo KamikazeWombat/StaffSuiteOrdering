@@ -27,12 +27,13 @@
     <input type="hidden" name="dept_id" value="{{ dept.id }}"/>
     <input type="hidden" name="original_location" value="{{ original_location }}"/>
     <div class="section-border">
-      <p>Slack Channel   : <textarea name="slack_channel" cols="40" rows="1"
+        <h3>These notifications are sent <b>automatically,</b> so the Channel and User names must be spelled correctly</h3>
+      <p>Slack Channel   : <textarea name="slack_channel" cols="40" rows="3"
                 placeholder="Where to send the message"{% if not dept %} disabled{% endif %}
       >{{ dept.slack_channel }}</textarea>
-        <br/>What channel or DM to post in, eg 'staffsuiteordering, #bottesting, @wombat3'
-        <br/>Must be <b>comma separated</b> if more than one. If the channel is private you must invite @Tuber Eats to the channel before it can post there
-      <br/>If DMing someone or pinging someone please put in the username <i>you will actually have in January<i/></p>
+        <br/>What channel or DM to post in, eg '#staff-suite-ordering-app, @wombat3'
+        <br/>Must be <b>comma separated</b> if more than one. <b>If the channel is private</b> you must invite @Tuber Eats to the channel before it can post there
+          <br/>If DMing someone or pinging someone please put in the username <i>you will actually have during the event</i> or perhaps their IRL name if they have it in Slack as that also works</p>
 
       <p>Slack Contact(s): <textarea name="slack_contact" cols="40" rows="4"{% if not dept %} disabled {% endif %}
                 placeholder="Who to ping in Slack?"
@@ -40,13 +41,13 @@
     </div>
     <div class="section-border">
       <p>SMS           : <textarea name="sms_contact" cols="40" rows="4"{% if not dept %} disabled {% endif %}
-                placeholder="Phone numbers to send SMS messages to, comma separated"
-      >{{ dept.sms_contact }}</textarea><br/>Phone numbers to send SMS messages to, <b>comma separated</b></p>
+                placeholder="Phone number(s) to send SMS messages to, comma separated"
+      >{{ dept.sms_contact }}</textarea><br/>Phone number(s) to send SMS messages to, <b>comma separated</b></p>
     </div>
     <div class="section-border">
       <p>Email           : <textarea name="email_contact" cols="40" rows="4"{% if not dept %} disabled {% endif %}
-                placeholder="Email addresses to send emails to, comma separated"
-      >{{ dept.email_contact }}</textarea><br/>Email addresses to send emails to, <b>comma separated</b></p>
+                placeholder="Email address(es) to send emails to, comma separated"
+      >{{ dept.email_contact }}</textarea><br/>Email address(es) to send emails to, <b>comma separated</b></p>
     </div>
     <!--<div class="section-border">
       <p>Other Contact   : <textarea name="other_contact" cols="50" rows="6"
