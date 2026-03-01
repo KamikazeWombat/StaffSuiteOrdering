@@ -22,7 +22,7 @@ class Order(dec_base):
     toggle4 = Column('toggle4', String)
     toppings1 = Column('toppings1', String)
     toppings2 = Column('toppings2', String)
-    notes = Column('notes', String(120))  # todo: figure out how long the limit should be
+    notes = Column('notes', String(130))  # todo: figure out how long the limit should be
 
     eligible = False
     allergies = ''
