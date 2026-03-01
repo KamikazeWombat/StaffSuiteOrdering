@@ -2508,22 +2508,24 @@ class Root:
         start = datetime.utcnow()
         print('-------------beginning dept contact info CSV export for ' + str(len(depts)) + ' depts-------------')
 
-        export = "Name,has_some_contact_info,is_Shiftless,SMS,Slack_Channel,Slack_Contact,Other\n"
+        export = "Name,has_some_contact_info,is_Shiftless,Email,Slack_Channel,Slack_Contact,SMS,Other\n"
         for dept in depts:
             export += dept.name
             export += ","
-            if(dept.sms_contact or dept.slack_channel or dept.other_contact):
+            if dept.sms_contact or dept.slack_channel or dept.email_contact or dept.other_contact:
                 export += "True"
             else:
                 export += "False"
             export += ','
             export += re.sub(r'[\r\n;,]', ' ', str(dept.is_shiftless))
             export += ','
-            export += re.sub(r'[\r\n;,]', ' ', str(dept.sms_contact))
+            export += re.sub(r'[\r\n;,]', ' ', str(dept.email_contact))
             export += ','
             export += re.sub(r'[\r\n;,]', ' ', str(dept.slack_channel))
             export += ','
             export += re.sub(r'[\r\n;,]', ' ', str(dept.slack_contact))
+            export += ','
+            export += re.sub(r'[\r\n;,]', ' ', str(dept.sms_contact))
             export += ','
             export += re.sub(r'[\r\n;,]', ' ', str(dept.other_contact))
             export += '\n'
