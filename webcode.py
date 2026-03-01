@@ -2192,7 +2192,11 @@ class Root:
             export += ','
             export += order.department.name
             export += ','
-            export += str(order.attendee.badge_num)
+            try:
+                export += str(order.attendee.badge_num)
+            except sqlalchemy.exc.DataError:
+                session.rollback()
+                export += "unknown"
             export += ','
             export += str(order.overridden)
             export += ','
@@ -2206,7 +2210,7 @@ class Root:
             export += ','
             replacement_list = [',', ';', '\r', '\n', '\t']
             for char in replacement_list:
-                order.notes = order.notes.replace(char, ' - ')
+                order.notes = order.notes.replace(char, '-')
             export += order.notes
             export += '\n'
 
