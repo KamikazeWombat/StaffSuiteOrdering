@@ -2146,6 +2146,7 @@ class Root:
         checkins = session.query(models.checkin.Checkin).all()
         start = datetime.utcnow()
         print('-------------beginning order CSV export for ' + str(len(checkins)) + ' checkins-------------')
+        print('Takes something like 2-3 minutes per 1000 entries')
 
         export = 'Meal ID,Meal Desc,Badge Number,Badge Type,Timestamp\n'
         for checkin in checkins:
@@ -2192,6 +2193,8 @@ class Root:
         orders = session.query(models.order.Order).all()
         export = 'Meal Id,Meal Desc,Department,Badge Number,Overridden,Eligible for Carryout,Badge Type,Notes\n'
         print('-------------beginning order CSV export for ' + str(len(orders)) + ' orders-------------')
+        print('Takes something like 2-3 minutes per 1000 entries')
+
         for order in orders:
             export += str(order.meal_id)
             export += ','
