@@ -2144,6 +2144,8 @@ class Root:
         session = models.new_sesh()
 
         checkins = session.query(models.checkin.Checkin).all()
+        start = datetime.utcnow()
+        print('-------------beginning order CSV export for ' + str(len(checkins)) + ' checkins-------------')
 
         export = 'Meal ID,Meal Desc,Badge Number,Badge Type,Timestamp\n'
         for checkin in checkins:
@@ -2167,6 +2169,11 @@ class Root:
             export += checkin.timestamp.strftime(cfg.date_format)
             export += '\n'
 
+        end = datetime.utcnow()
+        rd = relativedelta(end, start)
+        print('-------------done generating checkins CSV--------------')
+        print(str(rd.minutes) + ' minutes, ' + str(rd.seconds) + ' seconds')
+
         exportfile = open('pdfs/checkin_export.csv', 'w')
         exportfile.write(export)
         exportfile.close()
@@ -2184,7 +2191,7 @@ class Root:
         start = datetime.utcnow()
         orders = session.query(models.order.Order).all()
         export = 'Meal Id,Meal Desc,Department,Badge Number,Overridden,Eligible for Carryout,Badge Type,Notes\n'
-        print('-------------beginning order CSV export-------------')
+        print('-------------beginning order CSV export for ' + str(len(orders)) + ' orders-------------')
         for order in orders:
             export += str(order.meal_id)
             export += ','
@@ -2346,6 +2353,10 @@ class Root:
         orders = session.query(models.dept_order.DeptOrder) \
             .order_by(models.dept_order.DeptOrder.meal_id, models.dept_order.DeptOrder.dept_id) \
             .all()
+
+        start = datetime.utcnow()
+        print('-------------beginning order completion CSV export for ' + str(len(orders)) + ' orders-------------')
+
         export = "Meal,Department,Meal Start Time,Time Order Started,Time Order Completed" \
                  ",Difference between Meal Start and Completion\n"
         for order in orders:
@@ -2366,6 +2377,11 @@ class Root:
             delta = relativedelta(meal.start_time, order.completed_time)
             export += str(delta.hours) + ' hours ' + str(delta.minutes) + ' minutes'
             export += '\n'
+
+        end = datetime.utcnow()
+        rd = relativedelta(end, start)
+        print('-------------done generating orders CSV--------------')
+        print(str(rd.minutes) + ' minutes, ' + str(rd.seconds) + ' seconds')
 
         exportfile = open('pdfs/order_completion_export.csv', 'w', encoding='utf-8')
         exportfile.write(export)
@@ -2489,6 +2505,9 @@ class Root:
         session = models.new_sesh()
         depts = session.query(models.department.Department).order_by(models.department.Department.name).all()
 
+        start = datetime.utcnow()
+        print('-------------beginning dept contact info CSV export for ' + str(len(depts)) + ' depts-------------')
+
         export = "Name,has_some_contact_info,is_Shiftless,SMS,Slack_Channel,Slack_Contact,Other\n"
         for dept in depts:
             export += dept.name
@@ -2508,6 +2527,11 @@ class Root:
             export += ','
             export += re.sub(r'[\r\n;,]', ' ', str(dept.other_contact))
             export += '\n'
+
+        end = datetime.utcnow()
+        rd = relativedelta(end, start)
+        print('-------------done generating contact info CSV--------------')
+        print(str(rd.minutes) + ' minutes, ' + str(rd.seconds) + ' seconds')
 
         exportfile = open('pdfs/contact_completion_export.csv', 'w', encoding='utf-8')
         exportfile.write(export)
