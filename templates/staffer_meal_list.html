@@ -18,7 +18,7 @@
     </form>
   {% endif %}
   <br/>
-  <h2>Orders are still under construction and not open yet.  Please set contact info through the link above for your department if you have not yet.</h2>
+  {% if not orders_open %}<h2>Orders are still under construction and not open yet.  Please set contact info through the link above for your department if you have not yet.</h2>{% endif %}
   {% for meal in meallist %}
     <form style="padding-top:5px;padding-bottom:5px;" role="form">
       <div class="meal_selection">
