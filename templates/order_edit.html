@@ -21,7 +21,7 @@
     <input type="hidden" name="save_order" value="{{ meal.id }}"/>
     <input type="hidden" name="meal_id" value="{{ meal.id }}"/>
 
-    <h3><input type="text" placeholder="Meal Name" name="meal_name" value="{{ meal.meal_name }}" disabled /></h3>
+    <h3><label>{{ meal.meal_name }}</label></h3>
     Meal Start Time
     <input type="datetime-local" placeholder="Start Time" name="start_time"
                 {% if meal.start_time %}value="{{ meal.start_time.isoformat() }}"{% endif %} disabled/>
@@ -88,7 +88,7 @@
               placeholder="Notes/requests. No guarantees that requests will be honored due to lack of time and staff for order processing, please be aware of your own allergies."
     >{{ order.notes }}</textarea>
     <br/>-->
-    {% if order.eligible == False %}
+    {% if order.eligible == False and not dh_edit %}
       <h3 style="border:5px solid; padding:2px; color:red;">You are not seen as automatically eligible to order for this meal by the food system.
         You will need to get your DH to Approve your order or else go to Staff Suite in {{ cfg.room_location }} for self serve food.
         If you believe this is in error please contact us in Slack #Super-Staff-Suite-Ordering</h3>

@@ -556,6 +556,7 @@ class Root:
                                toppings1=toppings1,
                                toppings2=toppings2,
                                messages=messages,
+                               orders_open=cfg.orders_open(),
                                session=session_info,
                                c=c,
                                cfg=cfg)
@@ -1592,8 +1593,6 @@ class Root:
 
         if len(dept_list) == 0 and len(orderless_depts) == 0:
             order_fulfilment_completed = True
-
-        choices_list = session.query(Ingredient).order_by(Ingredient.sort_by).all()
 
         choices_count = list()
         for item in order_selections.items():

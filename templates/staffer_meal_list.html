@@ -18,6 +18,7 @@
     </form>
   {% endif %}
   <br/>
+  <p>By default page shows only meals the system thinks you should be eligible to place orders for, or that you have an existing order for.</p>
   {% if not orders_open %}<h2>Orders are still under construction and not open yet.  Please set contact info through the link above for your department if you have not yet.</h2>{% endif %}
   {% for meal in meallist %}
     <form style="padding-top:5px;padding-bottom:5px;" role="form">

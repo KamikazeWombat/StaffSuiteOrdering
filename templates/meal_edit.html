@@ -11,9 +11,16 @@
   <h2>{% if meal.id %}Edit Meal{% else %}Create Meal{% endif %}</h2>
     <div class="section-border">
       You can leave any of the select-one and multi-select fields blank if not needed.<br/>
-      More options can be added if desired, both more choices under a question and more questions.<br/>
-      Select-One lets the staffer choose only one of the options, Multi-Select gives a group of check boxes any combination of which can be checked.<br/>
+      More options can be added if desired, both more choices under a question and more questions.  More choices is a setting in <a href="config">Config</a>.<br/>
+      Select-One lets the staffer choose exactly one of the options, Multi-Select gives a group of check boxes from which the staffer can choose any or none.<br/>
+      Remember that the Label field is all that will show on the printed order labels, so for example rather than "None" put "No Tortilla"
     </div>
+  {% if orders_open %}
+    <h2>Warning! Orders are open!</h2>
+    <h3>Do not make any substantial changes after people have started placing orders.
+      Fixing spelling or clarifying an option is fine,
+      removing something or for example replacing "Mustard" with "Mayo" will make any orders already placed become chaos</h3>
+  {% endif %}
   <form role="form">
     <div class="form-section">
       <input type="hidden" name="id" value ="{{ meal.id }}">
@@ -42,26 +49,32 @@
 
     <div class="section-border">
       <input type="text" class="form-control" placeholder="First Select-One Title" name="toggle1_title" value="{{ meal.toggle1_title }}"/>
+      Sort Order
       {{ macros.textbox_list('toggle1', toggles1, 'First Select-One Option') }}
     </div>
     <div class="section-border">
       <input type="text" class="form-control" placeholder="Second Select-One Title" name="toggle2_title" value="{{ meal.toggle2_title }}"/>
+      Sort Order
       {{ macros.textbox_list('toggle2', toggles2, 'Second Select-One Option') }}
     </div>
     <div class="section-border">
       <input type="text" class="form-control" placeholder="Third Select-One Title" name="toggle3_title" value="{{ meal.toggle3_title }}"/>
+      Sort Order
       {{ macros.textbox_list('toggle3', toggles3, 'Third Select-One Option') }}
     </div>
     <div class="section-border">
       <input type="text" class="form-control" placeholder="Fourth Select-One Title" name="toggle4_title" value="{{ meal.toggle4_title }}"/>
+      Sort Order
       {{ macros.textbox_list('toggle4', toggles4, 'Fourth Select-One Option') }}
     </div>
     <div class="section-border">
       <input type="text" class="form-control" placeholder="Multi-Select 1 Title" name="toppings1_title" value="{{ meal.toppings1_title }}"/>
+      Sort Order
       {{ macros.textbox_list('toppings1', toppings1, 'Multiple Select 1 Option') }}
     </div>
     <div class="section-border">
       <input type="text" class="form-control" placeholder="Multi-Select 2 Title" name="toppings2_title" value="{{ meal.toppings2_title }}"/>
+      Sort Order
       {{ macros.textbox_list('toppings2', toppings2, 'Multiple Select 2 Option') }}
     </div>
 
