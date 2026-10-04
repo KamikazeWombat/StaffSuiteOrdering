@@ -18,7 +18,7 @@
     </form>
   {% endif %}
   <br/>
-
+  <h2>Orders are still under construction and not open yet.  Please set contact info through the link above for your department if you have not yet.</h2>
   {% for meal in meallist %}
     <form style="padding-top:5px;padding-bottom:5px;" role="form">
       <div class="meal_selection">
@@ -37,7 +37,7 @@
           {% if meal.order_exists %}
             <span style="display: inline-block;"><a class="btn btn-lg btn-primary " href="order_edit?meal_id={{ meal.id }}">Edit Existing Order</a></span>
           {% else %}
-            <span style="display: inline-block;"><a class="btn btn-lg btn-primary " href="order_edit?meal_id={{ meal.id }}">Create Order</a></span>
+            <span style="display: inline-block;"><a class="btn btn-lg btn-primary " href="order_edit?meal_id={{ meal.id }}"{% if not orders_open %} disabled{% endif %}>Create Order</a></span>
           {% endif %}
       </div>
     </form>

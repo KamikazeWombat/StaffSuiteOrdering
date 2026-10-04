@@ -1043,10 +1043,16 @@ class Root:
                             'this change in Slack #Super-Staff-Suite-Ordering.')
 
         template = env.get_template('staffer_meal_list.html')
+        if cherrypy.session['is_admin']:
+            orders_open = True
+        else:
+            orders_open = cfg.orders_open()
+
         return template.render(messages=messages,
                                meallist=meal_display,
                                allergies=allergies,
                                attendee=attendee,
+                               orders_open=orders_open,
                                session=session_info,
                                c=c,
                                cfg=cfg)
