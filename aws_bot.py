@@ -24,6 +24,7 @@ def send_message(recipients, dept_name, meal_name, test_message=False):
 
     if test_message:
         SUBJECT = "Staff Suite !! Test Message !!"
+        meal_name = "Test meal, only for message testing purposes"
     else:
         SUBJECT = "Staff Suite Order Ready"
     BODY_TEXT = ("Your department's order bundle for " + str(meal_name) + " for " + str(dept_name)
