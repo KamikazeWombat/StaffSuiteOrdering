@@ -93,6 +93,8 @@
         You will need to get your DH to Approve your order or else go to Staff Suite in {{ cfg.room_location }} for self serve food.
         If you believe this is in error please contact us in Slack #Super-Staff-Suite-Ordering</h3>
     {% endif %}
+    <h3>Meals ordered for pickup are NOT customizable. If you have dietary restrictions,
+      please come to Staff Suite in-person or send a fellow staffer to put together a meal to-go for you.</h3>
     <button class="btn btn-lg btn-primary " type="submit"{% if order.locked %} disabled{% endif %}>Submit</button>
     <a class="btn btn-lg btn-primary " href="staffer_meal_list">Cancel</a>
     {% if order.exists == True %}
