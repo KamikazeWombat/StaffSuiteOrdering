@@ -204,7 +204,7 @@ class Root:
 
     @cherrypy.expose
     @ss_staffer
-    def dinein_checkin(self):
+    def dinein_checkin(self, **kwargs):
         """
         This page handles scanning attendee's badges for walk-in food
         """
@@ -217,28 +217,57 @@ class Root:
             current_meal = current_meals[-1]
         session.close()
 
+        dinein_default = 'Tuber_Eats_Dinein_Checkin_Default'
+        cookie = cherrypy.request.cookie
+        if dinein_default in cookie:
+            # if (no existing cookie)
+            default = cookie[dinein_default].value
+        else:
+            default = ""
+
+        locations = [("", "", "")]
+        for location in cfg.location_list:
+            # dropdown macro is expecting column 2 to be the ID returned.
+            # In this case I just want it to return the string.
+            if location == default:
+                locations.append((location, location, True))
+            else:
+                locations.append((location, location, False))
+
         template = env.get_template("dinein_checkin.html")
 
         session_info = get_session_info()
 
         return template.render(current_meal=current_meal,
+                               locations=locations,
                                c=c,
                                cfg=cfg,
                                session=session_info)
 
     @cherrypy.expose
     @ss_staffer
-    def checkin_badge(self, badge=''):
+    def checkin_badge(self, badge='', location = ''):
         """
         Processes checkin requests for walk-ins
         """
         badge = badge.replace('plussign', '+')
         # remove accidental whitespace
         badge = badge.strip()
+        location = location.replace('spacecharacter', ' ')
+
+        dinein_default = 'Tuber_Eats_Dinein_Checkin_Default'
+        cookie = cherrypy.response.cookie
+        cookie[dinein_default] = location
+        cookie[dinein_default]['path'] = '/'
+        cookie[dinein_default]['max-age'] = 3600
+        cookie[dinein_default]['version'] = 1
 
         # if badge is blank
         if not badge:
-            return json.dumps({"success": False, "badge": badge, "reason": "scan field blank?"})
+            return json.dumps({"success": False, "badge": badge, "reason": "Scan field blank?"})
+
+        if not location:
+            return json.dumps({"success": False, "badge": badge, "reason": "Please choose location"})
 
         # barcode on badges starts with ~
         if badge[0] == "~":
@@ -253,6 +282,7 @@ class Root:
         # badge will be none if lookup fails
         if not badge:
             return json.dumps({"success": False, "badge": '', "reason": "Could not locate badge."})
+
         session = models.new_sesh()
         now = now_utc()
         meal = session.query(Meal).filter(Meal.start_time < now, Meal.end_time > now).order_by(Meal.end_time).one_or_none()
@@ -260,9 +290,6 @@ class Root:
         try:
             attend = session.query(Attendee).filter_by(badge_num=badge).one()
 
-            print(attend.public_id)
-            print(attend.badge_num)
-            print(attend.full_name)
             # checks if attendee already in DB
         except sqlalchemy.orm.exc.NoResultFound:
             response = shared_functions.lookup_attendee(badge)
@@ -284,7 +311,7 @@ class Root:
                 session.add(attend)
                 session.commit()
         except sqlalchemy.exc.MultipleResultsFound:
-            messageforslack = "Someone's Checkin lookup retured multiple badges somehow.  " + str(badge)
+            messageforslack = "Someone's Checkin lookup retured multiple badges somehow.  " + str(badge) + " at " + str(location)
             slack_bot.send_message("@wombat3", messageforslack)
             session.close()
             return json.dumps(
@@ -322,7 +349,7 @@ class Root:
                                                     Checkin.meal_id == None).order_by(desc(Checkin.timestamp)).all()
         if checkin and meal:
             # ie if there is a checkin for this meal period (meal is blank if not during meal period)
-            checkin = Checkin(attendee_id=attend.public_id, meal_id=meal.id, duplicate=True)
+            checkin = Checkin(attendee_id=attend.public_id, meal_id=meal.id, duplicate=True, location=location)
             session.add(checkin)
             session.commit()
             session.close()
@@ -341,7 +368,7 @@ class Root:
         if meal:
             # if during a meal period and not already a checkin for this meal period
             # checks if there is an existing meal associated checkin above
-            checkin = Checkin(attendee_id=attend.public_id, meal_id=meal.id)
+            checkin = Checkin(attendee_id=attend.public_id, meal_id=meal.id, location=location)
         else:
             if checkin:
                 # if not during meal period, and one or more checkins for this attendee this event.
@@ -350,7 +377,7 @@ class Root:
                     if abs(delta.minutes) <= 15 and delta.hours == 0 and abs(delta.days) == 0:
                         # if a previously received checkin
                         # is within 15 minutes of current checkin, does not record as another checkin
-                        checkin = Checkin(attendee_id=attend.public_id, meal_id=None, duplicate=True)
+                        checkin = Checkin(attendee_id=attend.public_id, meal_id=None, duplicate=True, location=location)
                         session.add(checkin)
                         session.commit()
                         session.close()
@@ -358,7 +385,7 @@ class Root:
                         return json.dumps({"success": True, "badge": badge, "reason": "Checked in successfully!",
                                            "has_allergy": has_allergy})
             # if no existing checkin for this attendee overlaps current time, create new checkin
-            checkin = Checkin(attendee_id=attend.public_id, meal_id=None)
+            checkin = Checkin(attendee_id=attend.public_id, meal_id=None, location=location)
 
         # save new checkin record to DB
         session.add(checkin)
@@ -562,8 +589,8 @@ class Root:
 
     @restricted
     @cherrypy.expose
-    def order_edit(self, meal_id='', save_order='', order_id='', message=[], notes='', delete_order=False,
-                   dh_edit=False, **params):
+    def order_edit(self, meal_id='', save_order='', order_id='', message=[], notes='',
+                   delete_order=False, dh_edit=False, **params):
 
         messages = []
         if message:
@@ -1077,6 +1104,7 @@ class Root:
 
             admin_list = params['admin_list']
             staffer_list = params['staffer_list']
+            location_list = params['location_list']
 
             if 'local_print' in params:
                 cfg.local_print = True
@@ -1111,13 +1139,14 @@ class Root:
                 admin_list = ',\n'.join(cfg.admin_list)
             manager_list = ',\n'.join(cfg.food_managers)
 
-            cfg.save(admin_list, staffer_list, manager_list)
+            cfg.save(admin_list=admin_list, staffer_list=staffer_list, location_list=location_list, manager_list=manager_list)
 
             raise HTTPRedirect('config?message=Successfully saved config settings')
 
         # load lists into plain string for display in webpage
         admin_list = ',\n'.join(cfg.admin_list)
         staffer_list = ',\n'.join(cfg.staffer_list)
+        location_list = ',\n'.join(cfg.location_list)
 
         if badge:
             if not session_info['is_super_admin']:
@@ -1130,6 +1159,7 @@ class Root:
                                    session=session_info,
                                    admin_list=admin_list,
                                    staffer_list=staffer_list,
+                                   location_list=location_list,
                                    attendee=attendee,
                                    c=c,
                                    cfg=cfg)
@@ -1145,6 +1175,7 @@ class Root:
                                    session=session_info,
                                    admin_list=admin_list,
                                    staffer_list=staffer_list,
+                                   location_list=location_list,
                                    attendee=attendee,
                                    c=c,
                                    cfg=cfg)
@@ -1158,6 +1189,7 @@ class Root:
                                session=session_info,
                                admin_list=admin_list,
                                staffer_list=staffer_list,
+                               location_list=location_list,
                                c=c,
                                cfg=cfg)
 
@@ -2147,7 +2179,7 @@ class Root:
 
         checkins = session.query(models.checkin.Checkin).all()
 
-        export = 'Meal ID,Meal Desc,Badge Number,Badge Type,Timestamp\n'
+        export = 'Meal ID,Meal Desc,Badge Number,Badge Type,Location,Timestamp\n'
         for checkin in checkins:
             if checkin.meal_id:
                 export += str(checkin.meal_id)
@@ -2165,6 +2197,8 @@ class Root:
             else:
                 export += str(response['result']['badge_type_label'])
                 export += ','
+            export += str(checkin.location)
+            export += ','
             checkin.timestamp = con_tz(checkin.timestamp)
             export += checkin.timestamp.strftime(cfg.date_format)
             export += '\n'

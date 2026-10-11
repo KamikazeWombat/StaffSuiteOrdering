@@ -15,3 +15,4 @@ class Checkin(dec_base):
     meal = relationship('Meal', back_populates='checkins')
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
     duplicate = Column(String, default=False)
+    location = Column(String, default="")

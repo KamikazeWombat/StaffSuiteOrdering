@@ -17,7 +17,7 @@ class Config:
     Class to make config data easily accessible
     """
     
-    def load_user_lists(self):
+    def load_lists_from_disk(self):
         self.admin_list = list()
         try:
             adminfile = open('admin_list.cfg', 'r')
@@ -39,6 +39,18 @@ class Config:
             for staffer in staffer_list:
                 staffer = staffer.strip()
                 self.staffer_list.append(staffer)
+        except FileNotFoundError:
+            pass
+
+        self.location_list = list()
+        try:
+            locationfile = open('ss_location_list.cfg', 'r')
+            locations = locationfile.read()
+            locationfile.close()
+            location_list = locations.split(',')
+            for location in location_list:
+                location = location.strip()
+                self.location_list.append(location)
         except FileNotFoundError:
             pass
 
@@ -97,7 +109,7 @@ class Config:
         cdata = json.load(configfile)
         configfile.close()
 
-        self.version = "1.2.8"  # code version
+        self.version = "1.2.11"  # code version
         if 'last_version_loaded' in cdata:
             self.last_version_loaded = cdata['last_version_loaded']
         else:
@@ -105,9 +117,10 @@ class Config:
 
         self.admin_list = ''
         self.staffer_list = ''
+        self.location_list = ''
         self.food_managers = ''
         self.super_admins = ''
-        self.load_user_lists()
+        self.load_lists_from_disk()
         
         self.api_endpoint = cdata['api_endpoint']
         self.uber_key_location = cdata['uber_key_location']
@@ -197,7 +210,7 @@ class Config:
         else:
             return False
         
-    def save(self, admin_list="", staffer_list="", manager_list="", cfgonly=False):
+    def save(self, admin_list="", staffer_list="", location_list="", manager_list="", cfgonly=False):
         cdata = {
             'last_version_loaded': self.last_version_loaded,
             'api_endpoint': self.api_endpoint,
@@ -227,7 +240,7 @@ class Config:
         configfile = open(self.config_file_in_use, 'w')
         json.dump(cdata, configfile, indent=2)
         configfile.close()
-        if cfgonly:  # cfgonly indicates that we are not attempting to update user role lists
+        if cfgonly:  # cfgonly indicates that we are not attempting to update lists stored on disk
             return
 
         adminfile = open('admin_list.cfg', 'w')
@@ -238,11 +251,15 @@ class Config:
         stafferfile.write(staffer_list)
         stafferfile.close()
 
+        locationfile = open('ss_location_list.cfg', 'w')
+        locationfile.write(location_list)
+        locationfile.close()
+
         managerfile = open('food_managers.cfg', 'w')
         managerfile.write(manager_list)
         managerfile.close()
         
-        self.load_user_lists()
+        self.load_lists_from_disk()
         return
 
 

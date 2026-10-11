@@ -1116,6 +1116,24 @@ def do_upgrade():
         cfg.save(cfgonly=True)
         changes_needed = True
 
+    if first_older_than_second(cfg.last_version_loaded, "1.2.11"):
+        print("--------------Upgrading to 1.2.11-------------")
+        try:
+            engine = create_my_db_engine()
+            connection = engine.connect()
+            query = 'ALTER TABLE checkin ADD location VARCHAR;'
+            connection.execute(sqlalchemy.text(query))
+        except:
+            # if this runs but location column already exists that's not a problem
+            pass
+
+        connection.commit()
+        connection.close()
+        engine.dispose()
+        cfg.last_version_loaded = "1.2.11"
+        cfg.save(cfgonly=True)
+        changes_needed = True
+
     return changes_needed
 
 

@@ -9,11 +9,14 @@
   <script type="text/javascript">
     function checkin() {
         barcode = document.getElementById("barcode");
-        console.log("Checking in " + barcode.value);
+        console.log("Checking in " + barcode.value + " at " + checkin_location.value);
+        checkin_location = document.getElementById("checkin_location");
+
         message = document.getElementById("message");
         message.innerHTML = "Loading...";
         allergy.innerHTML = "";
-        fetch("checkin_badge?badge=" + barcode.value.replace('+', 'plussign'), {credentials: "include"}, ).then((response) => {
+        fetch("checkin_badge?badge=" + barcode.value.replace('+', 'plussign') +
+            "&location=" + checkin_location.value.replace(' ','spacecharacter'), {credentials: "include"}, ).then((response) => {
             return response.json();
         }).then((response) => {
             barcode.value = "";
@@ -33,6 +36,7 @@
     }
   </script>
   <form onsubmit="return checkin()">
+      {{ macros.dropdown(field='checkin_location', options=locations, is_required=True) }}
       <input id="barcode" type="text" name="barcode" autofocus>
       <button type="submit" class="btn btn-lg btn-primary">Checkin Badge</button>
   </form>

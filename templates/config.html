@@ -43,6 +43,13 @@ padding-bottom: 3px;
         <button type="submit">Add</button>
         <div id="staff_message"></div>
       </td></tr>
+
+      <tr><td>Location list for beep-boop</td>
+        <td><textarea name="location_list" cols="50" rows="4"
+        placeholder ="List of location names for the Dine-in Check-in screen"
+        >{{ location_list }}</textarea>
+      </td></tr>
+
       <tr><td>Printing Setup - select one :</td>
         <td><label class="checkbox-label">Local Printer </label><input type="checkbox" name="local_print"{% if cfg.local_print %} checked{% endif %}>
         <label class="checkbox-label">Remote Printer </label><input type="checkbox" name="remote_print"{% if cfg.remote_print %} checked{% endif %}></td>
