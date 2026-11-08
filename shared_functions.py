@@ -280,7 +280,7 @@ def load_departments():
         # fewer changed records makes the SQL commit faster
         if not mydept.is_shiftless == dept_details['result']['is_shiftless']:
             mydept.is_shiftless = dept_details['result']['is_shiftless']
-            
+
     session.commit()
     session.close()
     return
@@ -692,8 +692,9 @@ def combine_shifts(badge_num, full=False, no_combine=False):
     else:
         shifts = response['result']['shifts']
         for shift in shifts:
+            shift_length = relativedelta(minutes=shift['job']['duration'])
             item = Shift(parse(shift['job']['start_time']),
-                         parse(shift['job']['end_time']),
+                         parse(shift['job']['start_time']) + shift_length,
                          extra_15=shift['job']['extra15']
                          )
             shift_list.append(item)
