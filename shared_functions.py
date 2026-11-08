@@ -276,11 +276,6 @@ def load_departments():
         request = requests.post(url=cfg.api_endpoint, json=request_data, headers=REQUEST_HEADERS)
         dept_details = json.loads(request.text)
 
-        # this checks if changed before updating because my memory tells me
-        # fewer changed records makes the SQL commit faster
-        if not mydept.is_shiftless == dept_details['result']['is_shiftless']:
-            mydept.is_shiftless = dept_details['result']['is_shiftless']
-
     session.commit()
     session.close()
     return
@@ -661,13 +656,6 @@ def ss_eligible(badge_num):
         session.close()
         return True
 
-    # shiftless departments are exempt from eligibility requirements
-    depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
-    for dept in depts:
-        if dept.name in attendee['assigned_depts_labels']:
-            session.close()
-            return True
-
     # if nothing above matches, not eligible.
     session.close()
     return False
@@ -818,12 +806,6 @@ def carryout_eligible(shifts, response, meal_start, meal_end):
     if 'result' in response and is_vip(response['result']['badge_num'], session):
         session.close()
         return True
-
-    shiftless_depts = session.query(models.department.Department).filter_by(is_shiftless=True).all()
-    for dept in shiftless_depts:
-        if dept.name in response['result']['assigned_depts_labels']:
-            session.close()
-            return True
 
     session.close()
     # if none of the shifts match the meal period and attendee is not exempt, return false.

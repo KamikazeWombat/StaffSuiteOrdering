@@ -2516,7 +2516,7 @@ class Root:
         start = datetime.utcnow()
         print('-------------beginning dept contact info CSV export for ' + str(len(depts)) + ' depts-------------')
 
-        export = "Name,has_some_contact_info,is_Shiftless,Email,Slack_Channel,Slack_Contact,SMS,Other\n"
+        export = "Name,has_some_contact_info,Email,Slack_Channel,Slack_Contact,SMS,Other\n"
         for dept in depts:
             export += dept.name
             export += ","
@@ -2524,8 +2524,6 @@ class Root:
                 export += "True"
             else:
                 export += "False"
-            export += ','
-            export += re.sub(r'[\r\n;,]', ' ', str(dept.is_shiftless))
             export += ','
             export += re.sub(r'[\r\n;,]', ' ', str(dept.email_contact))
             export += ','
