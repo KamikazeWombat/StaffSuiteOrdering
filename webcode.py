@@ -556,6 +556,7 @@ class Root:
                                toppings1=toppings1,
                                toppings2=toppings2,
                                messages=messages,
+                               orders_open=cfg.orders_open(),
                                session=session_info,
                                c=c,
                                cfg=cfg)
@@ -1043,10 +1044,16 @@ class Root:
                             'this change in Slack #Super-Staff-Suite-Ordering.')
 
         template = env.get_template('staffer_meal_list.html')
+        if cherrypy.session['is_admin']:
+            orders_open = True
+        else:
+            orders_open = cfg.orders_open()
+
         return template.render(messages=messages,
                                meallist=meal_display,
                                allergies=allergies,
                                attendee=attendee,
+                               orders_open=orders_open,
                                session=session_info,
                                c=c,
                                cfg=cfg)
@@ -1587,8 +1594,6 @@ class Root:
         if len(dept_list) == 0 and len(orderless_depts) == 0:
             order_fulfilment_completed = True
 
-        choices_list = session.query(Ingredient).order_by(Ingredient.sort_by).all()
-
         choices_count = list()
         for item in order_selections.items():
             if item[0]:
@@ -1884,10 +1889,10 @@ class Root:
                                        'pdfs\\' + dept_name + '.pdf',
                                        options=options,
                                        configuration=config)
-                else:   # Linux seems to find the package automatically
-                    # path_wkhtmltopdf = r'/usr/local/bin/wkhtmltopdf'
-                    # config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
-                    pdfkit.from_string(labels.render(orders=order_list,
+                else:   # Linux used to to find the package automatically, now doesn't because deprecated
+                    path_wkhtmltopdf = r'/usr/local/bin/wkhtmltopdf'
+                    config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+                pdfkit.from_string(labels.render(orders=order_list,
                                                      meal=thismeal,
                                                      dept_name=dept_name,
                                                      date=thismeal.start_time.strftime("%d-%m-%Y")),
@@ -2146,6 +2151,7 @@ class Root:
         checkins = session.query(models.checkin.Checkin).all()
         start = datetime.utcnow()
         print('-------------beginning order CSV export for ' + str(len(checkins)) + ' checkins-------------')
+        print('Takes something like 2-3 minutes per 1000 entries')
 
         export = 'Meal ID,Meal Desc,Badge Number,Badge Type,Timestamp\n'
         for checkin in checkins:
@@ -2192,6 +2198,8 @@ class Root:
         orders = session.query(models.order.Order).all()
         export = 'Meal Id,Meal Desc,Department,Badge Number,Overridden,Eligible for Carryout,Badge Type,Notes\n'
         print('-------------beginning order CSV export for ' + str(len(orders)) + ' orders-------------')
+        print('Takes something like 2-3 minutes per 1000 entries')
+
         for order in orders:
             export += str(order.meal_id)
             export += ','
@@ -2508,7 +2516,7 @@ class Root:
         start = datetime.utcnow()
         print('-------------beginning dept contact info CSV export for ' + str(len(depts)) + ' depts-------------')
 
-        export = "Name,has_some_contact_info,is_Shiftless,Email,Slack_Channel,Slack_Contact,SMS,Other\n"
+        export = "Name,has_some_contact_info,Email,Slack_Channel,Slack_Contact,SMS,Other\n"
         for dept in depts:
             export += dept.name
             export += ","
@@ -2516,8 +2524,6 @@ class Root:
                 export += "True"
             else:
                 export += "False"
-            export += ','
-            export += re.sub(r'[\r\n;,]', ' ', str(dept.is_shiftless))
             export += ','
             export += re.sub(r'[\r\n;,]', ' ', str(dept.email_contact))
             export += ','

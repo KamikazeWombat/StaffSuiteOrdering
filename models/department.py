@@ -18,4 +18,4 @@ class Department(dec_base):
     sms_contact = Column('sms_contact', String, default='')      # who to text
     email_contact = Column('email_contact', String, default='')  # who to email
     other_contact = Column('other_contact', String, default='')  # additional contact info
-    is_shiftless = Column('is_shiftless', Boolean, default=False)  # is this department shiftless?
+    is_shiftless = Column('is_shiftless', Boolean, default=False)  # deprecated by Uber API change for 2027
