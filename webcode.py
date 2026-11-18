@@ -1889,10 +1889,10 @@ class Root:
                                        'pdfs\\' + dept_name + '.pdf',
                                        options=options,
                                        configuration=config)
-                else:   # Linux seems to find the package automatically
-                    # path_wkhtmltopdf = r'/usr/local/bin/wkhtmltopdf'
-                    # config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
-                    pdfkit.from_string(labels.render(orders=order_list,
+                else:   # Linux used to to find the package automatically, now doesn't because deprecated
+                    path_wkhtmltopdf = r'/usr/local/bin/wkhtmltopdf'
+                    config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+                pdfkit.from_string(labels.render(orders=order_list,
                                                      meal=thismeal,
                                                      dept_name=dept_name,
                                                      date=thismeal.start_time.strftime("%d-%m-%Y")),
